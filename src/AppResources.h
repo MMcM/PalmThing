@@ -1,56 +1,81 @@
 //
-//	Palm App Name:   		"BasicApp"
+//      Palm App Name:                  "PalmThing"
+//      Palm App Version:               "1.0"
+//      $Header$
 //
-//	Palm App Version:		"1.0"
 
+//      Resource: tFRM 1000
+#define ListForm                                  1000
+#define ListNewButton                             1001
+#define ListCategoryList                          1002
+#define ListCategorySelTrigger                    1003
+#define ListScrollUpRepeating                     1004
+#define ListScrollDownRepeating                   1005
+#define ListTable                                 1006
 
-//	Resource: tFRM 1000
-#define MainForm                                  1000	//(Left Origin = 0, Top Origin = 0, Width = 160, Height = 160, Usable = 1, Modal = 0, Save Behind = 0, Help ID = 0, Menu Bar ID = 1000, Default Button ID = 0)
+//      Resource: tFRM 1100
+#define AboutForm                                 1100
+#define AboutOKButton                             1101
+#define AboutTitleLabel                           1102
+#define AboutBlurbLabel                           1103
+#define AboutVersionStringLabel                   1104
 
-//	Resource: tFRM 1100
-#define AboutForm                                 1100	//(Left Origin = 2, Top Origin = 2, Width = 156, Height = 156, Usable = 1, Modal = 1, Save Behind = 1, Help ID = 0, Menu Bar ID = 0, Default Button ID = 0)
-#define AboutOKButton                             1105	//(Left Origin = 58, Top Origin = 139, Width = 40, Height = 12, Usable = 1, Anchor Left = 1, Frame = 1, Non-bold Frame = 1, Font = Standard)
-#define AboutTitleLabel                           1102	//(Left Origin = 54, Top Origin = 25, Usable = 1, Font = Bold 12)
-#define AboutText1Label                           1103	//(Left Origin = 23, Top Origin = 54, Usable = 1, Font = Standard)
-#define AboutText2Label                           1104	//(Left Origin = 50, Top Origin = 104, Usable = 1, Font = Bold)
+//      Resource: tFRM 1200
+#define ViewForm                                  1200
 
+//      Resource: tFRM 1300
+#define EditForm                                  1300
+#define EditDoneButton                            1301
+#define EditDetailsButton                         1302
+#define EditNoteButton                            1303
+#define EditGraffitiShiftIndicatorGraffitiShift   1304
+#define EditCategoryList                          1305
+#define EditCategorySelTrigger                    1306
+#define EditScrollUpRepeating                     1307
+#define EditScrollDownRepeating                   1308
+#define EditTable                                 1309
 
-//	Resource: Talt 1001
-#define RomIncompatibleAlert                      1001
-#define RomIncompatibleOK                         0
+//      Resource: MBAR 1000
+#define ListFormMenuBar                           1000
 
+//      Resource: MBAR 1100
+#define ListV40MenuBar                            1100
 
-//	Resource: MBAR 1000
-#define MainFormMenuBar                           1000
+//      Resource: MBAR 1200
+#define ViewFormMenuBar                           1200
 
+//      Resource: MBAR 1300
+#define ViewV40MenuBar                            1300
 
-//	Resource: MENU 1000
-#define MainOptionsMenu                           1000
-#define MainOptionsAboutStarterApp                1000
+//      Resource: MBAR 1400
+#define EditFormMenuBar                           1400
 
+//      Resource: MBAR 1500
+#define EditV40MenuBar                            1500
 
-//	Resource: PICT 1001
-#define Bitmap                                    1001
+//      Resource: MENU items
+#define EditUndo                                  1000
+#define EditCut                                   1001
+#define EditCopy                                  1002
+#define EditPaste                                 1003
+#define EditSelectAll                             1004
+#define EditKeyboard                              1006
+#define EditGraffitiHelp                          1007
 
-//	Resource: PICT 1002
-#define Bitmap2                                   1002
+#define RecordBeamCategory                        1100
+#define RecordSendCategory                        1101
+#define RecordBeamBook                            1102
+#define RecordSendBook                            1103
 
-//	Resource: PICT 1008
-#define Bitmap3                                   1008
+#define OptionsAbout                              1200
+#define OptionsFont                               1201
+#define OptionsPreferences                        1202
 
-//	Resource: PICT 1011
-#define Bitmap4                                   1011
+//      Resource: taif 1000
+#define LargeAppIconFamily                        1000
 
-//	Resource: PICT 1012
-#define Bitmap5                                   1012
+//      Resource: taif 1001
+#define SmallAppIconFamily                        1001
 
-//	Resource: PICT 1018
-#define Bitmap6                                   1018
-
-
-//	Resource: taif 1000
-#define Largeicons12and8bitsAppIconFamily         1000
-
-//	Resource: taif 1001
-#define Smallicons12and8bitsAppIconFamily         1001
-
+//	Resource: tAIS 2000
+#define CategoryAppInfoStr                        1000

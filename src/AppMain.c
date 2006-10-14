@@ -8,79 +8,16 @@
 #include "AppResources.h"
 #include "AppGlobals.h"
 
-/***********************************************************************
- *
- * FUNCTION:    MainFormDoCommand
- *
- * DESCRIPTION: This routine performs the menu command specified.
- *
- * PARAMETERS:  command  - menu item id
- *
- * RETURNED:    nothing
- *
- * REVISION HISTORY:
- *
- *
- ***********************************************************************/
-static Boolean MainFormDoCommand(UInt16 command)
-{
-  Boolean handled = false;
+/*** Global storage ***/
 
-  switch (command) {
-  case MainOptionsAboutStarterApp:
-    AboutFormDisplay();
-    handled = true;
-    break;
-  }
-	
-  return handled;
-}
-
-
-/***********************************************************************
- *
- * FUNCTION:    MainFormHandleEvent
- *
- * DESCRIPTION: This routine is the event handler for the 
- *              "MainForm" of this application.
- *
- * PARAMETERS:  pEvent  - a pointer to an EventType structure
- *
- * RETURNED:    true if the event has handle and should not be passed
- *              to a higher level handler.
- *
- * REVISION HISTORY:
- *
- *
- ***********************************************************************/
-static Boolean MainFormHandleEvent(EventType* pEvent)
-{
-  Boolean 	handled = false;
-  FormType* 	pForm;
-
-  switch (pEvent->eType) {
-  case menuEvent:
-    return MainFormDoCommand(pEvent->data.menu.itemID);
-
-  case frmOpenEvent:
-    pForm = FrmGetActiveForm();
-    FrmDrawForm(pForm);
-    handled = true;
-    break;
-			
-  default:
-    break;
-  }
-	
-  return handled;
-}
+UInt32 g_ROMVersion = 0;
+UInt16 g_CurrentRecord = NO_RECORD;
+UInt16 g_CurrentCategory = dmAllCategories;
 
 /** About form. **/
 void AboutFormDisplay()
 {
-  FormType *pForm;
-
-  pForm = FrmInitForm(AboutForm);
+  FormType *pForm = FrmInitForm(AboutForm);
   FrmDoDialog(pForm);
   FrmDeleteForm(pForm);
 }
@@ -88,7 +25,23 @@ void AboutFormDisplay()
 /** Initial application startup. **/
 static Err AppStart(void)
 {
-  FrmGotoForm(MainForm);
+  BookAppInfo *appInfo;
+  Err error;
+
+  // Get version of system ROM.
+  FtrGet(sysFtrCreator, sysFtrNumROMVersion, &g_ROMVersion);
+
+  error = BookDatabaseOpen();
+  if (error) return error;
+
+  appInfo = BookDatabaseGetAppInfo();
+  ListFormSetup(appInfo);
+  ViewFormSetup(appInfo);
+  EditFormSetup(appInfo);
+  NoteFormSetup(appInfo);
+  MemPtrUnlock(appInfo);
+  
+  FrmGotoForm(ListForm);
   return errNone;
 }
 
@@ -109,21 +62,26 @@ static Boolean AppHandleEvent(EventType* pEvent)
   Boolean handled = false;
 
   if (pEvent->eType == frmLoadEvent) {
-    UInt16 formId;
-    FormType* pForm;
-
     // Load the form resource.
-    formId = pEvent->data.frmLoad.formID;
-		
-    pForm = FrmInitForm(formId);
+    UInt16 formId = pEvent->data.frmLoad.formID;
+    FormType* pForm = FrmInitForm(formId);
     FrmSetActiveForm(pForm);
 
     // Set the event handler for the form.  The handler of the currently
     // active form is called by FrmHandleEvent each time is receives an
     // event.
     switch (formId) {
-    case MainForm:
-      FrmSetEventHandler(pForm, MainFormHandleEvent);
+    case ListForm:
+      FrmSetEventHandler(pForm, ListFormHandleEvent);
+      break;
+    case ViewForm:
+      FrmSetEventHandler(pForm, ViewFormHandleEvent);
+      break;
+    case EditForm:
+      FrmSetEventHandler(pForm, EditFormHandleEvent);
+      break;
+    case NewNoteView:
+      FrmSetEventHandler(pForm, NoteFormHandleEvent);
       break;
     }
     handled = true;
@@ -162,7 +120,8 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
 
   switch (cmd) {
   case sysAppLaunchCmdNormalLaunch:
-    if ((error = AppStart()) == 0) {			
+    error = AppStart();
+    if (errNone == error) {
       AppEventLoop();
       AppStop();
     }

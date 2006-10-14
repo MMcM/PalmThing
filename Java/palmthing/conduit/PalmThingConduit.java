@@ -28,11 +28,11 @@ public class PalmThingConduit implements Conduit {
     }
   }
 
-  public String name() {
-    return NAME;
-  }
-
   public int configure(ConfigureConduitInfo info) {
     return 0;
+  }
+
+  public String name() {
+    return NAME;
   }
 }

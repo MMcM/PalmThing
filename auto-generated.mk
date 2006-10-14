@@ -14,12 +14,12 @@ ifeq ($(SDK_VERSION), )
    SDK_VERSION = sdk-5r4
 endif
 
-ifeq ($(DATABASE_BUNDLE), )
-   DATABASE_BUNDLE = 
-endif
-
 ifeq ($(DATABASE_RESET), )
    DATABASE_RESET = 
+endif
+
+ifeq ($(DATABASE_BUNDLE), )
+   DATABASE_BUNDLE = 
 endif
 
 ifeq ($(CREATOR_ID), )
@@ -38,12 +38,12 @@ ifeq ($(PROJECT_VERSION), )
    PROJECT_VERSION = 10100
 endif
 
-ifeq ($(SDK), )
-   SDK = com.palmsource.eclipse.sdk.palmos5
-endif
-
 ifeq ($(DATABASE_PROTECT), )
    DATABASE_PROTECT = 
+endif
+
+ifeq ($(SDK), )
+   SDK = com.palmsource.eclipse.sdk.palmos5
 endif
 
 ifeq ($(DB_NAME), )
