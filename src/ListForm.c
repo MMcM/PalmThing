@@ -44,6 +44,11 @@ static void ListFormUpdateScrollButtons();
 static void ListFormSelectRecord(UInt16 recordNum);
 static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds);
 
+static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
+{
+  return FrmGetObjectPtr(formP, FrmGetObjectIndex(formP, objID));
+}
+
 /*** Setup and event handling ***/
 
 void ListFormSetup(BookAppInfo *appInfo)
@@ -62,7 +67,7 @@ static void ListFormOpen(FormType *form)
 
   oldFont = FntSetFont(g_ListFont);
 
-  table = FrmGetObjectPtr(form, FrmGetObjectIndex(form, ListTable));
+  table = FrmGetObjectPtrFromID(form, ListTable);
   TblGetBounds(table, &tableBounds);
   nrows = TblGetNumberOfRows(table);
 
@@ -83,7 +88,7 @@ static void ListFormOpen(FormType *form)
 
   ListFormLoadTable();
 
-  CategorySetTriggerLabel(FrmGetObjectPtr(form, ListCategorySelTrigger), 
+  CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategorySelTrigger), 
                           BookDatabaseGetCategoryName(g_CurrentCategory));
 
   FntSetFont(oldFont);
@@ -274,7 +279,7 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
   UInt16 newTopVisibleRecord;
  
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, ListTable);
+  table = FrmGetObjectPtrFromID(form, ListTable);
   rowsPerPage = ListFormNumberOfRows(table) - 1;
   newTopVisibleRecord = g_TopVisibleRecord;
 
@@ -343,7 +348,7 @@ static void ListFormLoadTable()
   Int16 row, nrows, nvisible;
 
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, ListTable);
+  table = FrmGetObjectPtrFromID(form, ListTable);
   TblUnhighlightSelection(table);
   nrows = TblGetNumberOfRows(table);
   nvisible = ListFormNumberOfRows(table);
@@ -387,7 +392,7 @@ static void ListFormUpdateScrollButtons()
   scrollableUp = BookDatabaseSeekRecord(&recordNum, 1, dmSeekBackward);
  
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, ListTable);
+  table = FrmGetObjectPtrFromID(form, ListTable);
   row = TblGetLastUsableRow(table);
   if (row != -1)
     recordNum = TblGetRowID(table, row);
@@ -407,7 +412,7 @@ static Boolean ListFormUpdateDisplay(UInt16 updateCode)
   Boolean handled;
  
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, ListTable);
+  table = FrmGetObjectPtrFromID(form, ListTable);
   handled = false;
  
   if (updateCode & frmRedrawUpdateCode) {
@@ -432,7 +437,7 @@ static Boolean ListFormUpdateDisplay(UInt16 updateCode)
   if (updateCode & UPDATE_CATEGORY_CHANGED) {
     ListFormLoadTable();
     TblRedrawTable(table);
-    CategorySetTriggerLabel(FrmGetObjectPtr(form, ListCategorySelTrigger),
+    CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategorySelTrigger),
                             BookDatabaseGetCategoryName(g_CurrentCategory));
     handled = true;
   }
@@ -481,7 +486,7 @@ static void DrawCharsInWidth(char *str, Int16 *width, Int16 *length,
   if (fitInWidth) {
     // Draw whole string (less trimmed spaces).
     if (rightJustify)
-      x -= *width;
+      x += maxWidth - *width;
     WinDrawChars(str, *length, x, y);
   }
   else {
@@ -490,7 +495,7 @@ static void DrawCharsInWidth(char *str, Int16 *width, Int16 *length,
     FntCharsInWidth(str, width, length, &fitInWidth);
   
     if (rightJustify)
-      x -= *width + ellipsisWidth;
+      x += maxWidth - (*width + ellipsisWidth);
     WinDrawChars(str, *length, x, y);
 
     x += *width;
@@ -532,7 +537,7 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
   if (NULL != str1)
     len1 = StrLen(str1);
   if (NULL != str2)
-    len1 = StrLen(str2);
+    len2 = StrLen(str2);
 
   width = bounds->extent.x;
   x = bounds->topLeft.x;
@@ -554,7 +559,7 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
       width = (width * LEFT_FRACTION_NUM) / LEFT_FRACTION_DEN;
       DrawCharsInWidth(str1, &width, &len1, x, y, false);
       x += width + SPACE_BETWEEN_FIELDS;
-      width = bounds->extent.x - width;
+      width = bounds->extent.x - x;
       DrawCharsInWidth(str2, &width, &len2, x, y, true);
     }
   }
@@ -568,7 +573,7 @@ static void ListFormSelectRecord(UInt16 recordNum)
   int i;
 
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, ListTable);
+  table = FrmGetObjectPtrFromID(form, ListTable);
 
   if (TblGetSelection(table, &row, &column) &&
       (recordNum == TblGetRowID(table, row))) {

@@ -76,6 +76,12 @@ static void EditFormLoadTableRow(TableType *table, UInt16 row, UInt16 fieldNumbe
                                  short rowHeight, FontID fontID);
 static void EditFormUpdateScrollButtons(FormType *form, UInt16 bottomFieldNumber,
                                         Boolean lastItemClipped);
+static void DeleteCurrentRecord(Boolean archive);
+
+static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
+{
+  return FrmGetObjectPtr(formP, FrmGetObjectIndex(formP, objID));
+}
 
 /*** Setup and event handling ***/
 
@@ -116,7 +122,7 @@ static void EditFormOpen(FormType *form)
   TableType *table;
   RectangleType  bounds;
   
-  table = FrmGetObjectPtr(form, FrmGetObjectIndex(form, EditTable));
+  table = FrmGetObjectPtrFromID(form, EditTable);
   nrows = TblGetNumberOfRows(table);
   for (row = 0; row < nrows; row++) {
     TblSetItemStyle(table, row, COL_LABEL, labelTableItem);
@@ -139,7 +145,7 @@ static void EditFormOpen(FormType *form)
 
   EditFormLoadTable();
 
-  CategorySetTriggerLabel(FrmGetObjectPtr(form, EditCategorySelTrigger),
+  CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, EditCategorySelTrigger),
                           BookRecordGetCategoryName(g_CurrentRecord));
 }
 
@@ -200,7 +206,7 @@ Boolean EditFormHandleEvent(EventType *event)
   case keyDownEvent:
     if (TxtCharIsHardKey(event->data.keyDown.modifiers,
                          event->data.keyDown.chr)) {
-      TblReleaseFocus(FrmGetObjectPtr(FrmGetActiveForm(), EditTable));
+      TblReleaseFocus(FrmGetObjectPtrFromID(FrmGetActiveForm(), EditTable));
       //gTopVisibleRecord = 0;
       //gCurrentFieldIndex = noFieldIndex;
       FrmGotoForm(ListForm);
@@ -413,7 +419,7 @@ static void EditFormLoadTable()
     return;
 
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, EditTable);
+  table = FrmGetObjectPtrFromID(form, EditTable);
   nrows = TblGetNumberOfRows(table);
   TblGetBounds(table, &bounds);
   tableHeight = bounds.extent.y;
@@ -644,7 +650,7 @@ static void EditFormResizeField(EventType *event)
 
   // Have the table handle basic resize.
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, EditTable);
+  table = FrmGetObjectPtrFromID(form, EditTable);
   TblHandleEvent(table, event);
   
   if (event->data.fldHeightChanged.newHeight >= bounds.extent.y) {
@@ -703,7 +709,7 @@ static Boolean EditFormUpdateDisplay(UInt16 updateCode)
   Boolean handled;
  
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtr(form, EditTable);
+  table = FrmGetObjectPtrFromID(form, EditTable);
   handled = false;
  
   if (updateCode & frmRedrawUpdateCode) {
@@ -726,7 +732,7 @@ static Boolean EditFormUpdateDisplay(UInt16 updateCode)
   }
 
   if (updateCode & UPDATE_CATEGORY_CHANGED) {
-    CategorySetTriggerLabel(FrmGetObjectPtr(form, EditCategorySelTrigger),
+    CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, EditCategorySelTrigger),
                             BookRecordGetCategoryName(g_CurrentRecord));
     handled = true;
   }
@@ -824,10 +830,11 @@ static Boolean EditFormSaveRecordField(MemPtr table, Int16 row, Int16 column)
         record.fields[recordFieldIndex] = NULL;
       else
         record.fields[recordFieldIndex] = text;
-      error = BookDatabaseSaveRecord(&g_CurrentRecord, &record);
+      error = BookDatabaseSaveRecord(&g_CurrentRecord, &recordH, &record);
       if (NULL != text)
         MemPtrUnlock(text);
-      MemHandleUnlock(recordH);
+      if (NULL != recordH)
+        MemHandleUnlock(recordH);
 
       if (error) {
         // Save did not happen.  Before telling the user, discard their edit.
@@ -873,5 +880,53 @@ static Boolean EditFormSaveRecordField(MemPtr table, Int16 row, Int16 column)
 
 static void EditFormSaveRecord()
 {
+  FormType *form;
+  TableType *table;
+  MemHandle recordH;
+  BookRecord record;
+  Boolean empty;
+  Err error;
   
+  // This will invoke EditFormSaveRecordField as necessary.
+  form = FrmGetActiveForm();
+  table = FrmGetObjectPtrFromID(form, EditTable);
+  TblReleaseFocus(table);
+
+  error = BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record);
+  if (error) return;
+
+  empty = BookRecordIsEmpty(&record);
+  MemHandleUnlock(recordH);
+  if (empty) {
+    DeleteCurrentRecord(false);
+    return;
+  }
+
+  // Something may have changed that makes the current record not
+  // satisfy category or filters.  Try to find one.
+  if (!BookDatabaseSeekRecord(&g_CurrentRecord, 0, dmSeekBackward) &&
+      !BookDatabaseSeekRecord(&g_CurrentRecord, 0, dmSeekForward))
+    g_CurrentRecord = NO_RECORD;
+}
+
+static void DeleteCurrentRecord(Boolean archive)
+{
+  UInt16 newCurrentRecord;
+  Boolean selectedForward;
+
+  newCurrentRecord = g_CurrentRecord;
+  selectedForward = false;
+  if (!BookDatabaseSeekRecord(&newCurrentRecord, 0, dmSeekBackward)) {
+    if (BookDatabaseSeekRecord(&newCurrentRecord, 0, dmSeekForward))
+      selectedForward = true;
+    else
+      newCurrentRecord = NO_RECORD;
+  }
+  
+  if (BookDatabaseDeleteRecord(&g_CurrentRecord, archive))
+    return;
+
+  if (selectedForward)
+    newCurrentRecord--;
+  g_CurrentRecord = newCurrentRecord;
 }

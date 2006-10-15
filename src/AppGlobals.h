@@ -5,6 +5,9 @@
 
 /*** Application constants and types ***/
 
+#define countof(x) (sizeof(x)/sizeof(x[0]))
+#define offsetof(t,f) ((UInt32)&(((t *)0)->f))
+
 #define SYS_ROM_3_0 sysMakeROMVersion(3,0,0,sysROMStageRelease,0)
 #define SYS_ROM_3_5 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
 #define SYS_ROM_4_0 sysMakeROMVersion(4,0,0,sysROMStageRelease,0)
@@ -84,14 +87,17 @@ extern Boolean NoteFormHandleEvent(EventType *event);
 
 /*** Book database routines ***/
 extern Err BookDatabaseOpen();
+extern Err BookDatabaseClose();
 extern BookAppInfo *BookDatabaseGetAppInfo();
 extern Err BookDatabaseGetRecord(UInt16 index, MemHandle *recordH, BookRecord *record);
 extern Err BookRecordGetField(UInt16 index, UInt16 fieldIndex, 
                               MemHandle *dataH, UInt16 *dataOffset, UInt16 *dataLen);
 extern Err BookDatabaseNewRecord(UInt16 *index, BookRecord *record);
-extern Err BookDatabaseSaveRecord(UInt16 *index, BookRecord *record);
+extern Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record);
+extern Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive);
 extern Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction);
 extern Char *BookDatabaseGetCategoryName(UInt16 index);
+extern Boolean BookRecordIsEmpty(BookRecord *record);
 extern void BookDatabaseSelectCategory(FormType *form, UInt16 ctlID, UInt16 lstID,
                                        Boolean all, UInt16 *category);
 extern UInt16 BookRecordGetCategory(UInt16 index);

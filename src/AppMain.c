@@ -34,6 +34,8 @@ static Err AppStart(void)
   error = BookDatabaseOpen();
   if (error) return error;
 
+  // TODO: Get prefs.
+
   appInfo = BookDatabaseGetAppInfo();
   ListFormSetup(appInfo);
   ViewFormSetup(appInfo);
@@ -48,8 +50,16 @@ static Err AppStart(void)
 /** Final application cleanup. **/
 static void AppStop(void)
 {
+  // TODO: Save prefs.
+
+  // Send a frmSave event to all the open forms.
+  FrmSaveAllForms();
+
   // Close all the open forms.
   FrmCloseAllForms();
+
+  // Close the application's data file.
+  BookDatabaseClose();
 }
 
 /** Application event dispatching.  

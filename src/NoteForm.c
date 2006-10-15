@@ -36,9 +36,11 @@ void NoteFormActivate()
   FrmGotoForm(NewNoteView);
 }
 
+/**
 static void NoteFormOpen(FormType *form)
 {
 }
+**/
 
 Boolean NoteFormHandleEvent(EventType *event)
 {
@@ -56,6 +58,7 @@ Boolean NoteFormHandleEvent(EventType *event)
 
 /*** Commands ***/
 
+/**
 static Boolean NoteFormMenuCommand(UInt16 command)
 {
   Boolean handled;
@@ -81,9 +84,11 @@ static Boolean NoteFormDeleteNote()
 {
   return false;
 }
+**/
 
 /*** Display ***/
 
+/**
 static void NoteFormLoadRecord(void)
 {
 }
@@ -95,3 +100,4 @@ static void NoteFormDrawTitle(FormType *form)
 static void NoteFormUpdateScrollBar(void)
 {
 }
+**/

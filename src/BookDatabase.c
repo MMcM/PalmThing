@@ -20,7 +20,7 @@ enum { DB_VER_0 = 0 };
 
 typedef struct {
   UInt32 bookID;
-  UInt8 fieldMask;
+  UInt16 fieldMask;
   Char fields[0];
 } BookRecordPacked;
 
@@ -53,25 +53,26 @@ static UInt16 BookRecordPackedSize(BookRecord *record)
 
 static void PackRecord(BookRecord *record, BookRecordPacked *packed)
 {
-  UInt8 mask;
+  UInt16 mask;
   UInt32 offset;
   UInt16 len;
   int i;
   Char *p;
 
-  packed->bookID = record->bookID;
+  DmWrite(packed, offsetof(BookRecordPacked,bookID), 
+          &record->bookID, sizeof(packed->bookID));
   
   mask = 0;
-  offset = (UInt32)&(((BookRecordPacked *)0)->fields);
+  offset = offsetof(BookRecordPacked,fields);
   for (i = 0; i < BOOK_NFIELDS; i++) {
     if (NULL != (p = record->fields[i])) {
       mask |= (1 << i);
       len = StrLen(p) + 1;
       DmWrite(packed, offset, p, len);
-      p += len;
+      offset += len;
     }
   }
-  DmWrite(packed, (UInt32)&(((BookRecordPacked *)0)->fieldMask), &mask, sizeof(mask));
+  DmWrite(packed, offsetof(BookRecordPacked,fieldMask), &mask, sizeof(packed->fieldMask));
 }
 
 static void UnpackRecord(BookRecordPacked *packed, BookRecord *record)
@@ -96,7 +97,8 @@ static void UnpackRecord(BookRecordPacked *packed, BookRecord *record)
 Err BookDatabaseOpen()
 {
   DmOpenRef db;
-  UInt16 cardNo, attr, dbVersion, fields;
+  UInt16 cardNo, attr, dbVersion;
+  UInt8 fields;
   LocalID dbID, appInfoID;
   MemHandle appInfoH;
   BookAppInfo *appInfo;
@@ -133,9 +135,9 @@ Err BookDatabaseOpen()
     DmSet(appInfo, 0, sizeof(BookAppInfo), 0);
     CategoryInitialize(&appInfo->categories, CategoryAppInfoStr);
     fields = KEY_TITLE_AUTHOR;
-    DmWrite(appInfo, (UInt32)&((BookAppInfo *)0)->listFields, 
+    DmWrite(appInfo, offsetof(BookAppInfo,listFields),
             &fields, sizeof(appInfo->listFields));
-    DmWrite(appInfo, (UInt32)&((BookAppInfo *)0)->sortFields, 
+    DmWrite(appInfo, offsetof(BookAppInfo,sortFields), 
             &fields, sizeof(appInfo->sortFields));
     MemHandleUnlock(appInfoH);
 
@@ -147,6 +149,11 @@ Err BookDatabaseOpen()
   }
   g_BookDatabase = db;
   return errNone;
+}
+
+Err BookDatabaseClose()
+{
+  return DmCloseDatabase(g_BookDatabase);
 }
 
 BookAppInfo *BookDatabaseGetAppInfo()
@@ -206,7 +213,7 @@ Err BookRecordGetField(UInt16 index, UInt16 fieldIndex,
     if (packed->fieldMask & (1 << i)) {
       len = StrLen(p) + 1;
       if (i == fieldIndex) {
-        *dataOffset = p - packed->fields;
+        *dataOffset = p - (Char *)packed;
         *dataLen = len;
         break;
       }
@@ -273,11 +280,11 @@ Err BookDatabaseNewRecord(UInt16 *index, BookRecord *record)
   return error;
 }
 
-Err BookDatabaseSaveRecord(UInt16 *index, BookRecord *record)
+Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record)
 {
   BookAppInfo *appInfo;
   UInt16 sortFields;
-  MemHandle recordH, orecordH;
+  MemHandle nrecordH, orecordH;
   BookRecordPacked *packed, *opacked;
   Boolean move;
   UInt16 nindex;
@@ -290,12 +297,17 @@ Err BookDatabaseSaveRecord(UInt16 *index, BookRecord *record)
   sortFields = appInfo->listFields;
   MemPtrUnlock(appInfo);
 
-  recordH = DmNewHandle(g_BookDatabase, BookRecordPackedSize(record));
-  if (NULL == recordH)
+  nrecordH = DmNewHandle(g_BookDatabase, BookRecordPackedSize(record));
+  if (NULL == nrecordH)
     return dmErrMemError;
 
-  packed = (BookRecordPacked *)MemHandleLock(recordH);
+  packed = (BookRecordPacked *)MemHandleLock(nrecordH);
   PackRecord(record, packed);
+  if ((NULL != recordH) && (NULL != *recordH)) {
+    // If caller got record from recordH via BookDatabaseGetRecord, we're done with it.
+    MemHandleUnlock(*recordH);
+    *recordH = NULL;
+  }
 
   move = false;
 
@@ -320,15 +332,36 @@ Err BookDatabaseSaveRecord(UInt16 *index, BookRecord *record)
     *index = nindex;
   }
     
-  MemHandleUnlock(recordH);
+  MemHandleUnlock(nrecordH);
 
-  error = DmAttachRecord(g_BookDatabase, index, recordH, &orecordH);
+  error = DmAttachRecord(g_BookDatabase, index, nrecordH, &orecordH);
   if (error) 
-    MemHandleFree(recordH);
+    MemHandleFree(nrecordH);
   else
     MemHandleFree(orecordH);
 
   return error;
+}
+
+Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive)
+{
+  Err error;
+  UInt16 nindex;
+
+  // Delete or archive the record.
+  if (archive)
+    error = DmArchiveRecord(g_BookDatabase, *index);
+  else
+    error = DmDeleteRecord(g_BookDatabase, *index);
+  if (error) return error;
+ 
+  // Deleted records are stored at the end of the database.
+  nindex = DmNumRecords(g_BookDatabase);
+  error = DmMoveRecord(g_BookDatabase, *index, nindex);
+  if (error) return error;
+  
+  *index = nindex;
+  return errNone;
 }
 
 Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction)
@@ -431,6 +464,21 @@ Err BookRecordSetCategory(UInt16 index, UInt16 category)
 Char *BookRecordGetCategoryName(UInt16 index)
 {
   return BookDatabaseGetCategoryName(BookRecordGetCategory(index));
+}
+
+Boolean BookRecordIsEmpty(BookRecord *record)
+{
+  int i;
+
+  if (record->bookID)
+    return false;
+
+  for (i = 0; i < BOOK_NFIELDS; i++) {
+    if (NULL != record->fields[i])
+      return false;
+  }
+
+  return true;
 }
 
 static void BookRecordCompareGetField(BookRecordPacked *packed, Int16 fieldIndex,
