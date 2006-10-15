@@ -6,6 +6,8 @@
 package palmthing.conduit;
 
 import palm.conduit.*;
+
+import java.util.*;
 import java.io.*;
 
 /** PalmThing conduit.
@@ -18,7 +20,24 @@ public class PalmThingConduit implements Conduit {
     Log.startSync();
 
     try {
-      //...
+      File local = new File(props.pathName, props.localName);
+      LibraryThingImporter importer = new LibraryThingImporter();
+      importer.importFile(local.getPath());
+      Vector books = importer.getRecords();
+      Log.out("Read " + books.size() + " books from " + local);
+      
+      int db = SyncManager.openDB(props.remoteNames[0], 0, 
+                                  SyncManager.OPEN_READ | SyncManager.OPEN_WRITE | 
+                                  SyncManager.OPEN_EXCLUSIVE);
+      SyncManager.purgeAllRecs(db);
+      
+      Enumeration benum = books.elements();
+      while (benum.hasMoreElements()) {
+        BookRecord book = (BookRecord)benum.nextElement();
+        SyncManager.writeRec(db, book);
+      }
+      
+      SyncManager.closeDB(db);
 
       Log.endSync();
     } 

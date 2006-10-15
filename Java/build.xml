@@ -26,6 +26,7 @@
            destdir="${build}"
            includes="**/*.java" 
            source="1.3"
+           target="1.1"
            debug="${DEBUG}"
            deprecation="${DEPRECATION}">
       <classpath>
