@@ -108,6 +108,9 @@ Boolean ListFormHandleEvent(EventType *event)
       form = FrmGetActiveForm();
       ListFormOpen(form);
       FrmDrawForm(form);
+      
+      if (NO_RECORD != g_CurrentRecord)
+        ListFormSelectRecord(g_CurrentRecord);
     }
     handled = true;
     break;

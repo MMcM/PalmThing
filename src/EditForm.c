@@ -436,6 +436,7 @@ static void EditFormSelectField(UInt16 row, UInt16 column)
   }
 
   editFieldNumber = TblGetRowID(table, row);
+  redraw = false;
 
   if (((editFieldNumber != g_CurrentFieldNumber) ||
        (NULL == TblGetCurrentField(table))) &&
