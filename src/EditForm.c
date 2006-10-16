@@ -42,6 +42,7 @@ static UInt8 g_EditFields[] = {
 
 #define EDIT_NFIELDS sizeof(g_EditFields)
 
+// TODO: Make into a resource.
 static char *g_EditLabels[] = {
   "Title",
   "Author",
@@ -49,7 +50,7 @@ static char *g_EditLabels[] = {
   "ISBN",
   "Pub.",
   "Tags",
-  "Summary"
+  "Summ."
 };
 
 /*** Local routines ***/
@@ -64,6 +65,7 @@ static Boolean EditFormMenuCommand(UInt16 command);
 static void EditFormSelectCategory();
 static void EditFormScroll(WinDirectionType direction);
 static void EditFormNextField(WinDirectionType direction);
+static void EditFormSelectField(UInt16 row, UInt16 column);
 static void EditFormResizeField(EventType *event);
 static void EditFormSaveRecord();
 static UInt16 EditFormComputeLabelWidth();
@@ -152,14 +154,13 @@ static void EditFormOpen(FormType *form)
 Boolean EditFormHandleEvent(EventType *event)
 {
   Boolean handled;
+  FormType *form;
 
   handled = false;
 
   switch (event->eType) {
   case frmOpenEvent:
     {
-      FormType *form;
-
       form = FrmGetActiveForm();
       EditFormOpen(form);
       FrmDrawForm(form);
@@ -188,7 +189,7 @@ Boolean EditFormHandleEvent(EventType *event)
     break;
 
   case tblSelectEvent:
-    // TODO: EditFormHandleSelectField
+    EditFormSelectField(event->data.tblSelect.row, event->data.tblSelect.column);
     break;
 
   case ctlRepeatEvent:
@@ -372,12 +373,180 @@ static void EditBeamRecord(Boolean send)
 
 static void EditFormNextField(WinDirectionType direction)
 {
-  // TODO:
+  FormType *form;
+  TableType *table;
+  Int16 row, column;
+  UInt16 nextFieldNumber;
+  int i;
+ 
+  form = FrmGetActiveForm();
+  table = FrmGetObjectPtrFromID(form, EditTable);
+ 
+  if (!TblEditing(table))
+    return;
+   
+  TblGetSelection(table, &row, &column);
+  nextFieldNumber = TblGetRowID(table, row);
+  if (winDown == direction) {
+    if (nextFieldNumber >= BOOK_NFIELDS-1)
+      nextFieldNumber = 0;
+    else
+      nextFieldNumber++;
+    }
+  else {
+    if (nextFieldNumber == 0)
+      nextFieldNumber = BOOK_NFIELDS-1;
+    else
+      nextFieldNumber--;
+  }
+  TblReleaseFocus(table);
+
+  g_CurrentFieldNumber = nextFieldNumber;
+
+  for (i = 1; i <= 2; i++) {
+    if (TblFindRowID(table, nextFieldNumber, &row)) {
+      EditFormSelectField(row, COL_DATA);
+      break;
+    }
+    g_TopFieldNumber = nextFieldNumber;
+    EditFormLoadTable();
+    TblRedrawTable(table);
+  }
+}
+
+static void EditFormSelectField(UInt16 row, UInt16 column)
+{
+  FormType *form;
+  TableType *table;  
+  FieldType *field;
+  UInt16 editFieldNumber;
+  Int16 curRow;
+  BookRecord record;
+  MemHandle recordH;
+  FontID oldFont;
+  Boolean redraw;
+
+  form = FrmGetActiveForm();
+  table = FrmGetObjectPtrFromID(form, EditTable);
+  
+  // Tap the static label column and cursor moves into data column.
+  if (COL_DATA != column) {
+    TblReleaseFocus(table);
+    TblUnhighlightSelection(table);
+  }
+
+  editFieldNumber = TblGetRowID(table, row);
+
+  if (((editFieldNumber != g_CurrentFieldNumber) ||
+       (NULL == TblGetCurrentField(table))) &&
+      (!BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record))) {
+    oldFont = FntGetFont();
+
+    if ((NO_FIELD != g_CurrentFieldNumber) &&
+        (NULL == record.fields[g_EditFields[g_CurrentFieldNumber]])) {
+      // If the old current field is empty, set row height to blank height.
+      if (TblFindRowID(table, g_CurrentFieldNumber, &curRow)) {
+        FntSetFont(g_EditBlankFont);
+        if (FntLineHeight() != TblGetRowHeight(table, curRow)) {
+          TblMarkRowInvalid(table, curRow);
+          redraw = true;
+        }
+      }
+    }
+
+    g_CurrentFieldNumber = editFieldNumber;
+
+    if (NULL == record.fields[g_EditFields[g_CurrentFieldNumber]]) {
+      // If the new current field is empty, set row height to edit height.
+      FntSetFont(g_EditDataFont);
+      if (FntLineHeight() != TblGetRowHeight(table, row)) {
+        TblMarkRowInvalid(table, row);
+        redraw = true;
+      }
+    }
+    
+    MemHandleUnlock(recordH);
+
+    FntSetFont(oldFont);
+
+    if (redraw) {
+      TblReleaseFocus(table);
+      EditFormLoadTable();
+      TblFindRowID(table, editFieldNumber, &row);
+      TblRedrawTable(table);
+    }
+  }
+
+  if (TblGetCurrentField(table) == NULL) {
+    TblGrabFocus(table, row, COL_DATA);
+    field = TblGetCurrentField(table);
+    FldGrabFocus(field);
+    FldMakeFullyVisible(field);
+  }
 }
 
 static void EditFormScroll(WinDirectionType direction)
 {
-  // TODO:
+  FormType *form;
+  TableType *table;
+  Int16 row;
+  UInt16 fieldNumber;
+  UInt16 height, columnWidth, tableHeight;
+  RectangleType bounds;
+  BookRecord record;
+  MemHandle recordH;
+  FontID fontID;
+
+  form = FrmGetActiveForm();
+  table = FrmGetObjectPtrFromID(form, EditTable);
+  TblReleaseFocus(table);
+ 
+  TblGetBounds(table, &bounds);
+  tableHeight = bounds.extent.y;
+  height = 0;
+  columnWidth = TblGetColumnWidth(table, COL_DATA);
+ 
+  if (winDown == direction) {
+    // Bottom row becomes top unless already top.
+    row = TblGetLastUsableRow(table);
+    fieldNumber = TblGetRowID(table, row);
+  
+    if ((row == 0) &&
+        (fieldNumber < BOOK_NFIELDS-1))
+      fieldNumber++;
+  }
+  else {
+    fieldNumber = TblGetRowID(table, 0);
+    if (fieldNumber == 0) 
+      // Already at top.
+      return;
+         
+    if (BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record))
+      return;
+
+    height = TblGetRowHeight(table, 0);
+    if (height >= tableHeight)
+      // One row fills whole screen, don't keep it.
+      height = 0;                     
+
+    while ((height < tableHeight) && (fieldNumber > 0)) {
+      height += EditFormComputeFieldHeight(table, fieldNumber, columnWidth,
+                                           tableHeight, &record, &fontID);
+      if ((height <= tableHeight) ||
+          (fieldNumber == TblGetRowID(table, 0)))
+        fieldNumber--;
+    }
+
+    MemHandleUnlock(recordH);
+  }
+
+  TblMarkTableInvalid(table);
+  g_CurrentFieldNumber = NO_FIELD;
+  g_TopFieldNumber = fieldNumber;
+ 
+  TblUnhighlightSelection(table);
+  EditFormLoadTable();   
+  TblRedrawTable(table);
 }
 
 static void EditFormSelectCategory()
@@ -403,8 +572,8 @@ static void EditFormSelectCategory()
 
 static void EditFormLoadTable()
 {
-  TableType *table;  
   FormType *form;
+  TableType *table;  
   Int16 row, nrows;
   RectangleType bounds;
   UInt16 tableHeight, columnWidth, dataHeight, lineHeight, height, oldHeight;

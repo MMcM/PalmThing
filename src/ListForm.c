@@ -582,7 +582,7 @@ static void ListFormSelectRecord(UInt16 recordNum)
   }
 
   for (i = 1; i <= 2; i++) {
-    if (!TblFindRowID(table, recordNum, &row)) {
+    if (TblFindRowID(table, recordNum, &row)) {
       TblSelectItem(table, row, COL_TITLE);
       g_CurrentRecord = recordNum;
       break;
