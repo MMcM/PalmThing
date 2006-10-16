@@ -391,7 +391,7 @@ static void ListFormUpdateScrollButtons()
   UInt16 upIndex, downIndex;
 
   recordNum = g_TopVisibleRecord;
-  // Up if not top first record.
+  // Up if top not first record.
   scrollableUp = BookDatabaseSeekRecord(&recordNum, 1, dmSeekBackward);
  
   form = FrmGetActiveForm();
@@ -493,6 +493,7 @@ static void DrawCharsInWidth(char *str, Int16 *width, Int16 *length,
     WinDrawChars(str, *length, x, y);
   }
   else {
+    // TODO: Is there a single ellipsis char in some font?
     ellipsisWidth = (FntCharWidth('.') * 3);
     *width = maxWidth - ellipsisWidth;
     FntCharsInWidth(str, width, length, &fitInWidth);

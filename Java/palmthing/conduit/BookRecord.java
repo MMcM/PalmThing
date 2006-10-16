@@ -1,8 +1,7 @@
-/*! -*- Mode: C -*-
+/*! -*- Mode: Java -*-
 * Module: BookRecord.java
 * Version: $Header$
 */
-
 package palmthing.conduit;
 
 import palmthing.*;
@@ -25,19 +24,25 @@ public class BookRecord extends AbstractRecord {
 
   public static final int BOOK_NFIELDS = 8;
 
+  public static final int RECORD_ID_NONE = 0;
+
+  public static final int BOOK_ID_NONE = 0;
+
   private int m_bookID;
   private String m_stringFields[] = new String[BOOK_NFIELDS];
 
-  protected void setBookID(int bookID) {
-    m_bookID = bookID;
+  protected String getStringField(int index) {
+    return m_stringFields[index];
   }
-
   protected void setStringField(int index, String field) {
     m_stringFields[index] = field;
   }
 
   public int getBookID() {
     return m_bookID;
+  }
+  protected void setBookID(int bookID) {
+    m_bookID = bookID;
   }
 
   public String getTitle() {

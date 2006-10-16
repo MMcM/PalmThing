@@ -208,8 +208,8 @@ Boolean EditFormHandleEvent(EventType *event)
     if (TxtCharIsHardKey(event->data.keyDown.modifiers,
                          event->data.keyDown.chr)) {
       TblReleaseFocus(FrmGetObjectPtrFromID(FrmGetActiveForm(), EditTable));
-      //gTopVisibleRecord = 0;
-      //gCurrentFieldIndex = noFieldIndex;
+      g_TopFieldNumber = 0;
+      g_CurrentFieldNumber = NO_FIELD;
       FrmGotoForm(ListForm);
       handled = true;
       break;
@@ -531,6 +531,7 @@ static void EditFormScroll(WinDirectionType direction)
       height = 0;                     
 
     while ((height < tableHeight) && (fieldNumber > 0)) {
+      // So long as previous top still fits, add fields before.
       height += EditFormComputeFieldHeight(table, fieldNumber, columnWidth,
                                            tableHeight, &record, &fontID);
       if ((height <= tableHeight) ||
@@ -758,7 +759,7 @@ static UInt16 EditFormComputeFieldHeight(TableType *table, UInt16 fieldNumber,
   text = record->fields[g_EditFields[fieldNumber]];
   unlock = false;
   if (TblEditing(table)) {
-    // If field in question is open in editor, get that buffer.
+    // If field in question is open in editor, get that buffer instead.
     TblGetSelection(table, &row, &column);
     if (fieldNumber == TblGetRowID(table, row)) {
       field = TblGetCurrentField(table);
@@ -1077,7 +1078,7 @@ static void EditFormSaveRecord()
   }
 
   // Something may have changed that makes the current record not
-  // satisfy category or filters.  Try to find one.
+  // satisfy category or filters.  Try to find one that does.
   if (!BookDatabaseSeekRecord(&g_CurrentRecord, 0, dmSeekBackward) &&
       !BookDatabaseSeekRecord(&g_CurrentRecord, 0, dmSeekForward))
     g_CurrentRecord = NO_RECORD;

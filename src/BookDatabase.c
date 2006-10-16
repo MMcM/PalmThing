@@ -304,7 +304,7 @@ Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record
   packed = (BookRecordPacked *)MemHandleLock(nrecordH);
   PackRecord(record, packed);
   if ((NULL != recordH) && (NULL != *recordH)) {
-    // If caller got record from recordH via BookDatabaseGetRecord, we're done with it.
+    // If caller got record from recordH via BookDatabaseGetRecord, we're done with that.
     MemHandleUnlock(*recordH);
     *recordH = NULL;
   }

@@ -1,8 +1,7 @@
-/*! -*- Mode: C -*-
+/*! -*- Mode: Java -*-
 * Module: LibraryThingImporter.java
 * Version: $Header$
 */
-
 package palmthing.conduit;
 
 import palmthing.*;
@@ -18,7 +17,8 @@ import java.io.*;
  */
 public class LibraryThingImporter {
 
-  public static String g_bookField = "book id";
+  public static String g_recordIDField = "record id";
+  public static String g_bookIDField = "book id";
   // Order must agree with BookRecord.
   public static String[] g_stringFields = {
     "title",
@@ -31,20 +31,11 @@ public class LibraryThingImporter {
     "comments",
   };
 
-  private int m_bookFieldCol = -1;
-  private int[] m_stringFieldCols = new int[g_stringFields.length];
-
-  private Vector m_records;
-
-  public Vector getRecords() {
-    return m_records;
-  }
-
-  public void importFile(String file) throws PalmThingException, IOException {
+  public Vector importFile(String file) throws PalmThingException, IOException {
     FileInputStream fstr = null;
     try {
       fstr = new FileInputStream(file);
-      importStream(fstr);
+      return importStream(fstr);
     }
     finally {
       if (fstr != null)
@@ -52,10 +43,14 @@ public class LibraryThingImporter {
     }
   }
 
-  public void importStream(InputStream istr) throws PalmThingException, IOException {
+  public Vector importStream(InputStream istr) throws PalmThingException, IOException {
     BufferedReader in = 
       new BufferedReader(new InputStreamReader(istr, "UTF-16"));
     
+    int recordIDFieldCol = -1, bookIDFieldCol = -1;
+    int[] stringFieldCols = new int[g_stringFields.length];
+    Arrays.fill(stringFieldCols, -1);
+
     {
       String line = in.readLine();
       if (line == null) 
@@ -69,23 +64,25 @@ public class LibraryThingImporter {
 
       for (int i = 0; i < cols.length; i++) {
         String col = cols[i];
-        if (g_bookField.equals(col))
-          m_bookFieldCol = i;
+        if (g_recordIDField.equals(col))
+          recordIDFieldCol = i;
+        else if (g_bookIDField.equals(col))
+          bookIDFieldCol = i;
         else {
           for (int j = 0; j < g_stringFields.length; j++) {
             if (g_stringFields[j].equals(col)) {
-              m_stringFieldCols[j] = i;
+              stringFieldCols[j] = i;
               break;
             }
           }
         }
       }
 
-      if (m_bookFieldCol < 0)
+      if (bookIDFieldCol < 0)
         throw new PalmThingException("Export is missing required book id column.");
     }
 
-    m_records = new Vector();
+    Vector records = new Vector();
 
     while (true) {
       String line = in.readLine();
@@ -93,22 +90,124 @@ public class LibraryThingImporter {
       String[] cols = splitLine(line);
 
       BookRecord book = new BookRecord();
-      book.setBookID(Integer.parseInt(cols[m_bookFieldCol]));
-      for (int i = 0; i < m_stringFieldCols.length; i++) {
-        int j = m_stringFieldCols[i];
-        if (j < 0) continue;
-        String col = cols[j];
+      if (recordIDFieldCol >= 0) {
+        String col = cols[recordIDFieldCol];
+        if (col != null)
+          book.setId(Integer.parseInt(col, 16));
+      }
+      if (bookIDFieldCol >= 0) {
+        String col = cols[bookIDFieldCol];
+        if (col != null)
+          book.setBookID(Integer.parseInt(col));
+      }
+      for (int i = 0; i < stringFieldCols.length; i++) {
+        int fieldCol = stringFieldCols[i];
+        if (fieldCol < 0) continue;
+        if (fieldCol >= cols.length)
+          System.err.println(line);
+        String col = cols[fieldCol];
         if (col == null) continue;
-        switch (i) {
-        case BookRecord.FIELD_ISBN:
-          col = trimISBN(col);
-          break;
-        }
+        col = convertFromExternal(col, i);
         book.setStringField(i, col);
       }
 
-      m_records.add(book);
+      records.add(book);
     }
+
+    return records;
+  }
+
+  public void exportFile(Vector books, String file)
+      throws PalmThingException, IOException {
+    FileOutputStream fstr = null;
+    try {
+      fstr = new FileOutputStream(file);
+      exportStream(books, fstr);
+    }
+    finally {
+      if (fstr != null)
+        fstr.close();
+    }
+  }
+
+  public void exportStream(Vector books, OutputStream ostr)
+      throws PalmThingException, IOException {
+    BufferedWriter out = 
+      new BufferedWriter(new OutputStreamWriter(ostr, "UTF-16"));
+    
+    {
+      out.write(g_recordIDField);
+      out.write('\t');
+      out.write(g_bookIDField);
+      for (int i = 0; i < g_stringFields.length; i++) {
+        out.write('\t');
+        out.write(g_stringFields[i]);
+      }
+      out.newLine();
+    }
+
+    Enumeration benum = books.elements();
+    while (benum.hasMoreElements()) {
+      BookRecord book = (BookRecord)benum.nextElement();
+      if (book.getId() != BookRecord.RECORD_ID_NONE)
+        out.write(Integer.toString(book.getId(), 16));
+      out.write('\t');
+      if (book.getBookID() != BookRecord.BOOK_ID_NONE)
+        out.write(Integer.toString(book.getBookID()));
+      for (int i = 0; i < g_stringFields.length; i++) {
+        out.write('\t');
+        String col = book.getStringField(i);
+        if (col != null) {
+          col = convertToExternal(col, i);
+          out.write(col);
+        }
+      }
+      out.newLine();
+    }
+    
+    out.flush();
+  }
+
+  // Converts external (PC) format to internal (HH) format.
+  protected String convertFromExternal(String col, int index) {
+    if (col.indexOf("[return]") >= 0)
+      col = stringReplaceAll(col, "[return]", "\n");
+    switch (index) {
+    case BookRecord.FIELD_ISBN:
+      col = trimISBN(col);
+      break;
+    case BookRecord.FIELD_TAGS:
+      col = stringReplaceAll(col, ",", ", ");
+      break;
+    }
+    return col;
+  }
+
+  protected String trimISBN(String isbn) {
+    int start = 0;
+    if (isbn.charAt(start) == '[')
+      start++;
+    int end = isbn.length();
+    if (isbn.charAt(end-1) == ']')
+      end--;
+    if (start == end)
+      return null;
+    return isbn.substring(start, end);
+  }
+
+  // Converts internal (HH) format to external (PC) format.
+  protected String convertToExternal(String col, int i) {
+    switch (i) {
+    case BookRecord.FIELD_ISBN:
+      col = "[" + col + "]";
+      break;
+    case BookRecord.FIELD_TAGS:
+      col = stringReplaceAll(col, ", ", ",");
+      break;
+    }
+    if (col.indexOf("\n") >= 0)
+      col = stringReplaceAll(col, "\n", "[return]");
+    return col;
   }
 
   protected String[] splitLine(String line) {
@@ -117,8 +216,6 @@ public class LibraryThingImporter {
       String col = cols[i];
       if (col.length() == 0)
         cols[i] = null;
-      else if (col.indexOf("[return]") >= 0)
-        cols[i] = stringReplaceAll(col, "[return]", "\n");
     }
     return cols;
   }
@@ -149,30 +246,19 @@ public class LibraryThingImporter {
       if (toindex > index)
         result.append(str.substring(index, toindex));
       if (nindex < 0) break;
+      result.append(repl);
       index = nindex + key.length();
     }
     return result.toString();
   }
 
-  protected String trimISBN(String isbn) {
-    if (isbn == null)
-      return isbn;
-    int start = 0;
-    if (isbn.charAt(start) == '[')
-      start++;
-    int end = isbn.length();
-    if (isbn.charAt(end-1) == ']')
-      end--;
-    if (start == end)
-      return null;
-    return isbn.substring(start, end);
-  }
-
   public static void main(String[] args) throws Exception {
     LibraryThingImporter importer = new LibraryThingImporter();
-    importer.importFile(args[0]);
 
-    Vector books = importer.getRecords();
+    Vector books = importer.importFile(args[0]);
+
+    Collections.sort(books, 
+                     new BookRecordComparator(BookRecordComparator.KEY_TITLE_AUTHOR));
 
     DataOutputStream ostr = new DataOutputStream(new FileOutputStream(args[1]));
     Enumeration benum = books.elements();
@@ -182,18 +268,30 @@ public class LibraryThingImporter {
     }
     ostr.close();
 
+    books.clear();
+
     DataInputStream istr = new DataInputStream(new FileInputStream(args[1]));
     while (true) {
       try {
         BookRecord book = new BookRecord();
         book.readData(istr);
-        if (false) System.out.println(book.getISBN());
-        System.out.println(book.toFormattedString());
+        books.addElement(book);
       }
       catch (EOFException ex) {
         break;
       }
     }
     istr.close();
+
+    importer.exportFile(books, args[2]);
+
+    books = importer.importFile(args[2]);
+
+    benum = books.elements();
+    while (benum.hasMoreElements()) {
+      BookRecord book = (BookRecord)benum.nextElement();
+      if (false) System.out.println(book.getISBN());
+      System.out.println(book.toFormattedString());
+    }
   }
 }

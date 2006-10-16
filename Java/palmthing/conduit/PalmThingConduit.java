@@ -1,4 +1,4 @@
-/*! -*- Mode: C -*-
+/*! -*- Mode: Java -*-
 * Module: PalmThingConduit.java
 * Version: $Header$
 */
@@ -22,8 +22,7 @@ public class PalmThingConduit implements Conduit {
     try {
       File local = new File(props.pathName, props.localName);
       LibraryThingImporter importer = new LibraryThingImporter();
-      importer.importFile(local.getPath());
-      Vector books = importer.getRecords();
+      Vector books = importer.importFile(local.getPath());
       Log.out("Read " + books.size() + " books from " + local);
       
       int db = SyncManager.openDB(props.remoteNames[0], 0, 
