@@ -542,6 +542,7 @@ static Int16 BookRecordCompare(void *p1, void *p2,
   
   rec1 = (BookRecordPacked *)p1;
   rec2 = (BookRecordPacked *)p2;
+  f1 = f2 = NO_FIELD;
 
   if (KEY_NONE == sortKey) {
     appInfo = (BookAppInfo *)MemHandleLock(appInfoH);

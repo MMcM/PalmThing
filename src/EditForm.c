@@ -838,6 +838,9 @@ static void EditFormResizeField(EventType *event)
   }
 
   // Shrinking, may be able to expose more items or even undo a scroll.
+  pos = rowID = 0;
+  restoreFocus = false;
+  
   if (TblGetRowID(table, 0) > 0) {
     // Removing focus will cause save which will cause unscroll if possible.
     TblGetSelection(table, &row, &column);
@@ -992,6 +995,7 @@ static Boolean EditFormSaveRecordField(MemPtr table, Int16 row, Int16 column)
 
   FldSetSelection(field, 0, 0);
 
+  redraw = false;
   if (FldDirty(field)) {
     error = BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record);
     if (!error) {

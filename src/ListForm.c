@@ -514,6 +514,8 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
   UInt16 len1, len2;
   Int16 width, x, y;
 
+  str1 = str2 = NULL;
+  len1 = len2 = 0;
   switch (g_ListFields) {
   case KEY_TITLE:
     str1 = record->fields[FIELD_TITLE];

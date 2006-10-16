@@ -47,8 +47,8 @@
 <listOptionValue value="-p PalmOS4" builtIn="false"/>
 </optionReference>
 <optionReference id="tool.compiler.palmrc.option.locale" defaultValue=" enUS"/>
-<optionReference id="tool.compiler.palmrc.option.overlayFilter" defaultValue="None specified"/>
-<optionReference id="tool.compiler.palmrc.option.encodingTarget" defaultValue="Palm OS Latin"/>
+<optionReference id="tool.compiler.palmrc.option.overlayFilter" defaultValue="tool.compiler.palmrc.option.overlay_filter.none"/>
+<optionReference id="tool.compiler.palmrc.option.encodingTarget" defaultValue="tool.compiler.palmrc.option.encoding.latin"/>
 <optionReference id="tool.compiler.palmrc.option.strictEncoding" defaultValue="true"/>
 <optionReference id="tool.compiler.palmrc.option.noWarnSize" defaultValue="false"/>
 </toolReference>
@@ -70,6 +70,11 @@
 <listOptionValue value="$(MULTISECTION_DEFINITIONS_FILE)" builtIn="false"/>
 <listOptionValue value="-c '$(CREATOR_ID)'" builtIn="false"/>
 <listOptionValue value="-n $(ARTIFACT_NAME)" builtIn="false"/>
+</optionReference>
+</toolReference>
+<toolReference id="com.palmsource.eclipse.palmos4dev.linker.m68k_palmos" command="m68k-palmos-gcc" outputPrefix="" inputFlag="" outputFlag="-o" outputs="">
+<optionReference id="tool.linker.gcc.68K.option.additionalLibs">
+<listOptionValue value="-lPalmOSGlue" builtIn="false"/>
 </optionReference>
 </toolReference>
 </configuration>
