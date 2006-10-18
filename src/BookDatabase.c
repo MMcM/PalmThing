@@ -187,6 +187,23 @@ Err BookDatabaseGetRecord(UInt16 index, MemHandle *recordH, BookRecord *record)
   return errNone;
 }
 
+Boolean BookRecordHasField(UInt16 index, UInt16 fieldIndex)
+{
+  MemHandle recordH;
+  BookRecordPacked *packed;
+  Boolean result;
+
+  recordH = DmQueryRecord(g_BookDatabase, index);
+  if (NULL == recordH)
+    return false;
+
+  packed = (BookRecordPacked *)MemHandleLock(recordH);
+  result = (packed->fieldMask & (1 << fieldIndex)) != 0;
+  MemHandleUnlock(recordH);
+
+  return result;
+}
+
 /** Get a single field without unpacking. **/
 Err BookRecordGetField(UInt16 index, UInt16 fieldIndex, 
                        MemHandle *dataH, UInt16 *dataOffset, UInt16 *dataLen)
@@ -343,10 +360,22 @@ Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record
   return error;
 }
 
+Err BookDatabaseDirtyRecord(UInt16 index)
+{
+  UInt16  attr;
+  Err error;
+ 
+  error = DmRecordInfo(g_BookDatabase, index, &attr, NULL, NULL);
+  if (error) return error;
+  attr |= dmRecAttrDirty;
+  error = DmSetRecordInfo(g_BookDatabase, index, &attr, NULL);
+  return error;
+}
+
 Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive)
 {
-  Err error;
   UInt16 nindex;
+  Err error;
 
   // Delete or archive the record.
   if (archive)
@@ -542,7 +571,6 @@ static Int16 BookRecordCompare(void *p1, void *p2,
   
   rec1 = (BookRecordPacked *)p1;
   rec2 = (BookRecordPacked *)p2;
-  f1 = f2 = NO_FIELD;
 
   if (KEY_NONE == sortKey) {
     appInfo = (BookAppInfo *)MemHandleLock(appInfoH);
@@ -556,6 +584,7 @@ static Int16 BookRecordCompare(void *p1, void *p2,
     sortKey = -sortKey;
   }
 
+  f1 = f2 = NO_FIELD;
   switch (sortKey) {
   case KEY_TITLE:
     f1 = FIELD_TITLE;

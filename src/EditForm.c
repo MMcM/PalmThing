@@ -27,7 +27,7 @@ static FontID g_EditLabelFont = stdFont;
 static FontID g_EditBlankFont = stdFont;
 static FontID g_EditDataFont = largeBoldFont;
 
-static UInt16 g_returnToForm = ListForm;
+static UInt16 g_ReturnToForm = ListForm;
 static UInt16 g_TopFieldNumber = 0, g_CurrentFieldNumber = NO_FIELD;
 
 static UInt8 g_EditFields[] = {
@@ -96,7 +96,7 @@ void EditFormSetup(BookAppInfo *appInfo)
 
 void EditFormActivate()
 {
-  g_returnToForm = FrmGetActiveFormID();
+  g_ReturnToForm = FrmGetActiveFormID();
   FrmGotoForm(EditForm);
 }
 
@@ -122,7 +122,7 @@ static void EditFormOpen(FormType *form)
   Int16 row, nrows;
   UInt16 labelColumnWidth, dataColumnWidth;
   TableType *table;
-  RectangleType  bounds;
+  RectangleType bounds;
   
   table = FrmGetObjectPtrFromID(form, EditTable);
   nrows = TblGetNumberOfRows(table);
@@ -177,7 +177,12 @@ Boolean EditFormHandleEvent(EventType *event)
   case ctlSelectEvent:
     switch (event->data.ctlSelect.controlID) {
     case EditDoneButton:
-      FrmGotoForm(ListForm);
+      FrmGotoForm(g_ReturnToForm);
+      handled = true;
+      break;
+
+    case EditNoteButton:
+      NoteFormActivate();
       handled = true;
       break;
 
@@ -212,7 +217,6 @@ Boolean EditFormHandleEvent(EventType *event)
       g_CurrentFieldNumber = NO_FIELD;
       FrmGotoForm(ListForm);
       handled = true;
-      break;
     }
     else {
       switch (event->data.keyDown.chr) {
@@ -951,6 +955,8 @@ static Err EditFormGetRecordField(MemPtr table, Int16 row, Int16 column, Boolean
       FldSetAutoShift(field);
       break;
     }
+    // Cannot edit in place in the database record because adjustments
+    // would invalidate state fields' offsets into same handle.
     if (textLen > 1) {
       ntextH = MemHandleNew(textLen);
       if (NULL != ntextH) {
@@ -965,6 +971,7 @@ static Err EditFormGetRecordField(MemPtr table, Int16 row, Int16 column, Boolean
         return errNone;
       }
     }
+    // Handle will be created as necessary.
     *dataH = NULL;
     *dataOffset = *dataSize = 0;
   }

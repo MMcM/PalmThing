@@ -83,6 +83,7 @@ extern void EditFormNewRecord();
 
 /*** Note form routines ***/
 extern void NoteFormSetup(BookAppInfo *appInfo);
+extern void NoteFormActivate();
 extern Boolean NoteFormHandleEvent(EventType *event);
 
 /*** Book database routines ***/
@@ -90,10 +91,12 @@ extern Err BookDatabaseOpen();
 extern Err BookDatabaseClose();
 extern BookAppInfo *BookDatabaseGetAppInfo();
 extern Err BookDatabaseGetRecord(UInt16 index, MemHandle *recordH, BookRecord *record);
+extern Boolean BookRecordHasField(UInt16 index, UInt16 fieldIndex);
 extern Err BookRecordGetField(UInt16 index, UInt16 fieldIndex, 
                               MemHandle *dataH, UInt16 *dataOffset, UInt16 *dataLen);
 extern Err BookDatabaseNewRecord(UInt16 *index, BookRecord *record);
 extern Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record);
+extern Err BookDatabaseDirtyRecord(UInt16 index);
 extern Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive);
 extern Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction);
 extern Char *BookDatabaseGetCategoryName(UInt16 index);

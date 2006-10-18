@@ -35,6 +35,11 @@
 #define EditScrollDownRepeating                   1308
 #define EditTable                                 1309
 
+//	Resource: Talt 1001
+#define DeleteNoteAlert                           1000
+#define DeleteNoteYes                             0
+#define DeleteNoteNo                              1
+
 //      Resource: MBAR 1000
 #define ListFormMenuBar                           1100
 

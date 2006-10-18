@@ -157,7 +157,7 @@ Boolean ListFormHandleEvent(EventType *event)
   case keyDownEvent:
     if (TxtCharIsHardKey(event->data.keyDown.modifiers,
                          event->data.keyDown.chr)) {
-      // TODO: Any hard key handling?
+      // This is the main form, so no handling.
     }
     else {
       switch (event->data.keyDown.chr) {
