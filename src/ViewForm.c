@@ -19,7 +19,11 @@
 
 /*** Setup and event handling ***/
 
-void ViewFormSetup(BookAppInfo *appInfo)
+void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
+{
+}
+
+void ViewFormSetdown(AppPreferences *prefs)
 {
 }
 

@@ -48,9 +48,19 @@ static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 
 /*** Setup and event handling ***/
 
-void NoteFormSetup(BookAppInfo *appInfo)
+void NoteFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
 {
-  g_NoteFont = FntGlueGetDefaultFontID(defaultSmallFont);
+  if (NULL == prefs) {
+    g_NoteFont = FntGlueGetDefaultFontID(defaultSmallFont);
+  }
+  else {
+    g_NoteFont = prefs->noteFont;
+  }
+}
+
+void NoteFormSetdown(AppPreferences *prefs)
+{
+  prefs->noteFont = g_NoteFont;
 }
 
 void NoteFormActivate()

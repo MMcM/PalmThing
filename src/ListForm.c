@@ -51,10 +51,22 @@ static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 
 /*** Setup and event handling ***/
 
-void ListFormSetup(BookAppInfo *appInfo)
+void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
 {
-  g_ListFont = FntGlueGetDefaultFontID(defaultSystemFont);
-  g_ListFields = appInfo->listFields;
+  if (NULL == prefs) {
+    g_ListFont = FntGlueGetDefaultFontID(defaultSystemFont);
+    g_ListFields = appInfo->sortFields;
+  }
+  else {
+    g_ListFont = prefs->listFont;
+    g_ListFields = prefs->listFields;
+  }
+}
+
+void ListFormSetdown(AppPreferences *prefs)
+{
+  prefs->listFont = g_ListFont;
+  prefs->listFields = g_ListFields;
 }
 
 static void ListFormOpen(FormType *form)

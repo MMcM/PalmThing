@@ -5,6 +5,15 @@
 
 /*** Application constants and types ***/
 
+#define APP_CREATOR 'plTN'      // Think SAMPA.
+#define APP_PREF_ID 0x00
+#define APP_PREF_VER 0x01
+
+typedef struct {
+  FontID editFont, listFont, noteFont;
+  UInt8 listFields;
+} AppPreferences;
+
 #define countof(x) (sizeof(x)/sizeof(x[0]))
 #define offsetof(t,f) ((UInt32)&(((t *)0)->f))
 
@@ -53,7 +62,6 @@ enum {
 
 typedef struct {
   AppInfoType categories;
-  UInt8 listFields;
   UInt8 sortFields;
 } BookAppInfo;
 
@@ -67,22 +75,26 @@ extern UInt16 g_CurrentRecord, g_CurrentCategory;
 extern void AboutFormDisplay();
 
 /*** List form routines ***/
-extern void ListFormSetup(BookAppInfo *appInfo);
+extern void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
+extern void ListFormSetdown(AppPreferences *prefs);
 extern Boolean ListFormHandleEvent(EventType *event);
 
 /*** View form routines ***/
-extern void ViewFormSetup(BookAppInfo *appInfo);
+extern void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
+extern void ViewFormSetdown(AppPreferences *prefs);
 extern Boolean ViewFormHandleEvent(EventType *event);
 extern void ViewFormActivate();
 
 /*** Edit form routines ***/
-extern void EditFormSetup(BookAppInfo *appInfo);
+extern void EditFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
+extern void EditFormSetdown(AppPreferences *prefs);
 extern Boolean EditFormHandleEvent(EventType *event);
 extern void EditFormActivate();
 extern void EditFormNewRecord();
 
 /*** Note form routines ***/
-extern void NoteFormSetup(BookAppInfo *appInfo);
+extern void NoteFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
+extern void NoteFormSetdown(AppPreferences *prefs);
 extern void NoteFormActivate();
 extern Boolean NoteFormHandleEvent(EventType *event);
 

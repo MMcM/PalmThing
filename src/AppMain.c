@@ -25,22 +25,36 @@ void AboutFormDisplay()
 /** Initial application startup. **/
 static Err AppStart(void)
 {
+  AppPreferences prefs, *pprefs;
+  Int16 prefVer;
+  UInt16 prefsSize;
   BookAppInfo *appInfo;
   Err error;
 
   // Get version of system ROM.
   FtrGet(sysFtrCreator, sysFtrNumROMVersion, &g_ROMVersion);
 
+  prefsSize = sizeof(prefs);
+  prefVer = PrefGetAppPreferences(APP_CREATOR, APP_PREF_ID, &prefs, &prefsSize, true);
+  if (prefVer != noPreferenceFound) {
+    if (prefVer != APP_PREF_VER) {
+      // Convert as necessary.
+    }
+    pprefs = &prefs;
+  }
+  else
+    pprefs = NULL;
+
   error = BookDatabaseOpen();
   if (error) return error;
 
-  // TODO: Get prefs.
-
   appInfo = BookDatabaseGetAppInfo();
-  ListFormSetup(appInfo);
-  ViewFormSetup(appInfo);
-  EditFormSetup(appInfo);
-  NoteFormSetup(appInfo);
+
+  ListFormSetup(pprefs, appInfo);
+  ViewFormSetup(pprefs, appInfo);
+  EditFormSetup(pprefs, appInfo);
+  NoteFormSetup(pprefs, appInfo);
+
   MemPtrUnlock(appInfo);
   
   FrmGotoForm(ListForm);
@@ -50,7 +64,7 @@ static Err AppStart(void)
 /** Final application cleanup. **/
 static void AppStop(void)
 {
-  // TODO: Save prefs.
+  AppPreferences prefs;
 
   // Send a frmSave event to all the open forms.
   FrmSaveAllForms();
@@ -60,6 +74,14 @@ static void AppStop(void)
 
   // Close the application's data file.
   BookDatabaseClose();
+
+  MemSet(&prefs, sizeof(prefs), 0);
+  ListFormSetdown(&prefs);
+  ViewFormSetdown(&prefs);
+  EditFormSetdown(&prefs);
+  NoteFormSetdown(&prefs);
+  PrefSetAppPreferences(APP_CREATOR, APP_PREF_ID, APP_PREF_VER, 
+                        &prefs, sizeof(prefs), true);
 }
 
 /** Application event dispatching.  

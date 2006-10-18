@@ -9,12 +9,11 @@
 #include "AppResources.h"
 #include "AppGlobals.h"
 
-/*** Local types ***/
+/*** Local constants and types ***/
 
 enum { DB_VER_0 = 0 };
 #define DB_VER DB_VER_0
 
-#define DB_CREATOR 'plTN'       // Think SAMPA.
 #define DB_NAME "PalmThing-Books"
 #define DB_TYPE 'DATA'          // Main book database.
 
@@ -104,12 +103,12 @@ Err BookDatabaseOpen()
   BookAppInfo *appInfo;
   Err error;
   
-  db = DmOpenDatabaseByTypeCreator(DB_TYPE, DB_CREATOR, dmModeReadWrite);
+  db = DmOpenDatabaseByTypeCreator(DB_TYPE, APP_CREATOR, dmModeReadWrite);
   if (NULL == db) {
-    error = DmCreateDatabase(0, DB_NAME, DB_CREATOR, DB_TYPE, false);
+    error = DmCreateDatabase(0, DB_NAME, APP_CREATOR, DB_TYPE, false);
     if (error) return error;
 
-    db = DmOpenDatabaseByTypeCreator(DB_TYPE, DB_CREATOR, dmModeReadWrite);
+    db = DmOpenDatabaseByTypeCreator(DB_TYPE, APP_CREATOR, dmModeReadWrite);
     if (NULL == db) return DmGetLastErr();
 
     error = DmOpenDatabaseInfo(db, &dbID, NULL, NULL, &cardNo, NULL);
@@ -135,8 +134,6 @@ Err BookDatabaseOpen()
     DmSet(appInfo, 0, sizeof(BookAppInfo), 0);
     CategoryInitialize(&appInfo->categories, CategoryAppInfoStr);
     fields = KEY_TITLE_AUTHOR;
-    DmWrite(appInfo, offsetof(BookAppInfo,listFields),
-            &fields, sizeof(appInfo->listFields));
     DmWrite(appInfo, offsetof(BookAppInfo,sortFields), 
             &fields, sizeof(appInfo->sortFields));
     MemHandleUnlock(appInfoH);
@@ -311,7 +308,7 @@ Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record
   // packing.
 
   appInfo = BookDatabaseGetAppInfo();
-  sortFields = appInfo->listFields;
+  sortFields = appInfo->sortFields;
   MemPtrUnlock(appInfo);
 
   nrecordH = DmNewHandle(g_BookDatabase, BookRecordPackedSize(record));

@@ -78,11 +78,21 @@ static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 
 /*** Setup and event handling ***/
 
-void EditFormSetup(BookAppInfo *appInfo)
+void EditFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
 {
   g_EditLabelFont = FntGlueGetDefaultFontID(defaultSystemFont);
   g_EditBlankFont = FntGlueGetDefaultFontID(defaultSystemFont);
-  g_EditDataFont = FntGlueGetDefaultFontID(defaultLargeFont);
+  if (NULL == prefs) {
+    g_EditDataFont = FntGlueGetDefaultFontID(defaultLargeFont);
+  }
+  else {
+    g_EditDataFont = prefs->editFont;
+  }
+}
+
+void EditFormSetdown(AppPreferences *prefs)
+{
+  prefs->editFont = g_EditDataFont;
 }
 
 void EditFormActivate()
@@ -123,9 +133,8 @@ static void EditFormOpen(FormType *form)
     labelsH = DmGetResource(strListRscType, EditLabels);
     labels = (Char *)MemHandleLock(labelsH);
     p = labels;
-    p += StrLen(p) + 1;             // Skip over unused prefix.
-    nlabels = *(UInt16*)p;
-    p += sizeof(UInt16);
+    p += StrLen(p) + 2;             // Skip over unused prefix and zero MSB.
+    nlabels = *p++;
     lsize = MemHandleSize(labelsH) - (p - labels);
     g_EditLabels = (Char **)MemPtrNew(sizeof(Char *) * (nlabels + 1) + lsize);
     ErrFatalDisplayIf((NULL == g_EditLabels), "Out of memory");
