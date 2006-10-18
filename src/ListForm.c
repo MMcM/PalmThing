@@ -477,12 +477,16 @@ static void ListFormDrawRecord(MemPtr table, Int16 row, Int16 column,
   FntSetFont(oldFont);
 }
 
-static void DrawCharsInWidth(char *str, Int16 *width, Int16 *length,
-                             Int16 x, Int16 y, Boolean rightJustify)
+/** Like WinDrawTruncChars, but with support for right justification
+ * and returning width consumed so that any left over can be used for
+ * another field. */
+static void DrawTruncChars(char *str, Int16 *length, Int16 x, Int16 y, Int16 *width, 
+                           Boolean rightJustify)
 { 
+  Int16 fullLength, maxWidth;
   Boolean fitInWidth;
-  Int16 maxWidth, ellipsisWidth;
 
+  fullLength = *length;
   maxWidth = *width;
   FntCharsInWidth(str, width, length, &fitInWidth);
 
@@ -493,19 +497,9 @@ static void DrawCharsInWidth(char *str, Int16 *width, Int16 *length,
     WinDrawChars(str, *length, x, y);
   }
   else {
-    // TODO: Is there a single ellipsis char in some font?
-    ellipsisWidth = (FntCharWidth('.') * 3);
-    *width = maxWidth - ellipsisWidth;
-    FntCharsInWidth(str, width, length, &fitInWidth);
-  
-    if (rightJustify)
-      x += maxWidth - (*width + ellipsisWidth);
-    WinDrawChars(str, *length, x, y);
-
-    x += *width;
-    WinDrawChars("...", 3, x, y);
-
-    *width += ellipsisWidth;
+    // Claim whole space and draw with ellipsis.
+    *width = maxWidth;
+    WinGlueDrawTruncChars(str, fullLength, x, y, maxWidth);
   }
 }
 
@@ -554,19 +548,19 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
       str1 = "[None]";          // TODO: Resource.
       len1 = StrLen(str1);
     }
-    DrawCharsInWidth(str1, &width, &len1, x, y, false);
+    WinGlueDrawTruncChars(str1, len1, x, y, width);
   }
   else {
     if (NULL == str1) {
-      DrawCharsInWidth(str2, &width, &len2, x, y, true);
+      DrawTruncChars(str2, &len2, x, y, &width, true);
     }
     else {
       width -= SPACE_BETWEEN_FIELDS;
       width = (width * LEFT_FRACTION_NUM) / LEFT_FRACTION_DEN;
-      DrawCharsInWidth(str1, &width, &len1, x, y, false);
+      DrawTruncChars(str1, &len1, x, y, &width, false);
       x += width + SPACE_BETWEEN_FIELDS;
       width = bounds->extent.x - x;
-      DrawCharsInWidth(str2, &width, &len2, x, y, true);
+      DrawTruncChars(str2, &len2, x, y, &width, true);
     }
   }
 }
