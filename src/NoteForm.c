@@ -23,6 +23,8 @@
 
 /*** Local storage ***/
 
+static UInt16 g_NoteRecordField = FIELD_COMMENTS;
+
 static FontID g_NoteFont = stdFont;
 
 static UInt16 g_ReturnToForm = ListForm;
@@ -56,10 +58,10 @@ void NoteFormActivate()
   MemHandle recordH;
   BookRecord record;
 
-  if (!BookRecordHasField(g_CurrentRecord, FIELD_COMMENTS)) {
+  if (!BookRecordHasField(g_CurrentRecord, g_NoteRecordField)) {
     // Make sure there is a note to edit.
     if (!BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record)) {
-      record.fields[FIELD_COMMENTS] = "";
+      record.fields[g_NoteRecordField] = "";
       BookDatabaseSaveRecord(&g_CurrentRecord, &recordH, &record);
       if (NULL != recordH)
         MemHandleUnlock(recordH);
@@ -67,7 +69,7 @@ void NoteFormActivate()
   }
 
   g_ReturnToForm = FrmGetActiveFormID();
-  FrmGotoForm(NewNoteView);
+  FrmGotoForm((g_ROMVersion < SYS_ROM_3_5) ? NoteView : NewNoteView);
 }
 
 static void NoteFormOpen(FormType *form)
@@ -204,6 +206,8 @@ Boolean NoteFormHandleEvent(EventType *event)
 
 static Boolean NoteFormMenuCommand(UInt16 command)
 {
+  FormType *form;
+  FieldType *field;
   Boolean handled;
 
   handled = false;
@@ -214,6 +218,15 @@ static Boolean NoteFormMenuCommand(UInt16 command)
     NoteFontSelect();
     handled = true;
     break;
+
+  // TODO: Perhaps it would be better to just handle menuOpenEvent and
+  // hide these items.
+  case notePhoneLookupCmd:
+  case newNotePhoneLookupCmd:
+    form = FrmGetActiveForm();
+    field = FrmGetObjectPtrFromID(form, NoteField);
+    PhoneNumberLookup(field);
+    break;
   }
 
   return handled;
@@ -222,6 +235,8 @@ static Boolean NoteFormMenuCommand(UInt16 command)
 static void NoteFontSelect()
 {
   FontID newFont;
+
+  if (g_ROMVersion < SYS_ROM_3_0) return;
 
   newFont = FontSelect(g_NoteFont);
   if (newFont != g_NoteFont) {
@@ -319,7 +334,7 @@ static Boolean NoteFormDeleteNote()
   FldSetTextHandle(field, NULL);
 
   if (!BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record)) {
-    record.fields[FIELD_COMMENTS] = NULL;
+    record.fields[g_NoteRecordField] = NULL;
     BookDatabaseSaveRecord(&g_CurrentRecord, &recordH, &record);
     if (NULL != recordH)
       MemHandleUnlock(recordH);
@@ -342,7 +357,7 @@ static void NoteFormLoadRecord()
 
   FldSetFont(field, g_NoteFont);
 
-  if (BookRecordGetField(g_CurrentRecord, FIELD_COMMENTS, 
+  if (BookRecordGetField(g_CurrentRecord, g_NoteRecordField, 
                          &recordH, &offset, &length)) {
     recordH = NULL;
     offset = length = 0;
@@ -359,7 +374,7 @@ static void NoteFormDrawTitle(FormType *form)
   FontID oldFont;
   IndexedColorType oldForeColor, oldBackColor, oldTextColor;
   RectangleType bounds, eraseRect, drawRect;
-  Boolean ignored;
+  Boolean noName, ignored;
   Char *name;
   UInt8 *lockedWindow;
  
@@ -418,16 +433,19 @@ static void NoteFormDrawTitle(FormType *form)
     nameH = NULL;
     nameOffset = nameLength = 0;
   }
-  else
-    nameLength--;
+  else if (nameLength > 0)
+    nameLength--;               // Was alloc length, want string length.
 
-  if (NULL != nameH) {
+  if (nameLength > 0) {
     name = (Char *)MemHandleLock(nameH);
     name += nameOffset;
+    noName = false;
   }
   else {
-    name = "Book Note";
+    nameH = DmGetResource(strRsc, NoteNoName);
+    name = (Char *)MemHandleLock(nameH);
     nameLength = StrLen(name);
+    noName = true;
   }
 
   // Find out how much of the title string will fit.  If all of the
@@ -445,8 +463,11 @@ static void NoteFormDrawTitle(FormType *form)
   WinDrawInvertedChars(name, length, x, y);
 
   // Unlock the record that LibGetRecord locked.
-  if (NULL != nameH)
+  if (NULL != nameH) {
     MemHandleUnlock(nameH);
+    if (noName)
+      DmReleaseResource(nameH);
+  }
  
   // Everything is drawn, so on OS 3.5, it is now time to unlock the
   // form and toss the whole mess back onto the screen.

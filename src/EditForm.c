@@ -42,16 +42,7 @@ static UInt8 g_EditFields[] = {
 
 #define EDIT_NFIELDS sizeof(g_EditFields)
 
-// TODO: Make into a resource.
-static char *g_EditLabels[] = {
-  "Title",
-  "Author",
-  "Date",
-  "ISBN",
-  "Pub.",
-  "Tags",
-  "Summ."
-};
+static Char **g_EditLabels = NULL;
 
 /*** Local routines ***/
 
@@ -119,11 +110,36 @@ void EditFormNewRecord()
 
 static void EditFormOpen(FormType *form)
 {
+  MemHandle labelsH;
+  Char *labels, *p, *np;
+  UInt16 nlabels, lsize;
+  int i;
   Int16 row, nrows;
   UInt16 labelColumnWidth, dataColumnWidth;
   TableType *table;
   RectangleType bounds;
   
+  if (NULL == g_EditLabels) {
+    labelsH = DmGetResource(strListRscType, EditLabels);
+    labels = (Char *)MemHandleLock(labelsH);
+    p = labels;
+    p += StrLen(p) + 1;             // Skip over unused prefix.
+    nlabels = *(UInt16*)p;
+    p += sizeof(UInt16);
+    lsize = MemHandleSize(labelsH) - (p - labels);
+    g_EditLabels = (Char **)MemPtrNew(sizeof(Char *) * (nlabels + 1) + lsize);
+    ErrFatalDisplayIf((NULL == g_EditLabels), "Out of memory");
+    np = (Char *)(g_EditLabels + nlabels + 1);
+    MemMove(np, p, lsize);
+    MemHandleUnlock(labelsH);
+    DmReleaseResource(labelsH);
+    for (i = 0; i < nlabels; i++) {
+      g_EditLabels[i] = np;
+      np += StrLen(np) + 1;
+    }
+    g_EditLabels[nlabels] = NULL;
+  }
+
   table = FrmGetObjectPtrFromID(form, EditTable);
   nrows = TblGetNumberOfRows(table);
   for (row = 0; row < nrows; row++) {
@@ -250,6 +266,10 @@ Boolean EditFormHandleEvent(EventType *event)
       
   case frmCloseEvent:
     EditFormSaveRecord();
+    if (NULL != g_EditLabels) {
+      MemPtrFree(g_EditLabels);
+      g_EditLabels = NULL;
+    }
     break;
 
   default:
@@ -362,6 +382,8 @@ static Boolean EditFormMenuCommand(UInt16 command)
 static void EditFontSelect()
 {
   FontID newFont;
+
+  if (g_ROMVersion < SYS_ROM_3_0) return;
 
   newFont = FontSelect(g_EditDataFont);
   if (newFont != g_EditDataFont) {

@@ -88,3 +88,15 @@
 
 //	Resource: tAIS 2000
 #define CategoryAppInfoStr                        1000
+
+//      Resource: tSTR 1000
+#define ListNone                                  1000
+
+//      Resource: tSTR 1001
+#define ListNoTitle                               1100
+
+//      Resource: tSTR 1002
+#define NoteNoName                                1200
+
+//      Resource: tSTL 1000
+#define EditLabels                                1000

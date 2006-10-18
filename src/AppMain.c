@@ -90,6 +90,7 @@ static Boolean AppHandleEvent(EventType* pEvent)
     case EditForm:
       FrmSetEventHandler(pForm, EditFormHandleEvent);
       break;
+    case NoteView:
     case NewNoteView:
       FrmSetEventHandler(pForm, NoteFormHandleEvent);
       break;

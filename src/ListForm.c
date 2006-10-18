@@ -228,6 +228,8 @@ static void ListFontSelect()
 {
   FontID newFont;
 
+  if (g_ROMVersion < SYS_ROM_3_0) return;
+
   newFont = FontSelect(g_ListFont);
   if (newFont != g_ListFont) {
     g_ListFont = newFont;
@@ -508,6 +510,8 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
   Char *str1, *str2;
   UInt16 len1, len2;
   Int16 width, x, y;
+  DmResID noneID;
+  MemHandle noneH;
 
   str1 = str2 = NULL;
   len1 = len2 = 0;
@@ -544,11 +548,27 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
   y = bounds->topLeft.y;
 
   if (NULL == str2) {
+    noneH = NULL;
     if (NULL == str1) {
-      str1 = "[None]";          // TODO: Resource.
+      switch (g_ListFields) {
+      case KEY_TITLE:
+      case KEY_TITLE_AUTHOR:
+      case KEY_AUTHOR_TITLE:
+        noneID = ListNoTitle;
+        break;
+      default:
+        noneID = ListNone;
+        break;
+      }
+      noneH = DmGetResource(strRsc, noneID);
+      str1 = (Char *)MemHandleLock(noneH);
       len1 = StrLen(str1);
     }
     WinGlueDrawTruncChars(str1, len1, x, y, width);
+    if (NULL != noneH) {
+      MemHandleUnlock(noneH);
+      DmReleaseResource(noneH);
+    }
   }
   else {
     if (NULL == str1) {
