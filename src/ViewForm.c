@@ -375,8 +375,7 @@ static void ViewFormGadgetDraw()
   noneH = NULL;
 
   y = bounds.topLeft.y;
-  fieldNumber = g_TopFieldNumber;
-  while (fieldNumber < nfields) {
+  for (fieldNumber = g_TopFieldNumber; fieldNumber < nfields; fieldNumber++) {
     recordFieldIndex = fields[fieldNumber];
 
     str = record.fields[recordFieldIndex];
@@ -405,7 +404,6 @@ static void ViewFormGadgetDraw()
 
     if (!ViewFormGadgetDrawField(str, &y, &bounds))
       break;
-    fieldNumber++;
   }
 
   if (NULL != noneH)

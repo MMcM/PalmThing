@@ -104,7 +104,7 @@
 	<APP_INFO_STRINGS_RESOURCE RESOURCE_ID="1000" LOCALE="enUS">
 		<STRINGS>
 			<TEXT> "Unfiled" </TEXT>
-			<TEXT> "" </TEXT>
+			<TEXT> "Main" </TEXT>
 			<TEXT> "" </TEXT>
 			<TEXT> "" </TEXT>
 			<TEXT> "" </TEXT>
