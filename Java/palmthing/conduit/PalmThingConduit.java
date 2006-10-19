@@ -21,6 +21,11 @@ public class PalmThingConduit implements Conduit {
 
     try {
       File local = new File(props.pathName, props.localName);
+      String name = local.getName();
+      if (name.endsWith(".xls"))
+        name = name.substring(0, name.length() - 4);
+      File backup = new File(props.pathName, name + ".bak");
+
       LibraryThingImporter importer = new LibraryThingImporter();
       Vector books = importer.importFile(local.getPath());
       Log.out("Read " + books.size() + " books from " + local);
@@ -35,8 +40,10 @@ public class PalmThingConduit implements Conduit {
         BookRecord book = (BookRecord)benum.nextElement();
         SyncManager.writeRec(db, book);
       }
-      
+
       SyncManager.closeDB(db);
+
+      importer.exportFile(books, backup.getPath());
 
       Log.endSync();
     } 
