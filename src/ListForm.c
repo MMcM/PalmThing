@@ -240,7 +240,7 @@ static void ListFontSelect()
 {
   FontID newFont;
 
-  if (g_ROMVersion < SYS_ROM_3_0) return;
+  if (!SYS_ROM_3_0) return;
 
   newFont = FontSelect(g_ListFont);
   if (newFont != g_ListFont) {

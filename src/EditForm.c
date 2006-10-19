@@ -364,12 +364,12 @@ static Boolean EditFormMenuCommand(UInt16 command)
     handled = true;
     break;
 
-  case RecordBeamCategory:
+  case RecordBeamBook:
     EditBeamRecord(false);
     handled = true;
     break;
 
-  case RecordSendCategory:
+  case RecordSendBook:
     EditBeamRecord(true);
     handled = true;
     break;
@@ -392,7 +392,7 @@ static void EditFontSelect()
 {
   FontID newFont;
 
-  if (g_ROMVersion < SYS_ROM_3_0) return;
+  if (!SYS_ROM_3_0) return;
 
   newFont = FontSelect(g_EditDataFont);
   if (newFont != g_EditDataFont) {
@@ -904,7 +904,7 @@ static void EditFormUpdateScrollButtons(FormType *form, UInt16 bottomFieldNumber
   Boolean scrollableUp, scrollableDown;
   UInt16 upIndex, downIndex;
 
-  scrollableUp = g_TopFieldNumber > 0;
+  scrollableUp = (g_TopFieldNumber > 0);
   scrollableDown = (lastItemClipped || (bottomFieldNumber < EDIT_NFIELDS-1));
   upIndex = FrmGetObjectIndex(form, EditScrollUpRepeating);
   downIndex = FrmGetObjectIndex(form, EditScrollDownRepeating);

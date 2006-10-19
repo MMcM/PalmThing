@@ -23,7 +23,7 @@ void AboutFormDisplay()
 }
 
 /** Initial application startup. **/
-static Err AppStart(void)
+static Err AppStart(UInt16 launchFlags)
 {
   AppPreferences prefs, *pprefs;
   Int16 prefVer;
@@ -33,6 +33,18 @@ static Err AppStart(void)
 
   // Get version of system ROM.
   FtrGet(sysFtrCreator, sysFtrNumROMVersion, &g_ROMVersion);
+  if (g_ROMVersion < SYS_ROM_MIN) {
+    if ((launchFlags & (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) ==
+                       (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) {
+      FrmAlert(RomIncompatibleAlert);
+  
+      // Pilot 1.0 will continuously relaunch this app unless we
+      // switch to another safe one.
+      if (g_ROMVersion < sysMakeROMVersion(2,0,0,sysROMStageRelease,0))
+        AppLaunchWithCommand(sysFileCDefaultApp, sysAppLaunchCmdNormalLaunch, NULL);
+    }
+    return sysErrRomIncompatible;
+  }
 
   prefsSize = sizeof(prefs);
   prefVer = PrefGetAppPreferences(APP_CREATOR, APP_PREF_ID, &prefs, &prefsSize, true);
@@ -153,7 +165,7 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
 
   switch (cmd) {
   case sysAppLaunchCmdNormalLaunch:
-    error = AppStart();
+    error = AppStart(launchFlags);
     if (errNone == error) {
       AppEventLoop();
       AppStop();

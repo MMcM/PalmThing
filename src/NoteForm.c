@@ -79,7 +79,7 @@ void NoteFormActivate()
   }
 
   g_ReturnToForm = FrmGetActiveFormID();
-  FrmGotoForm((g_ROMVersion < SYS_ROM_3_5) ? NoteView : NewNoteView);
+  FrmGotoForm(SYS_ROM_3_5 ? NewNoteView : NoteView);
 }
 
 static void NoteFormOpen(FormType *form)
@@ -246,7 +246,7 @@ static void NoteFontSelect()
 {
   FontID newFont;
 
-  if (g_ROMVersion < SYS_ROM_3_0) return;
+  if (!SYS_ROM_3_0) return;
 
   newFont = FontSelect(g_NoteFont);
   if (newFont != g_NoteFont) {
@@ -401,7 +401,7 @@ static void NoteFormDrawTitle(FormType *form)
   // routine must make sure to draw the title so it matches the
   // current Form title colors, whatever they may be.
   lockedWindow = NULL;
-  if (g_ROMVersion >= SYS_ROM_3_5) {
+  if (SYS_ROM_3_5) {
     // Lock the screen during drawing to avoid the mess that occurs
     // when the system draws the form's title, then Librarian draws
     // the special note view title over that.
@@ -428,7 +428,7 @@ static void NoteFormDrawTitle(FormType *form)
   // background colors to the colors used for drawing the form's UI,
   // but NoteFormDrawTitle needs to draw in the colors used for the
   // form's title bar.
-  if (g_ROMVersion >= SYS_ROM_3_5) {
+  if (SYS_ROM_3_5) {
     oldForeColor = WinSetForeColor(UIColorGetTableEntryIndex(UIFormFrame));
     oldBackColor = WinSetBackColor(UIColorGetTableEntryIndex(UIFormFill));
     oldTextColor = WinSetTextColor(UIColorGetTableEntryIndex(UIFormFrame));
@@ -485,7 +485,7 @@ static void NoteFormDrawTitle(FormType *form)
     WinScreenUnlock();
  
   // Restore the colors to their original settings.
-  if (g_ROMVersion >= SYS_ROM_3_5) {
+  if (SYS_ROM_3_5) {
     WinSetForeColor(oldForeColor);
     WinSetBackColor(oldBackColor);
     WinSetTextColor(oldTextColor);

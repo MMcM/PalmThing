@@ -5,21 +5,44 @@
 
 /*** Application constants and types ***/
 
+#define _SYS_ROM_3_0 sysMakeROMVersion(3,0,0,sysROMStageRelease,0)
+#define _SYS_ROM_3_5 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
+#define _SYS_ROM_4_0 sysMakeROMVersion(4,0,0,sysROMStageRelease,0)
+
+#ifndef SYS_ROM_MIN
+#define SYS_ROM_MIN _SYS_ROM_3_0
+#endif
+
+#if 0
+#define SYS_ROM_3_0 false
+#else
+#define SYS_ROM_3_0 (g_ROMVersion >= _SYS_ROM_3_0)
+#endif
+
+#if 0
+#define SYS_ROM_3_5 false
+#else
+#define SYS_ROM_3_5 (g_ROMVersion >= _SYS_ROM_3_5)
+#endif
+
+#if 0
+#define SYS_ROM_4_0 false
+#else
+#define SYS_ROM_4_0 (g_ROMVersion >= _SYS_ROM_4_0)
+#endif
+
 #define APP_CREATOR 'plTN'      // Think SAMPA.
 #define APP_PREF_ID 0x00
 #define APP_PREF_VER 0x01
 
 typedef struct {
-  FontID editFont, listFont, noteFont;
+  FontID listFont, viewFont, editFont, noteFont;
   UInt8 listFields;
+  Boolean viewSummary;
 } AppPreferences;
 
 #define countof(x) (sizeof(x)/sizeof(x[0]))
 #define offsetof(t,f) ((UInt32)&(((t *)0)->f))
-
-#define SYS_ROM_3_0 sysMakeROMVersion(3,0,0,sysROMStageRelease,0)
-#define SYS_ROM_3_5 sysMakeROMVersion(3,5,0,sysROMStageRelease,0)
-#define SYS_ROM_4_0 sysMakeROMVersion(4,0,0,sysROMStageRelease,0)
 
 #define NO_RECORD 0xFFFF
 

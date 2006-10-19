@@ -22,6 +22,13 @@
 
 //      Resource: tFRM 1200
 #define ViewForm                                  1200
+#define ViewDoneButton                            1201
+#define ViewEditButton                            1202
+#define ViewNoteButton                            1203
+#define ViewCategoryLabel                         1204
+#define ViewScrollUpRepeating                     1205
+#define ViewScrollDownRepeating                   1206
+#define ViewRecordGadget                          1207
 
 //      Resource: tFRM 1300
 #define EditForm                                  1300
@@ -35,8 +42,12 @@
 #define EditScrollDownRepeating                   1308
 #define EditTable                                 1309
 
+//	Resource: Talt 1000
+#define RomIncompatibleAlert                      1000
+#define RomIncompatibleOK                         0
+
 //	Resource: Talt 1001
-#define DeleteNoteAlert                           1000
+#define DeleteNoteAlert                           1001
 #define DeleteNoteYes                             0
 #define DeleteNoteNo                              1
 
