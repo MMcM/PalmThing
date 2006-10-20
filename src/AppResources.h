@@ -24,7 +24,6 @@
 #define ListLookupClearButton                     1109
 #define ListLookupButton                          1110
 #define ListNewButton                             1111
-#define ListISBNButton                            1112
 
 //      Resource: tFRM 1200
 #define ViewForm                                  1200
@@ -121,6 +120,7 @@
 #define RecordSendBook                            1106
 #define RecordBeamCategory                        1107
 #define RecordSendCategory                        1108
+#define RecordAddISBNs                            1109
 
 #define OptionsAbout                              1200
 #define OptionsFont                               1201

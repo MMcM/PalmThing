@@ -155,11 +155,6 @@ Boolean ListFormHandleEvent(EventType *event)
       EditFormNewRecord();
       handled = true;
       break;
-        
-    case ListISBNButton:
-      ISBNFormActivate();
-      handled = true;
-      break;
     }
     break;
   
@@ -239,6 +234,11 @@ static Boolean ListFormMenuCommand(UInt16 command)
 
   case RecordSendCategory:
     ListBeamCategory(true);
+    handled = true;
+    break;
+        
+  case RecordAddISBNs:
+    ISBNFormActivate();
     handled = true;
     break;
 
