@@ -17,6 +17,7 @@ enum { COL_TITLE };
 #define UPDATE_FORCE_REDRAW 0x01
 #define UPDATE_FONT_CHANGED 0x02
 #define UPDATE_CATEGORY_CHANGED 0x04
+#define UPDATE_LOOKUP_TYPE_CHANGED 0x08
 
 #define SPACE_BETWEEN_FIELDS 4
 #define LEFT_FRACTION_NUM 3
@@ -37,6 +38,7 @@ static void ListFormLoadTable();
 static Boolean ListFormMenuCommand(UInt16 command);
 static void ListFormItemSelected(EventType *event);
 static void ListFormSelectCategory();
+static void ListFormLookupTypeSelected(EventType *event);
 static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean byPage);
 static Boolean ListFormUpdateDisplay(UInt16 updateCode);
 static void ListBeamCategory(Boolean send);
@@ -144,6 +146,11 @@ Boolean ListFormHandleEvent(EventType *event)
 
   case ctlSelectEvent:
     switch (event->data.ctlSelect.controlID) {
+    case ListCategoryPopTrigger:
+      ListFormSelectCategory();
+      handled = true;
+      break;
+
     case ListNewButton:
       EditFormNewRecord();
       handled = true;
@@ -153,14 +160,18 @@ Boolean ListFormHandleEvent(EventType *event)
       ISBNFormActivate();
       handled = true;
       break;
-        
-    case ListCategoryPopTrigger:
-      ListFormSelectCategory();
+    }
+    break;
+  
+  case popSelectEvent:
+    switch (event->data.popSelect.controlID) {
+    case ListLookupTypePopTrigger:
+      ListFormLookupTypeSelected(event);
       handled = true;
       break;
     }
     break;
-  
+
   case ctlRepeatEvent:
     switch (event->data.ctlEnter.controlID) {
     case ListScrollUpRepeating:
@@ -364,6 +375,24 @@ static void ListFormSelectCategory()
     g_CurrentCategory = category;
     g_CurrentRecord = NO_RECORD;
     FrmUpdateForm(FrmGetActiveFormID(), UPDATE_CATEGORY_CHANGED);
+  }
+}
+
+static void ListFormLookupTypeSelected(EventType *event)
+{
+  Char *label, *selection;
+  UInt16 len;
+
+  label = (Char *)CtlGetLabel(event->data.popSelect.controlP);
+  selection = LstGetSelectionText(event->data.popSelect.listP,
+                                  event->data.popSelect.selection);
+  len = StrChr(selection, ':') + 1 - selection;
+  MemMove(label, selection, len);
+  label[len] = '\0';
+  CtlSetLabel(event->data.popSelect.controlP, label);
+
+  if (event->data.popSelect.selection != event->data.popSelect.priorSelection) {
+    FrmUpdateForm(FrmGetActiveFormID(), UPDATE_LOOKUP_TYPE_CHANGED);
   }
 }
 

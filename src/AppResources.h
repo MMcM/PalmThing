@@ -18,8 +18,13 @@
 #define ListTable                                 1103
 #define ListScrollUpRepeating                     1104
 #define ListScrollDownRepeating                   1105
-#define ListNewButton                             1106
-#define ListISBNButton                            1107
+#define ListLookupTypePopTrigger                  1106
+#define ListLookupTypeList                        1107
+#define ListLookupTextField                       1108
+#define ListLookupClearButton                     1109
+#define ListLookupButton                          1110
+#define ListNewButton                             1111
+#define ListISBNButton                            1112
 
 //      Resource: tFRM 1200
 #define ViewForm                                  1200

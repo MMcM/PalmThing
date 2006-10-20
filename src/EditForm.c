@@ -201,6 +201,11 @@ Boolean EditFormHandleEvent(EventType *event)
     
   case ctlSelectEvent:
     switch (event->data.ctlSelect.controlID) {
+    case EditCategorySelTrigger:
+      EditFormSelectCategory();
+      handled = true;
+      break;
+
     case EditDoneButton:
       FrmGotoForm(g_ReturnToForm);
       handled = true;
@@ -208,11 +213,6 @@ Boolean EditFormHandleEvent(EventType *event)
 
     case EditNoteButton:
       NoteFormActivate();
-      handled = true;
-      break;
-
-    case EditCategorySelTrigger:
-      EditFormSelectCategory();
       handled = true;
       break;
     }

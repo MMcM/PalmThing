@@ -91,6 +91,11 @@ Boolean ISBNFormHandleEvent(EventType *event)
     
   case ctlSelectEvent:
     switch (event->data.ctlSelect.controlID) {
+    case ISBNCategorySelTrigger:
+      ISBNFormSelectCategory();
+      handled = true;
+      break;
+
     case ISBNDoneButton:
       ISBNFormSave();
       FrmGotoForm(ListForm);
@@ -99,11 +104,6 @@ Boolean ISBNFormHandleEvent(EventType *event)
 
     case ISBNSaveButton:
       ISBNFormSave();
-      handled = true;
-      break;
-
-    case ISBNCategorySelTrigger:
-      ISBNFormSelectCategory();
       handled = true;
       break;
     }
