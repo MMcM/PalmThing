@@ -27,6 +27,7 @@ enum { COL_TITLE };
 static UInt16 g_TopVisibleRecord = 0;
 static FontID g_ListFont = stdFont;
 static UInt16 g_ListFields = KEY_TITLE_AUTHOR;
+static Boolean g_IncrementalLookup = true;
 
 /*** Local routines ***/
 
@@ -55,11 +56,13 @@ void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
 {
   if (NULL == prefs) {
     g_ListFont = FntGlueGetDefaultFontID(defaultSystemFont);
-    g_ListFields = appInfo->sortFields;
+    g_ListFields = (appInfo->sortFields < 0) ? 
+      -appInfo->sortFields : appInfo->sortFields;
   }
   else {
     g_ListFont = prefs->listFont;
     g_ListFields = prefs->listFields;
+    g_IncrementalLookup = prefs->incrementalLookup;
   }
 }
 
@@ -67,6 +70,7 @@ void ListFormSetdown(AppPreferences *prefs)
 {
   prefs->listFont = g_ListFont;
   prefs->listFields = g_ListFields;
+  prefs->incrementalLookup = g_IncrementalLookup;
 }
 
 static void ListFormOpen(FormType *form)
@@ -100,7 +104,7 @@ static void ListFormOpen(FormType *form)
 
   ListFormLoadTable();
 
-  CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategorySelTrigger), 
+  CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger), 
                           BookDatabaseGetCategoryName(g_CurrentCategory));
 
   FntSetFont(oldFont);
@@ -145,7 +149,12 @@ Boolean ListFormHandleEvent(EventType *event)
       handled = true;
       break;
         
-    case ListCategorySelTrigger:
+    case ListISBNButton:
+      ISBNFormActivate();
+      handled = true;
+      break;
+        
+    case ListCategoryPopTrigger:
       ListFormSelectCategory();
       handled = true;
       break;
@@ -229,6 +238,11 @@ static Boolean ListFormMenuCommand(UInt16 command)
 
   case OptionsFont:
     ListFontSelect();
+    handled = true;
+    break;
+
+  case OptionsPreferences:
+    FrmPopupForm(PreferencesForm);
     handled = true;
     break;
   }
@@ -343,7 +357,7 @@ static void ListFormSelectCategory()
 
   category = g_CurrentCategory;
   BookDatabaseSelectCategory(form, 
-                             ListCategorySelTrigger, ListCategoryList, true,
+                             ListCategoryPopTrigger, ListCategoryList, true,
                              &category);
   
   if (category != g_CurrentCategory) {
@@ -454,7 +468,7 @@ static Boolean ListFormUpdateDisplay(UInt16 updateCode)
   if (updateCode & UPDATE_CATEGORY_CHANGED) {
     ListFormLoadTable();
     TblRedrawTable(table);
-    CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategorySelTrigger),
+    CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger),
                             BookDatabaseGetCategoryName(g_CurrentCategory));
     handled = true;
   }
@@ -624,3 +638,145 @@ static void ListFormSelectRecord(UInt16 recordNum)
     TblRedrawTable(table);
   }
 }
+
+/*** Preferences ***/
+
+extern Boolean g_ViewSummary;
+
+static void PreferencesFormOpen(FormType *form)
+{
+  ListType *list;
+  ControlType *ctl;
+  Char *label;
+  Int16 sortFields;
+  Boolean reverse;
+
+  sortFields = BookDatabaseGetSortFields();
+  if (sortFields < 0) {
+    sortFields = -sortFields;
+    reverse = true;
+  }
+  else
+    reverse = false;
+
+  // We arrange for the initial label to be the longest possible, then
+  // cast off the const and overwrite to current selection.  I think
+  // this avoids trouble should the list texts get relocated.
+  list = FrmGetObjectPtrFromID(form, PreferencesSortList);
+  LstSetSelection(list, sortFields-1);
+  ctl = FrmGetObjectPtrFromID(form, PreferencesSortPopTrigger);
+  label = (Char *)CtlGetLabel(ctl);
+  StrCopy(label, LstGetSelectionText(list, LstGetSelection(list)));
+  CtlSetLabel(ctl, label);
+  ctl = FrmGetObjectPtrFromID(form, PreferencesSortReverse);
+  CtlSetValue(ctl, reverse);
+  
+  list = FrmGetObjectPtrFromID(form, PreferencesListList);
+  LstSetSelection(list, g_ListFields-1);
+  ctl = FrmGetObjectPtrFromID(form, PreferencesListPopTrigger);
+  label = (Char *)CtlGetLabel(ctl);
+  StrCopy(label, LstGetSelectionText(list, LstGetSelection(list)));
+  CtlSetLabel(ctl, label);
+
+  ctl = FrmGetObjectPtrFromID(form, PreferencesIncrementalCheckbox);
+  CtlSetValue(ctl, g_IncrementalLookup);
+  
+  FrmSetControlGroupSelection(form, PreferencesViewGroup,
+                              (g_ViewSummary) ? PrefsViewSummaryPushButton :
+                                                PrefsViewTitleAuthorPushButton);
+}
+
+static void PreferencesFormSave()
+{
+  FormType *form, *sortForm;
+  ListType *list;
+  ControlType *ctl;
+  Int16 sortFields, newSortFields;
+  UInt16 newListFields;
+  Boolean forceRedraw;
+
+  sortFields = BookDatabaseGetSortFields();
+  forceRedraw = false;
+
+  form = FrmGetActiveForm();
+
+  list = FrmGetObjectPtrFromID(form, PreferencesSortList);
+  ctl = FrmGetObjectPtrFromID(form, PreferencesSortReverse);
+  newSortFields = LstGetSelection(list) + 1;
+  if (CtlGetValue(ctl))
+    newSortFields = -newSortFields;
+  if (sortFields != newSortFields) {
+    g_TopVisibleRecord = 0;
+    g_CurrentRecord = NO_RECORD;
+
+    sortForm = FrmInitForm(SortForm);
+    FrmSetActiveForm(sortForm);
+    FrmDrawForm(sortForm);
+    
+    BookDatabaseSetSortFields(newSortFields);
+    
+    FrmEraseForm(sortForm);
+    FrmDeleteForm(sortForm);
+    FrmSetActiveForm(form);
+
+    forceRedraw = true;
+  }
+
+  list = FrmGetObjectPtrFromID(form, PreferencesListList);
+  newListFields = LstGetSelection(list) + 1;
+  if (g_ListFields != newListFields) {
+    g_ListFields = newListFields;
+    forceRedraw = true;
+  }
+
+  ctl = FrmGetObjectPtrFromID(form, PreferencesIncrementalCheckbox);
+  g_IncrementalLookup = CtlGetValue(ctl);
+  
+  g_ViewSummary = 
+    (FrmGetObjectId(form, FrmGetControlGroupSelection(form, PreferencesViewGroup)) == 
+     PrefsViewSummaryPushButton);
+
+  if (forceRedraw)
+    FrmUpdateForm(ListForm, UPDATE_FORCE_REDRAW);
+}
+
+Boolean PreferencesFormHandleEvent(EventType *event)
+{
+  FormType *form;
+  Boolean handled;
+
+  handled = false;
+  switch (event->eType) {
+    case frmOpenEvent:
+      form = FrmGetActiveForm();
+      PreferencesFormOpen(form);
+      FrmDrawForm(form);
+      handled = true;
+      break;
+
+    case ctlSelectEvent:
+      switch (event->data.ctlSelect.controlID) {
+      case PreferencesOKButton:
+      case PreferencesCancelButton:
+        form = FrmGetActiveForm();
+        if (PreferencesOKButton == event->data.ctlSelect.controlID)
+          PreferencesFormSave(form);
+        FrmEraseForm(form);
+        FrmDeleteForm(form);
+#if 0
+        FrmReturnToForm(0);
+#else
+        FrmSetActiveForm(FrmGetFirstForm());
+#endif
+        handled = true;
+        break;
+      }
+      break;
+  
+    default:
+      break;
+    }
+ 
+  return handled;
+}
+

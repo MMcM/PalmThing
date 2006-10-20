@@ -17,9 +17,9 @@ UInt16 g_CurrentCategory = dmAllCategories;
 /** About form. **/
 void AboutFormDisplay()
 {
-  FormType *pForm = FrmInitForm(AboutForm);
-  FrmDoDialog(pForm);
-  FrmDeleteForm(pForm);
+  FormType *form = FrmInitForm(AboutForm);
+  FrmDoDialog(form);
+  FrmDeleteForm(form);
 }
 
 /** Initial application startup. **/
@@ -74,7 +74,7 @@ static Err AppStart(UInt16 launchFlags)
 }
 
 /** Final application cleanup. **/
-static void AppStop(void)
+static void AppStop()
 {
   AppPreferences prefs;
 
@@ -101,32 +101,35 @@ static void AppStop(void)
  * Only handle form load events.  From then on, form's own event
  * handler takes over.
 **/
-static Boolean AppHandleEvent(EventType* pEvent)
+static Boolean AppHandleEvent(EventType* event)
 {
   Boolean handled = false;
 
-  if (pEvent->eType == frmLoadEvent) {
+  if (event->eType == frmLoadEvent) {
     // Load the form resource.
-    UInt16 formId = pEvent->data.frmLoad.formID;
-    FormType* pForm = FrmInitForm(formId);
-    FrmSetActiveForm(pForm);
+    UInt16 formId = event->data.frmLoad.formID;
+    FormType* form = FrmInitForm(formId);
+    FrmSetActiveForm(form);
 
     // Set the event handler for the form.  The handler of the currently
     // active form is called by FrmHandleEvent each time is receives an
     // event.
     switch (formId) {
     case ListForm:
-      FrmSetEventHandler(pForm, ListFormHandleEvent);
+      FrmSetEventHandler(form, ListFormHandleEvent);
       break;
     case ViewForm:
-      FrmSetEventHandler(pForm, ViewFormHandleEvent);
+      FrmSetEventHandler(form, ViewFormHandleEvent);
       break;
     case EditForm:
-      FrmSetEventHandler(pForm, EditFormHandleEvent);
+      FrmSetEventHandler(form, EditFormHandleEvent);
       break;
     case NoteView:
     case NewNoteView:
-      FrmSetEventHandler(pForm, NoteFormHandleEvent);
+      FrmSetEventHandler(form, NoteFormHandleEvent);
+      break;
+    case PreferencesForm:
+      FrmSetEventHandler(form, PreferencesFormHandleEvent);
       break;
     }
     handled = true;
@@ -136,7 +139,7 @@ static Boolean AppHandleEvent(EventType* pEvent)
 }
 
 /** Main event loop **/
-static void AppEventLoop(void)
+static void AppEventLoop()
 {
   EventType event;
   Err error;

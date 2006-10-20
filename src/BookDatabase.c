@@ -297,7 +297,7 @@ Err BookDatabaseNewRecord(UInt16 *index, BookRecord *record)
 Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record)
 {
   BookAppInfo *appInfo;
-  UInt16 sortFields;
+  Int16 sortFields;
   MemHandle nrecordH, orecordH;
   BookRecordPacked *packed, *opacked;
   Boolean move;
@@ -616,4 +616,30 @@ static Int16 BookRecordCompare(void *p1, void *p2,
       return (reverse) ? -comp : comp;
   }
   return 0;
+}
+
+UInt16 BookDatabaseGetSortFields()
+{
+  BookAppInfo *appInfo;
+  UInt16 result;
+
+  appInfo = BookDatabaseGetAppInfo();
+  result = appInfo->sortFields;
+  MemPtrUnlock(appInfo);
+
+  return result;
+}
+
+void BookDatabaseSetSortFields(Int16 sortFields)
+{
+  BookAppInfo *appInfo;
+  Int8 fields;
+
+  appInfo = BookDatabaseGetAppInfo();
+  fields = sortFields;
+  DmWrite(appInfo, offsetof(BookAppInfo,sortFields), 
+          &fields, sizeof(appInfo->sortFields));
+  MemPtrUnlock(appInfo);
+  
+  DmQuickSort(g_BookDatabase, BookRecordCompare, sortFields);
 }

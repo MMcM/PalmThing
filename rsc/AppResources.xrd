@@ -153,7 +153,7 @@
 				<TEXT> "About PalmThing" </TEXT>
 			</FORM_TITLE>
 			<FORM_LABEL COMMENT="Title">
-				<ID> 1002 </ID>
+				<ID> 1001 </ID>
 				<LOCATION>
 					<X> 9 </X>
 					<Y> 24 </Y>
@@ -163,7 +163,7 @@
 				<TEXT> "PalmThing for LibraryThing" </TEXT>
 			</FORM_LABEL>
 			<FORM_LABEL COMMENT="Blurb">
-				<ID> 1003 </ID>
+				<ID> 1002 </ID>
 				<LOCATION>
 					<X> 23 </X>
 					<Y> 54 </Y>
@@ -173,7 +173,7 @@
 				<TEXT> "Initial rough cut" </TEXT>
 			</FORM_LABEL>
 			<FORM_LABEL COMMENT="VersionString">
-				<ID> 1004 </ID>
+				<ID> 1003 </ID>
 				<LOCATION>
 					<X> 50 </X>
 					<Y> 104 </Y>
@@ -183,7 +183,7 @@
 				<TEXT> "Version 1.0" </TEXT>
 			</FORM_LABEL>
 			<FORM_BUTTON COMMENT="OK">
-				<ID> 1001 </ID>
+				<ID> 1004 </ID>
 				<BOUNDS>
 					<LEFT> 58 </LEFT>
 					<TOP> 139 </TOP>
@@ -220,8 +220,37 @@
 			<FORM_TITLE>
 				<TEXT> "Book List" </TEXT>
 			</FORM_TITLE>
+			<FORM_POPUP_TRIGGER>
+				<ID> 1101 </ID>
+				<BOUNDS>
+					<LEFT> 142 </LEFT>
+					<TOP> 1 </TOP>
+					<WIDTH> 17 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<LEFT_ANCHOR> FALSE </LEFT_ANCHOR>
+				<TEXT> "" </TEXT>
+				<FONT_ID> STD_FONT </FONT_ID>
+			</FORM_POPUP_TRIGGER>
+			<FORM_LIST>
+				<ID> 1102 </ID>
+				<BOUNDS>
+					<LEFT> 86 </LEFT>
+					<TOP> 1 </TOP>
+					<WIDTH> 72 </WIDTH>
+					<HEIGHT> 11 </HEIGHT>
+				</BOUNDS>
+				<USABLE> FALSE </USABLE>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<NUM_VIS_ITEMS> 1 </NUM_VIS_ITEMS>
+				<LIST_ITEMS>
+					<TEXT> "" </TEXT>
+				</LIST_ITEMS>
+			</FORM_LIST>
 			<FORM_TABLE>
-				<ID> 1106 </ID>
+				<ID> 1103 </ID>
 				<BOUNDS>
 					<LEFT> 0 </LEFT>
 					<TOP> 16 </TOP>
@@ -230,12 +259,7 @@
 				</BOUNDS>
 				<EDITABLE> TRUE </EDITABLE>
 				<TABLE_COLUMNS>
-					<COLUMN_WIDTH> 113 </COLUMN_WIDTH>
-					<COLUMN_WIDTH> 10 </COLUMN_WIDTH>
-					<COLUMN_WIDTH> 10 </COLUMN_WIDTH>
-					<COLUMN_WIDTH> 10 </COLUMN_WIDTH>
-					<COLUMN_WIDTH> 10 </COLUMN_WIDTH>
-					<COLUMN_WIDTH> 6 </COLUMN_WIDTH>
+					<COLUMN_WIDTH> 160 </COLUMN_WIDTH>
 				</TABLE_COLUMNS>
 				<TABLE_ROWS>
 					<ROW_HEIGHT> 11 </ROW_HEIGHT>
@@ -251,21 +275,6 @@
 					<ROW_HEIGHT> 11 </ROW_HEIGHT>
 				</TABLE_ROWS>
 			</FORM_TABLE>
-			<FORM_BUTTON>
-				<ID> 1101 </ID>
-				<BOUNDS>
-					<LEFT> 1 </LEFT>
-					<TOP> 147 </TOP>
-					<WIDTH> 26 </WIDTH>
-					<HEIGHT> 12 </HEIGHT>
-				</BOUNDS>
-				<USABLE> TRUE </USABLE>
-				<ENABLED> TRUE </ENABLED>
-				<TEXT> "New" </TEXT>
-				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
-			</FORM_BUTTON>
 			<FORM_REPEATING_BUTTON>
 				<ID> 1104 </ID>
 				<BOUNDS>
@@ -296,35 +305,36 @@
 				<FONT_ID> SYMBOL_7_FONT </FONT_ID>
 				<BUTTON_FRAME> NO_BUTTON_FRAME </BUTTON_FRAME>
 			</FORM_REPEATING_BUTTON>
-			<FORM_POPUP_TRIGGER>
-				<ID> 1103 </ID>
+			<FORM_BUTTON>
+				<ID> 1106 </ID>
 				<BOUNDS>
-					<LEFT> 160 </LEFT>
-					<TOP> 1 </TOP>
-					<WIDTH> 1 </WIDTH>
+					<LEFT> 1 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 26 </WIDTH>
 					<HEIGHT> 12 </HEIGHT>
 				</BOUNDS>
 				<USABLE> TRUE </USABLE>
 				<ENABLED> TRUE </ENABLED>
-				<LEFT_ANCHOR> FALSE </LEFT_ANCHOR>
-				<TEXT> "" </TEXT>
+				<TEXT> "New" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
 				<FONT_ID> STD_FONT </FONT_ID>
-			</FORM_POPUP_TRIGGER>
-			<FORM_LIST>
-				<ID> 1102 </ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+			<FORM_BUTTON>
+				<ID> 1107 </ID>
 				<BOUNDS>
-					<LEFT> 86 </LEFT>
-					<TOP> 1 </TOP>
-					<WIDTH> 72 </WIDTH>
-					<HEIGHT> 11 </HEIGHT>
+					<LEFT> 33 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 26 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
 				</BOUNDS>
-				<USABLE> FALSE </USABLE>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "ISBN" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
 				<FONT_ID> STD_FONT </FONT_ID>
-				<NUM_VIS_ITEMS> 1 </NUM_VIS_ITEMS>
-				<LIST_ITEMS>
-					<TEXT> "" </TEXT>
-				</LIST_ITEMS>
-			</FORM_LIST>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
 		</FORM_OBJECTS>
 	</FORM_RESOURCE>
 
@@ -348,8 +358,18 @@
 			<FORM_TITLE>
 				<TEXT> "Book View" </TEXT>
 			</FORM_TITLE>
+			<FORM_LABEL>
+				<ID> 1201 </ID>
+				<LOCATION>
+					<X> 127 </X>
+					<Y> 0 </Y>
+				</LOCATION>
+				<USABLE> TRUE </USABLE>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<TEXT> "" </TEXT>
+			</FORM_LABEL>
 			<FORM_GADGET>
-				<ID> 1207 </ID>
+				<ID> 1202 </ID>
 				<BOUNDS>
 					<LEFT> 0 </LEFT>
 					<TOP> 17 </TOP>
@@ -360,63 +380,8 @@
 				<EXTENDED> TRUE </EXTENDED>
 				<VISIBLE> FALSE </VISIBLE>
 			</FORM_GADGET>
-			<FORM_LABEL>
-				<ID> 1204 </ID>
-				<LOCATION>
-					<X> 127 </X>
-					<Y> 0 </Y>
-				</LOCATION>
-				<USABLE> TRUE </USABLE>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<TEXT> "" </TEXT>
-			</FORM_LABEL>
-			<FORM_BUTTON>
-				<ID> 1201 </ID>
-				<BOUNDS>
-					<LEFT> 1 </LEFT>
-					<TOP> 147 </TOP>
-					<WIDTH> 35 </WIDTH>
-					<HEIGHT> 12 </HEIGHT>
-				</BOUNDS>
-				<USABLE> TRUE </USABLE>
-				<ENABLED> TRUE </ENABLED>
-				<TEXT> "Done" </TEXT>
-				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
-			</FORM_BUTTON>
-			<FORM_BUTTON>
-				<ID> 1202 </ID>
-				<BOUNDS>
-					<LEFT> 42 </LEFT>
-					<TOP> 147 </TOP>
-					<WIDTH> 35 </WIDTH>
-					<HEIGHT> 12 </HEIGHT>
-				</BOUNDS>
-				<USABLE> TRUE </USABLE>
-				<ENABLED> TRUE </ENABLED>
-				<TEXT> "Edit" </TEXT>
-				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
-			</FORM_BUTTON>
-			<FORM_BUTTON>
-				<ID> 1203 </ID>
-				<BOUNDS>
-					<LEFT> 83 </LEFT>
-					<TOP> 147 </TOP>
-					<WIDTH> 35 </WIDTH>
-					<HEIGHT> 12 </HEIGHT>
-				</BOUNDS>
-				<USABLE> TRUE </USABLE>
-				<ENABLED> TRUE </ENABLED>
-				<TEXT> "Note" </TEXT>
-				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
-			</FORM_BUTTON>
 			<FORM_REPEATING_BUTTON>
-				<ID> 1205 </ID>
+				<ID> 1203 </ID>
 				<BOUNDS>
 					<LEFT> 147 </LEFT>
 					<TOP> 144 </TOP>
@@ -431,7 +396,7 @@
 				<BUTTON_FRAME> NO_BUTTON_FRAME </BUTTON_FRAME>
 			</FORM_REPEATING_BUTTON>
 			<FORM_REPEATING_BUTTON>
-				<ID> 1206 </ID>
+				<ID> 1204 </ID>
 				<BOUNDS>
 					<LEFT> 147 </LEFT>
 					<TOP> 152 </TOP>
@@ -445,6 +410,51 @@
 				<FONT_ID> SYMBOL_7_FONT </FONT_ID>
 				<BUTTON_FRAME> NO_BUTTON_FRAME </BUTTON_FRAME>
 			</FORM_REPEATING_BUTTON>
+			<FORM_BUTTON>
+				<ID> 1205 </ID>
+				<BOUNDS>
+					<LEFT> 1 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 35 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Done" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+			<FORM_BUTTON>
+				<ID> 1206 </ID>
+				<BOUNDS>
+					<LEFT> 42 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 35 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Edit" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+			<FORM_BUTTON>
+				<ID> 1207 </ID>
+				<BOUNDS>
+					<LEFT> 83 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 35 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Note" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
 		</FORM_OBJECTS>
 	</FORM_RESOURCE>
 
@@ -468,8 +478,37 @@
 			<FORM_TITLE>
 				<TEXT> "Book Edit" </TEXT>
 			</FORM_TITLE>
+			<FORM_SELECTOR_TRIGGER>
+				<ID> 1301 </ID>
+				<BOUNDS>
+					<LEFT> 154 </LEFT>
+					<TOP> 1 </TOP>
+					<WIDTH> 5 </WIDTH>
+					<HEIGHT> 11 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<LEFT_ANCHOR> FALSE </LEFT_ANCHOR>
+				<TEXT> "" </TEXT>
+				<FONT_ID> STD_FONT </FONT_ID>
+			</FORM_SELECTOR_TRIGGER>
+			<FORM_LIST>
+				<ID> 1302 </ID>
+				<BOUNDS>
+					<LEFT> 86 </LEFT>
+					<TOP> 1 </TOP>
+					<WIDTH> 72 </WIDTH>
+					<HEIGHT> 11 </HEIGHT>
+				</BOUNDS>
+				<USABLE> FALSE </USABLE>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<NUM_VIS_ITEMS> 1 </NUM_VIS_ITEMS>
+				<LIST_ITEMS>
+					<TEXT> "" </TEXT>
+				</LIST_ITEMS>
+			</FORM_LIST>
 			<FORM_TABLE>
-				<ID> 1309 </ID>
+				<ID> 1303 </ID>
 				<BOUNDS>
 					<LEFT> 0 </LEFT>
 					<TOP> 18 </TOP>
@@ -495,53 +534,14 @@
 					<ROW_HEIGHT> 11 </ROW_HEIGHT>
 				</TABLE_ROWS>
 			</FORM_TABLE>
-			<FORM_BUTTON>
-				<ID> 1301 </ID>
-				<BOUNDS>
-					<LEFT> 1 </LEFT>
-					<TOP> 147 </TOP>
-					<WIDTH> 35 </WIDTH>
-					<HEIGHT> 12 </HEIGHT>
-				</BOUNDS>
-				<USABLE> TRUE </USABLE>
-				<ENABLED> TRUE </ENABLED>
-				<TEXT> "Done" </TEXT>
-				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
-			</FORM_BUTTON>
-			<FORM_BUTTON>
-				<ID> 1302 </ID>
-				<BOUNDS>
-					<LEFT> 42 </LEFT>
-					<TOP> 147 </TOP>
-					<WIDTH> 42 </WIDTH>
-					<HEIGHT> 12 </HEIGHT>
-				</BOUNDS>
-				<USABLE> TRUE </USABLE>
-				<ENABLED> TRUE </ENABLED>
-				<TEXT> "Details..." </TEXT>
-				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
-			</FORM_BUTTON>
-			<FORM_BUTTON>
-				<ID> 1303 </ID>
-				<BOUNDS>
-					<LEFT> 90 </LEFT>
-					<TOP> 147 </TOP>
-					<WIDTH> 35 </WIDTH>
-					<HEIGHT> 12 </HEIGHT>
-				</BOUNDS>
-				<USABLE> TRUE </USABLE>
-				<ENABLED> TRUE </ENABLED>
-				<TEXT> "Note" </TEXT>
-				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
-				<FONT_ID> STD_FONT </FONT_ID>
-				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
-			</FORM_BUTTON>
+			<FORM_GRAFFITI_STATE>
+				<LOCATION>
+					<X> 135 </X>
+					<Y> 150 </Y>
+				</LOCATION>
+			</FORM_GRAFFITI_STATE>
 			<FORM_REPEATING_BUTTON>
-				<ID> 1307 </ID>
+				<ID> 1305 </ID>
 				<BOUNDS>
 					<LEFT> 147 </LEFT>
 					<TOP> 144 </TOP>
@@ -556,7 +556,7 @@
 				<BUTTON_FRAME> NO_BUTTON_FRAME </BUTTON_FRAME>
 			</FORM_REPEATING_BUTTON>
 			<FORM_REPEATING_BUTTON>
-				<ID> 1308 </ID>
+				<ID> 1306 </ID>
 				<BOUNDS>
 					<LEFT> 147 </LEFT>
 					<TOP> 152 </TOP>
@@ -570,8 +570,61 @@
 				<FONT_ID> SYMBOL_7_FONT </FONT_ID>
 				<BUTTON_FRAME> NO_BUTTON_FRAME </BUTTON_FRAME>
 			</FORM_REPEATING_BUTTON>
+			<FORM_BUTTON>
+				<ID> 1307 </ID>
+				<BOUNDS>
+					<LEFT> 1 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 35 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Done" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+			<FORM_BUTTON>
+				<ID> 1308 </ID>
+				<BOUNDS>
+					<LEFT> 42 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 35 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Note" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+		</FORM_OBJECTS>
+	</FORM_RESOURCE>
+
+	<FORM_RESOURCE RESOURCE_ID="1400" LOCALE="enUS" COMMENT="ISBN">
+		<FORM_ID> 1400 </FORM_ID>
+		<BOUNDS>
+			<LEFT> 0 </LEFT>
+			<TOP> 0 </TOP>
+			<WIDTH> 160 </WIDTH>
+			<HEIGHT> 160 </HEIGHT>
+		</BOUNDS>
+		<USABLE> TRUE </USABLE>
+		<MODAL> FALSE </MODAL>
+		<SAVE_BEHIND> TRUE </SAVE_BEHIND>
+		<HELP_ID> 0 </HELP_ID>
+		<MENU_ID> 1400 </MENU_ID>
+		<DEFAULT_BUTTON> 0 </DEFAULT_BUTTON>
+		<TITLE_ICON> FALSE </TITLE_ICON>
+		<TITLE_BAR_FOCUSABLE> FALSE </TITLE_BAR_FOCUSABLE>
+		<FORM_OBJECTS>
+			<FORM_TITLE>
+				<TEXT> "Add ISBNs" </TEXT>
+			</FORM_TITLE>
 			<FORM_SELECTOR_TRIGGER>
-				<ID> 1306 </ID>
+				<ID> 1401 </ID>
 				<BOUNDS>
 					<LEFT> 154 </LEFT>
 					<TOP> 1 </TOP>
@@ -585,7 +638,7 @@
 				<FONT_ID> STD_FONT </FONT_ID>
 			</FORM_SELECTOR_TRIGGER>
 			<FORM_LIST>
-				<ID> 1305 </ID>
+				<ID> 1402 </ID>
 				<BOUNDS>
 					<LEFT> 86 </LEFT>
 					<TOP> 1 </TOP>
@@ -599,12 +652,319 @@
 					<TEXT> "" </TEXT>
 				</LIST_ITEMS>
 			</FORM_LIST>
+			<FORM_TABLE>
+				<ID> 1403 </ID>
+				<BOUNDS>
+					<LEFT> 0 </LEFT>
+					<TOP> 18 </TOP>
+					<WIDTH> 160 </WIDTH>
+					<HEIGHT> 121 </HEIGHT>
+				</BOUNDS>
+				<EDITABLE> TRUE </EDITABLE>
+				<TABLE_COLUMNS>
+					<COLUMN_WIDTH> 150 </COLUMN_WIDTH>
+					<COLUMN_WIDTH> 10 </COLUMN_WIDTH>
+				</TABLE_COLUMNS>
+				<TABLE_ROWS>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+					<ROW_HEIGHT> 11 </ROW_HEIGHT>
+				</TABLE_ROWS>
+			</FORM_TABLE>
 			<FORM_GRAFFITI_STATE>
 				<LOCATION>
 					<X> 135 </X>
 					<Y> 150 </Y>
 				</LOCATION>
 			</FORM_GRAFFITI_STATE>
+			<FORM_BUTTON>
+				<ID> 1405 </ID>
+				<BOUNDS>
+					<LEFT> 1 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 35 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Done" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+			<FORM_BUTTON>
+				<ID> 1406 </ID>
+				<BOUNDS>
+					<LEFT> 42 </LEFT>
+					<TOP> 147 </TOP>
+					<WIDTH> 35 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Save" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+		</FORM_OBJECTS>
+	</FORM_RESOURCE>
+
+	<FORM_RESOURCE RESOURCE_ID="2000" LOCALE="enUS" COMMENT="Preferences">
+		<FORM_ID> 2000 </FORM_ID>
+		<BOUNDS>
+			<LEFT> 2 </LEFT>
+			<TOP> 2 </TOP>
+			<WIDTH> 156 </WIDTH>
+			<HEIGHT> 156 </HEIGHT>
+		</BOUNDS>
+		<USABLE> TRUE </USABLE>
+		<MODAL> TRUE </MODAL>
+		<SAVE_BEHIND> TRUE </SAVE_BEHIND>
+		<HELP_ID> 0 </HELP_ID>
+		<MENU_ID> 0 </MENU_ID>
+		<DEFAULT_BUTTON> 2009 </DEFAULT_BUTTON>
+		<TITLE_ICON> FALSE </TITLE_ICON>
+		<TITLE_BAR_FOCUSABLE> FALSE </TITLE_BAR_FOCUSABLE>
+		<FORM_OBJECTS>
+			<FORM_TITLE>
+				<TEXT> "PalmThing Preferences" </TEXT>
+			</FORM_TITLE>
+			<FORM_LABEL>
+				<ID> 9998 </ID>
+				<LOCATION>
+					<X> 5 </X>
+					<Y> 15 </Y>
+				</LOCATION>
+				<USABLE> TRUE </USABLE>
+				<FONT_ID> BOLD_FONT </FONT_ID>
+				<TEXT> "Sort:" </TEXT>
+			</FORM_LABEL>
+			<FORM_POPUP_TRIGGER>
+				<ID> 2001 </ID>
+				<BOUNDS>
+					<LEFT> 40 </LEFT>
+					<TOP> 15 </TOP>
+					<WIDTH> 69 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<TEXT> "Title, Author" </TEXT>
+				<FONT_ID> STD_FONT </FONT_ID>
+			</FORM_POPUP_TRIGGER>
+			<FORM_LIST>
+				<ID> 2002 </ID>
+				<BOUNDS>
+					<LEFT> 43 </LEFT>
+					<TOP> 15 </TOP>
+					<WIDTH> 56 </WIDTH>
+					<HEIGHT> 66 </HEIGHT>
+				</BOUNDS>
+				<USABLE> FALSE </USABLE>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<NUM_VIS_ITEMS> 6 </NUM_VIS_ITEMS>
+				<LIST_ITEMS>
+					<TEXT> "Title" </TEXT>
+					<TEXT> "Author" </TEXT>
+					<TEXT> "ISBN" </TEXT>
+					<TEXT> "Summary" </TEXT>
+					<TEXT> "Title, Author" </TEXT>
+					<TEXT> "Author, Title" </TEXT>
+				</LIST_ITEMS>
+			</FORM_LIST>
+			<FORM_POPUP>
+				<CONTROL_ID> 2001 </CONTROL_ID>
+				<LIST_ID> 2002 </LIST_ID>
+			</FORM_POPUP>
+			<FORM_CHECKBOX>
+				<ID> 2003 </ID>
+				<BOUNDS>
+					<LEFT> 10 </LEFT>
+					<TOP> 30 </TOP>
+					<WIDTH> 75 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Descending" </TEXT>
+				<FONT_ID> BOLD_FONT </FONT_ID>
+				<GROUP_ID> 0 </GROUP_ID>
+				<SELECTED> FALSE </SELECTED>
+			</FORM_CHECKBOX>
+			<FORM_LABEL>
+				<ID> 9997 </ID>
+				<LOCATION>
+					<X> 5 </X>
+					<Y> 50 </Y>
+				</LOCATION>
+				<USABLE> TRUE </USABLE>
+				<FONT_ID> BOLD_FONT </FONT_ID>
+				<TEXT> "List:" </TEXT>
+			</FORM_LABEL>
+			<FORM_POPUP_TRIGGER>
+				<ID> 2004 </ID>
+				<BOUNDS>
+					<LEFT> 40 </LEFT>
+					<TOP> 50 </TOP>
+					<WIDTH> 69 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<TEXT> "Title, Author" </TEXT>
+				<FONT_ID> STD_FONT </FONT_ID>
+			</FORM_POPUP_TRIGGER>
+			<FORM_LIST>
+				<ID> 2005 </ID>
+				<BOUNDS>
+					<LEFT> 43 </LEFT>
+					<TOP> 50 </TOP>
+					<WIDTH> 56 </WIDTH>
+					<HEIGHT> 66 </HEIGHT>
+				</BOUNDS>
+				<USABLE> FALSE </USABLE>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<NUM_VIS_ITEMS> 6 </NUM_VIS_ITEMS>
+				<LIST_ITEMS>
+					<TEXT> "Title" </TEXT>
+					<TEXT> "Author" </TEXT>
+					<TEXT> "ISBN" </TEXT>
+					<TEXT> "Summary" </TEXT>
+					<TEXT> "Title, Author" </TEXT>
+					<TEXT> "Author, Title" </TEXT>
+				</LIST_ITEMS>
+			</FORM_LIST>
+			<FORM_POPUP>
+				<CONTROL_ID> 2004 </CONTROL_ID>
+				<LIST_ID> 2005 </LIST_ID>
+			</FORM_POPUP>
+			<FORM_CHECKBOX>
+				<ID> 2006 </ID>
+				<BOUNDS>
+					<LEFT> 5 </LEFT>
+					<TOP> 110 </TOP>
+					<WIDTH> 118 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Incremental Lookup" </TEXT>
+				<FONT_ID> BOLD_FONT </FONT_ID>
+				<GROUP_ID> 0 </GROUP_ID>
+				<SELECTED> FALSE </SELECTED>
+			</FORM_CHECKBOX>
+			<FORM_LABEL>
+				<ID> 9996 </ID>
+				<LOCATION>
+					<X> 5 </X>
+					<Y> 85 </Y>
+				</LOCATION>
+				<USABLE> TRUE </USABLE>
+				<FONT_ID> BOLD_FONT </FONT_ID>
+				<TEXT> "View:" </TEXT>
+			</FORM_LABEL>
+			<FORM_PUSH_BUTTON>
+				<ID> 2007 </ID>
+				<BOUNDS>
+					<LEFT> 39 </LEFT>
+					<TOP> 85 </TOP>
+					<WIDTH> 55 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Title, Author" </TEXT>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<GROUP_ID> 1 </GROUP_ID>
+			</FORM_PUSH_BUTTON>
+			<FORM_PUSH_BUTTON>
+				<ID> 2008 </ID>
+				<BOUNDS>
+					<LEFT> 95 </LEFT>
+					<TOP> 85 </TOP>
+					<WIDTH> 50 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Summary" </TEXT>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<GROUP_ID> 1 </GROUP_ID>
+			</FORM_PUSH_BUTTON>
+			<FORM_BUTTON>
+				<ID> 2009 </ID>
+				<BOUNDS>
+					<LEFT> 4 </LEFT>
+					<TOP> 140 </TOP>
+					<WIDTH> 36 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "OK" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+			<FORM_BUTTON>
+				<ID> 2010 </ID>
+				<BOUNDS>
+					<LEFT> 45 </LEFT>
+					<TOP> 140 </TOP>
+					<WIDTH> 36 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</BOUNDS>
+				<USABLE> TRUE </USABLE>
+				<ENABLED> TRUE </ENABLED>
+				<TEXT> "Cancel" </TEXT>
+				<LEFT_ANCHOR> TRUE </LEFT_ANCHOR>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<BUTTON_FRAME> STANDARD_BUTTON_FRAME </BUTTON_FRAME>
+			</FORM_BUTTON>
+		</FORM_OBJECTS>
+	</FORM_RESOURCE>
+
+	<FORM_RESOURCE RESOURCE_ID="3000" LOCALE="enUS" COMMENT="Sort">
+		<FORM_ID> 3000 </FORM_ID>
+		<BOUNDS>
+			<LEFT> 51 </LEFT>
+			<TOP> 70 </TOP>
+			<WIDTH> 58 </WIDTH>
+			<HEIGHT> 20 </HEIGHT>
+		</BOUNDS>
+		<USABLE> TRUE </USABLE>
+		<MODAL> TRUE </MODAL>
+		<SAVE_BEHIND> TRUE </SAVE_BEHIND>
+		<HELP_ID> 0 </HELP_ID>
+		<MENU_ID> 0 </MENU_ID>
+		<DEFAULT_BUTTON> 0 </DEFAULT_BUTTON>
+		<TITLE_ICON> FALSE </TITLE_ICON>
+		<TITLE_BAR_FOCUSABLE> FALSE </TITLE_BAR_FOCUSABLE>
+		<FORM_OBJECTS>
+			<FORM_TITLE>
+				<TEXT> "" </TEXT>
+			</FORM_TITLE>
+			<FORM_LABEL>
+				<ID> 9980 </ID>
+				<LOCATION>
+					<X> 5 </X>
+					<Y> 4 </Y>
+				</LOCATION>
+				<USABLE> TRUE </USABLE>
+				<FONT_ID> STD_FONT </FONT_ID>
+				<TEXT> "Sorting..." </TEXT>
+			</FORM_LABEL>
 		</FORM_OBJECTS>
 	</FORM_RESOURCE>
 
@@ -655,6 +1015,12 @@
 						<ID> 1201 </ID>
 						<TITLE> "Font" </TITLE>
 						<COMMAND> "F" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1202 </ID>
+						<TITLE> "Preferences..." </TITLE>
+						<COMMAND> "R" </COMMAND>
 						<HIDDEN> FALSE </HIDDEN>
 					</MENU_ITEM>
 					<MENU_ITEM>
@@ -712,6 +1078,156 @@
 				</BOUNDS>
 				<TITLE_BOUNDS>
 					<LEFT> 47 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 47 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1201 </ID>
+						<TITLE> "Font" </TITLE>
+						<COMMAND> "F" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1200 </ID>
+						<TITLE> "About PalmThing" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+		</MENUS>
+	</MENU_BAR_RESOURCE>
+
+	<MENU_BAR_RESOURCE RESOURCE_ID="1200" LOCALE="enUS" COMMENT="View">
+		<VISIBLE> TRUE </VISIBLE>
+		<MENUS>
+			<MENU>
+				<TITLE> "Record" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 6 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 106 </WIDTH>
+					<HEIGHT> 76 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 4 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 43 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1102 </ID>
+						<TITLE> "Duplicate Book" </TITLE>
+						<COMMAND> "T" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 0 </ID>
+						<TITLE> "-" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1105 </ID>
+						<TITLE> "Beam Book" </TITLE>
+						<COMMAND> "B" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+			<MENU>
+				<TITLE> "Options" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 73 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 85 </WIDTH>
+					<HEIGHT> 22 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 74 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 47 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1201 </ID>
+						<TITLE> "Font" </TITLE>
+						<COMMAND> "F" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1200 </ID>
+						<TITLE> "About PalmThing" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+		</MENUS>
+	</MENU_BAR_RESOURCE>
+
+	<MENU_BAR_RESOURCE RESOURCE_ID="1240" LOCALE="enUS" COMMENT="View 4.0">
+		<VISIBLE> TRUE </VISIBLE>
+		<MENUS>
+			<MENU>
+				<TITLE> "Record" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 6 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 106 </WIDTH>
+					<HEIGHT> 76 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 4 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 43 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1102 </ID>
+						<TITLE> "Duplicate Book" </TITLE>
+						<COMMAND> "T" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 0 </ID>
+						<TITLE> "-" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1105 </ID>
+						<TITLE> "Beam Book" </TITLE>
+						<COMMAND> "B" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1106 </ID>
+						<TITLE> "Send Book" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+			<MENU>
+				<TITLE> "Options" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 73 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 85 </WIDTH>
+					<HEIGHT> 22 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 74 </LEFT>
 					<TOP> 0 </TOP>
 					<WIDTH> 47 </WIDTH>
 					<HEIGHT> 12 </HEIGHT>
@@ -1055,7 +1571,109 @@
 					</MENU_ITEM>
 					<MENU_ITEM>
 						<ID> 1200 </ID>
-						<TITLE> "About Librarian" </TITLE>
+						<TITLE> "About PalmThing" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+		</MENUS>
+	</MENU_BAR_RESOURCE>
+
+	<MENU_BAR_RESOURCE RESOURCE_ID="1400" LOCALE="enUS" COMMENT="ISBN">
+		<VISIBLE> TRUE </VISIBLE>
+		<MENUS>
+			<MENU>
+				<TITLE> "Edit" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 49 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 98 </WIDTH>
+					<HEIGHT> 82 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 47 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 27 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1000 </ID>
+						<TITLE> "Undo" </TITLE>
+						<COMMAND> "U" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1001 </ID>
+						<TITLE> "Cut" </TITLE>
+						<COMMAND> "X" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1002 </ID>
+						<TITLE> "Copy" </TITLE>
+						<COMMAND> "C" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1003 </ID>
+						<TITLE> "Paste" </TITLE>
+						<COMMAND> "P" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1004 </ID>
+						<TITLE> "Select All" </TITLE>
+						<COMMAND> "S" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 0 </ID>
+						<TITLE> "-" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1006 </ID>
+						<TITLE> "Keyboard" </TITLE>
+						<COMMAND> "K" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1007 </ID>
+						<TITLE> "Graffiti Help" </TITLE>
+						<COMMAND> "G" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+			<MENU>
+				<TITLE> "Options" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 73 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 85 </WIDTH>
+					<HEIGHT> 22 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 74 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 47 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1201 </ID>
+						<TITLE> "Font" </TITLE>
+						<COMMAND> "F" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1200 </ID>
+						<TITLE> "About PalmThing" </TITLE>
 						<COMMAND> "" </COMMAND>
 						<HIDDEN> FALSE </HIDDEN>
 					</MENU_ITEM>

@@ -36,8 +36,9 @@
 #define APP_PREF_VER 0x01
 
 typedef struct {
-  FontID listFont, viewFont, editFont, noteFont;
+  FontID listFont, viewFont, editFont, noteFont, isbnFont;
   UInt8 listFields;
+  Boolean incrementalLookup;
   Boolean viewSummary;
 } AppPreferences;
 
@@ -85,7 +86,7 @@ enum {
 
 typedef struct {
   AppInfoType categories;
-  UInt8 sortFields;
+  Int8 sortFields;
 } BookAppInfo;
 
 /*** Application globals ***/
@@ -101,6 +102,7 @@ extern void AboutFormDisplay();
 extern void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
 extern void ListFormSetdown(AppPreferences *prefs);
 extern Boolean ListFormHandleEvent(EventType *event);
+extern Boolean PreferencesFormHandleEvent(EventType *event);
 
 /*** View form routines ***/
 extern void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
@@ -120,6 +122,12 @@ extern void NoteFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
 extern void NoteFormSetdown(AppPreferences *prefs);
 extern void NoteFormActivate();
 extern Boolean NoteFormHandleEvent(EventType *event);
+
+/*** ISBN form routines ***/
+extern void ISBNFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
+extern void ISBNFormSetdown(AppPreferences *prefs);
+extern Boolean ISBNFormHandleEvent(EventType *event);
+extern void ISBNFormActivate();
 
 /*** Book database routines ***/
 extern Err BookDatabaseOpen();
@@ -141,3 +149,5 @@ extern void BookDatabaseSelectCategory(FormType *form, UInt16 ctlID, UInt16 lstI
 extern UInt16 BookRecordGetCategory(UInt16 index);
 extern Err BookRecordSetCategory(UInt16 index, UInt16 category);
 extern Char *BookRecordGetCategoryName(UInt16 index);
+extern UInt16 BookDatabaseGetSortFields();
+extern void BookDatabaseSetSortFields(Int16 sortFields);

@@ -19,7 +19,7 @@ static FontID g_ViewTitleFont = largeBoldFont;
 static FontID g_ViewDetailFont = stdFont;
 static FontID g_ViewFont = stdFont;
 
-static Boolean g_ViewSummary = false;
+/*static*/ Boolean g_ViewSummary = false;
 
 static UInt16 g_TopFieldNumber = 0, g_TopFieldOffset = 0;
 
@@ -64,6 +64,7 @@ void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
   g_ViewDetailFont = FntGlueGetDefaultFontID(defaultSmallFont);
   if (NULL == prefs) {
     g_ViewFont = FntGlueGetDefaultFontID(defaultSystemFont);
+    g_ViewSummary = false;
   }
   else {
     g_ViewFont = prefs->viewFont;
