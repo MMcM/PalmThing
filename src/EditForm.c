@@ -1118,30 +1118,16 @@ static void EditFormSaveRecord()
   }
 
   // Something may have changed that makes the current record not
-  // satisfy category or filters.  Try to find one that does.
-  if (!BookDatabaseSeekRecord(&g_CurrentRecord, 0, dmSeekBackward) &&
-      !BookDatabaseSeekRecord(&g_CurrentRecord, 0, dmSeekForward))
-    g_CurrentRecord = NO_RECORD;
+  // satisfy category or filters.
+  //g_CurrentRecordChanged = true;
 }
 
 static void DeleteCurrentRecord(Boolean archive)
 {
-  UInt16 newCurrentRecord;
-  Boolean selectedForward;
+  UInt16 index;
 
-  newCurrentRecord = g_CurrentRecord;
-  selectedForward = false;
-  if (!BookDatabaseSeekRecord(&newCurrentRecord, 0, dmSeekBackward)) {
-    if (BookDatabaseSeekRecord(&newCurrentRecord, 0, dmSeekForward))
-      selectedForward = true;
-    else
-      newCurrentRecord = NO_RECORD;
-  }
-  
-  if (BookDatabaseDeleteRecord(&g_CurrentRecord, archive))
+  index = g_CurrentRecord;
+  if (BookDatabaseDeleteRecord(&index, archive))
     return;
-
-  if (selectedForward)
-    newCurrentRecord--;
-  g_CurrentRecord = newCurrentRecord;
+  g_CurrentRecord = NO_RECORD;
 }

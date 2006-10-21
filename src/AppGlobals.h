@@ -89,6 +89,25 @@ typedef struct {
   Int8 sortFields;
 } BookAppInfo;
 
+enum {
+  FIND_NONE,
+  FIND_ALL,
+  FIND_TITLE,
+  FIND_AUTHOR,
+  FIND_ISBN,
+  FIND_TAGS,
+  FIND_COMMENTS
+};
+
+typedef struct {
+  UInt8 findType;
+  const Char *findKey;
+  Char *keyPrep;
+  UInt16 matchField;
+  UInt32 matchPos;
+  UInt16 matchLen;
+} BookFindState;
+
 /*** Application globals ***/
 
 extern UInt32 g_ROMVersion;
@@ -142,7 +161,9 @@ extern Err BookDatabaseNewRecord(UInt16 *index, BookRecord *record);
 extern Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record);
 extern Err BookDatabaseDirtyRecord(UInt16 index);
 extern Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive);
-extern Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction);
+extern Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
+                                      UInt16 category, BookFindState *findState);
+extern Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState);
 extern Char *BookDatabaseGetCategoryName(UInt16 index);
 extern Boolean BookRecordIsEmpty(BookRecord *record);
 extern void BookDatabaseSelectCategory(FormType *form, UInt16 ctlID, UInt16 lstID,

@@ -29,6 +29,7 @@ static UInt16 g_TopVisibleRecord = 0;
 static FontID g_ListFont = stdFont;
 static UInt16 g_ListFields = KEY_TITLE_AUTHOR;
 static Boolean g_IncrementalFind = true;
+static BookFindState *g_FindState = NULL;
 
 /*** Local routines ***/
 
@@ -43,9 +44,10 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
 static Boolean ListFormUpdateDisplay(UInt16 updateCode);
 static void ListBeamCategory(Boolean send);
 static void ListFontSelect();
-static void ListFormUpdateScrollButtons();
 static void ListFormSelectRecord(UInt16 recordNum);
 static void ListFormFieldChanged();
+static void ListFormFindStart();
+static void ListFormFindCleanup();
 static void ListFormFind();
 static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds);
 
@@ -412,6 +414,8 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
   UInt16 rowsPerPage;
   UInt16 newTopVisibleRecord;
  
+  ListFormFindStart();
+
   form = FrmGetActiveForm();
   table = FrmGetObjectPtrFromID(form, ListTable);
   rowsPerPage = ListFormNumberOfRows(table) - 1;
@@ -423,24 +427,30 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
 
   if (direction == winDown) {
     // Forward n or last page.
-    if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekForward)) {
+    if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekForward,
+                                g_CurrentCategory, g_FindState)) {
       newTopVisibleRecord = dmMaxRecordIndex;        
       if (byPage) {
-        if (!BookDatabaseSeekRecord(&newTopVisibleRecord, rowsPerPage, dmSeekBackward)) {
+        if (!BookDatabaseSeekRecord(&newTopVisibleRecord, rowsPerPage, dmSeekBackward,
+                                    g_CurrentCategory, g_FindState)) {
           newTopVisibleRecord = 0;
-          BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward);
+          BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward,
+                                 g_CurrentCategory, g_FindState);
         }
       }
       else {
-        BookDatabaseSeekRecord(&newTopVisibleRecord, 1, dmSeekBackward);
+        BookDatabaseSeekRecord(&newTopVisibleRecord, 1, dmSeekBackward,
+                               g_CurrentCategory, g_FindState);
       }
     }
   }
   else {
     // Backward n or top.
-    if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekBackward)) {
+    if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekBackward,
+                                g_CurrentCategory, g_FindState)) {
       newTopVisibleRecord = 0;
-      BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward);
+      BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward,
+                             g_CurrentCategory, g_FindState);
     }
   }
 
@@ -449,6 +459,8 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
     ListFormLoadTable();
     TblRedrawTable(table);
   }
+
+  ListFormFindCleanup();
 }
 
 static void ListFormSelectCategory()
@@ -495,16 +507,43 @@ static void ListFormFieldChanged()
 
 static void ListFormFind()
 {
-  Char *key;
+  FrmUpdateForm(FrmGetActiveFormID(), UPDATE_FORCE_REDRAW);
+}
 
+static void ListFormFindStart()
+{
+  Char *key;
   FormType *form;
   FieldType *field;
+  ListType *list;
+
+  if (NULL != g_FindState)
+    return;
 
   form = FrmGetActiveForm();
   field = FrmGetObjectPtrFromID(form, ListFindTextField);
   key = FldGetTextPtr(field);
   if ((NULL == key) || ('\0' == *key))
     return;
+
+  g_FindState = MemPtrNew(sizeof(BookFindState));
+  if (NULL == g_FindState)
+    return;
+
+  list = FrmGetObjectPtrFromID(form, ListFindTypeList);
+  g_FindState->findType = LstGetSelection(list) + 1;
+  g_FindState->findKey = key;
+  g_FindState->keyPrep = NULL;
+}
+
+static void ListFormFindCleanup()
+{
+  if (NULL != g_FindState) {
+    if (NULL != g_FindState->keyPrep)
+      MemPtrFree(g_FindState->keyPrep);
+    MemPtrFree(g_FindState);
+    g_FindState = NULL;
+  }
 }
 
 /*** Display ***/
@@ -517,6 +556,10 @@ static void ListFormLoadTable()
   UInt16 lineHeight;
   UInt16 recordNum;
   Int16 row, nrows, nvisible;
+  Boolean scrollableUp, scrollableDown;
+  UInt16 upIndex, downIndex;
+
+  ListFormFindStart();
 
   form = FrmGetActiveForm();
   table = FrmGetObjectPtrFromID(form, ListTable);
@@ -530,9 +573,8 @@ static void ListFormLoadTable()
 
   recordNum = g_TopVisibleRecord;
   for (row = 0; row < nvisible; row++) {
-    if (!BookDatabaseSeekRecord(&recordNum, 
-                                (row > 0) ? 1 : 0, 
-                                dmSeekForward))
+    if (!BookDatabaseSeekRecord(&recordNum, (row > 0) ? 1 : 0, dmSeekForward,
+                                g_CurrentCategory, g_FindState))
       break;
 
     TblSetRowUsable(table, row, true);
@@ -546,34 +588,24 @@ static void ListFormLoadTable()
     row++;
   }
 
-  ListFormUpdateScrollButtons();
-}
-
-static void ListFormUpdateScrollButtons()
-{
-  FormType *form;
-  TableType *table;
-  Int16 row;
-  UInt16 recordNum;
-  Boolean scrollableUp, scrollableDown;
-  UInt16 upIndex, downIndex;
-
   recordNum = g_TopVisibleRecord;
   // Up if top not first record.
-  scrollableUp = BookDatabaseSeekRecord(&recordNum, 1, dmSeekBackward);
+  scrollableUp = BookDatabaseSeekRecord(&recordNum, 1, dmSeekBackward,
+                                        g_CurrentCategory, g_FindState);
  
-  form = FrmGetActiveForm();
-  table = FrmGetObjectPtrFromID(form, ListTable);
   row = TblGetLastUsableRow(table);
   if (row != -1)
     recordNum = TblGetRowID(table, row);
 
   // Down if bottom not last record.
-  scrollableDown = BookDatabaseSeekRecord(&recordNum, 1, dmSeekForward);
+  scrollableDown = BookDatabaseSeekRecord(&recordNum, 1, dmSeekForward,
+                                          g_CurrentCategory, g_FindState);
 
   upIndex = FrmGetObjectIndex(form, ListScrollUpRepeating);
   downIndex = FrmGetObjectIndex(form, ListScrollDownRepeating);
   FrmUpdateScrollers(form, upIndex, downIndex, scrollableUp, scrollableDown);
+
+  ListFormFindCleanup();
 }
 
 static Boolean ListFormUpdateDisplay(UInt16 updateCode)

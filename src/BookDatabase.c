@@ -390,61 +390,196 @@ Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive)
   return errNone;
 }
 
-Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction)
+Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
+                               UInt16 category, BookFindState *findState)
 {
-  Char *searchKey;
-  UInt16 searchFields, searchToGo;
-  Char *p;
-  UInt32 outPos;
-  UInt16 len, outLen;
-  int i;
-  Boolean found, match;
-  MemHandle recordH;
-  BookRecordPacked *packed;
+  Boolean found;
 
-  searchKey = NULL;
-  if (searchFields) {
-    // TODO: More filtering.
-  }
-
-  if (NULL == searchKey)
-    searchFields = 0;
-
-  if (!searchFields) 
+  if (NULL == findState)
     return (errNone == DmSeekRecordInCategory(g_BookDatabase, index, offset, direction,
-                                              g_CurrentCategory));
-
+                                              category));
+  
   found = true;
-  do {
-    if (errNone != DmSeekRecordInCategory(g_BookDatabase, index, 1, direction,
-                                          g_CurrentCategory)) {
+  while (true) {
+    if (errNone != DmSeekRecordInCategory(g_BookDatabase, index, 
+                                          (0 == offset) ? 0 : 1, 
+                                          direction, category)) {
       found = false;
       break;
     }
 
-    recordH = DmQueryRecord(g_BookDatabase, *index);
-    if (NULL == recordH)
+    if (!BookRecordFindMatch(*index, findState)) {
+      if (offset == 0) offset = 1;
       continue;
-    packed = (BookRecordPacked *)MemHandleLock(recordH);
-    p = packed->fields;
-    match = true;
-    searchToGo = searchFields;
-    for (i = 0; i < BOOK_NFIELDS; i++) {
-      len = StrLen(p);
-      if (searchToGo & (1 << i)) {
-        match = TxtGlueFindString(p, searchKey, &outPos, &outLen);
-        searchToGo &= ~(1 << i);
-        if (!match || !searchToGo) 
-          break;
-      }
-      p += len + 1;
     }
-    MemHandleUnlock(recordH);
-    if (!match) continue;
-  } while (offset-- > 0);
 
-  MemPtrFree(searchKey);
+    if (--offset <= 0) 
+      break;
+  }
+
   return found;
+}
+
+Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState)
+{
+  MemHandle recordH;
+  BookRecordPacked *packed;
+  const Char *fldp, *keyp, *valp;
+  Char *outp, ch;
+  UInt16 len;
+  UInt16 searchMask;
+  int i;
+  Boolean match;
+
+  if (NULL == findState->keyPrep) {
+    len = StrLen(findState->findKey);
+    switch (findState->findType) {
+    case FIND_NONE:
+    case FIND_ISBN:
+      break;
+      
+    case FIND_TAGS:
+      // Prep'ed key is null-terminated strings between commas, followed by another nul.
+      outp = findState->keyPrep = (Char *)MemPtrNew(len + 1);
+      keyp = findState->findKey;
+      while (true) {
+        ch = *keyp++;
+        if ('\0' == ch) break;
+        if (',' == ch) {
+          *outp++ = '\0';
+          while (' ' == *keyp) keyp++;
+        }
+        *outp++ = ch;
+      }
+      *outp++ = '\0';
+      *outp++ = '\0';
+      break;
+
+    default:
+      findState->keyPrep = (Char *)MemPtrNew(len + 1);
+      if (NULL == findState->keyPrep) return false;
+      TxtGluePrepFindString(findState->findKey, findState->keyPrep, len + 1);
+    }
+  }
+
+  switch (findState->findType) {
+  case FIND_NONE:
+    searchMask = 0;
+    break;
+
+  case FIND_ALL:
+    searchMask = (1 << FIELD_TITLE) | (1 << FIELD_AUTHOR) | (1 << FIELD_PUBLICATION) |
+      (1 << FIELD_SUMMARY) | (1 << FIELD_COMMENTS);
+    break;
+
+  case FIND_TITLE:
+    searchMask = (1 << FIELD_TITLE);
+    break;
+
+  case FIND_AUTHOR:
+    searchMask = (1 << FIELD_AUTHOR);
+    break;
+
+  case FIND_ISBN:
+    searchMask = (1 << FIELD_ISBN);
+    break;
+
+  case FIND_TAGS:
+    searchMask = (1 << FIELD_TAGS);
+    break;
+
+  case FIND_COMMENTS:
+    searchMask = (1 << FIELD_COMMENTS);
+    break;
+  }
+
+  recordH = DmQueryRecord(g_BookDatabase, index);
+  if (NULL == recordH)
+    return false;
+  packed = (BookRecordPacked *)MemHandleLock(recordH);
+
+  searchMask &= packed->fieldMask;
+  if (0 == searchMask) {
+    MemHandleUnlock(recordH);
+    return false;
+  }
+
+  match = false;
+  fldp = packed->fields;
+  for (i = 0; i < BOOK_NFIELDS; i++) {
+    len = StrLen(fldp);
+    if (searchMask & (1 << i)) {
+      switch (findState->findType) {
+      case FIND_NONE:
+        break;
+
+      case FIND_ISBN:
+        // Caseless compare ignoring the - character.
+        // Could just go digits with special case for 'X'.
+        keyp = findState->findKey;
+        valp = fldp;
+        while (true) {
+          while ('-' == *keyp) keyp++;
+          while ('-' == *valp) valp++;
+          if ('\0' == *keyp) {
+            match = true;
+            break;
+          }
+          if ('\0' == *valp)
+            break;
+          if (TxtGlueUpperChar(*keyp++) != TxtGlueUpperChar(*valp++))
+            break;
+        }
+        break;
+      
+      case FIND_TAGS:
+        // Must have all given keys as left substrings of some tag.
+        match = true;
+        keyp = findState->keyPrep;
+        while ('\0' != *keyp) {
+          valp = fldp;
+          while (true) {
+            valp = StrStr(valp, keyp);
+            if (NULL == valp) {
+              match = false;
+              break;
+            }
+            if ((valp == fldp) ||
+                (',' == *(valp-1)) ||
+                ((' ' == *(valp-1)) &&
+                 (',' == *(valp-2)))) {
+              if (keyp == findState->keyPrep) {
+                // Match indicator to first such.
+                findState->matchPos = (valp - fldp);
+                findState->matchLen = StrLen(keyp);
+              }
+              break;
+            }
+            valp++;             // False match within some tag.
+          }
+          if (!match) break;
+          keyp += StrLen(keyp) + 1; // Next key tag.
+        }
+        break;
+
+      default:
+        match = TxtGlueFindString(fldp, findState->keyPrep, 
+                                  &findState->matchPos, &findState->matchLen);
+      }
+      if (match) {
+        findState->matchField = i;
+        break;
+      }
+      searchMask &= ~(1 << i);
+      if (0 == searchMask)
+        break;
+    }
+    if (packed->fieldMask & (1 << i))
+      fldp += len + 1;
+  }
+
+  MemHandleUnlock(recordH);
+  return match;
 }
 
 Char *BookDatabaseGetCategoryName(UInt16 index)
