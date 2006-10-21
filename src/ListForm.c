@@ -49,7 +49,6 @@ static void ListFormFieldChanged();
 static void ListFormFindStart();
 static void ListFormFindCleanup();
 static void ListFormFind();
-static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds);
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 {
@@ -669,7 +668,7 @@ static void ListFormDrawRecord(MemPtr table, Int16 row, Int16 column,
 
   switch (column) {
   case COL_TITLE:
-    ListFormDrawTitle(&record, bounds);
+    ListFormDrawTitle(&record, bounds, g_ListFields);
     break;
   }
 
@@ -703,7 +702,7 @@ static void DrawTruncChars(char *str, Int16 *length, Int16 x, Int16 y, Int16 *wi
   }
 }
 
-static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
+void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFields)
 {
   Char *str1, *str2;
   UInt16 len1, len2;
@@ -713,7 +712,7 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
 
   str1 = str2 = NULL;
   len1 = len2 = 0;
-  switch (g_ListFields) {
+  switch (listFields) {
   case KEY_TITLE:
     str1 = record->fields[FIELD_TITLE];
     break;
@@ -748,7 +747,7 @@ static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds)
   if (NULL == str2) {
     noneH = NULL;
     if (NULL == str1) {
-      switch (g_ListFields) {
+      switch (listFields) {
       case KEY_TITLE:
       case KEY_TITLE_AUTHOR:
       case KEY_AUTHOR_TITLE:

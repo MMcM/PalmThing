@@ -122,6 +122,8 @@ extern FieldType *GetFocusField();
 extern void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
 extern void ListFormSetdown(AppPreferences *prefs);
 extern Boolean ListFormHandleEvent(EventType *event);
+extern void ListFormDrawTitle(BookRecord *record, RectangleType *bounds,
+                              UInt16 listFields);
 extern Boolean PreferencesFormHandleEvent(EventType *event);
 
 /*** View form routines ***/
@@ -173,3 +175,5 @@ extern Err BookRecordSetCategory(UInt16 index, UInt16 category);
 extern Char *BookRecordGetCategoryName(UInt16 index);
 extern UInt16 BookDatabaseGetSortFields();
 extern void BookDatabaseSetSortFields(Int16 sortFields);
+extern Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc, 
+                            void (*drawRecord)(BookRecord*, RectangleType*, UInt16));

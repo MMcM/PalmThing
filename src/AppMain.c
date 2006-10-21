@@ -23,28 +23,13 @@ void AboutFormDisplay()
 }
 
 /** Initial application startup. **/
-static Err AppStart(UInt16 launchFlags)
+static Err AppStart()
 {
   AppPreferences prefs, *pprefs;
   Int16 prefVer;
   UInt16 prefsSize;
   BookAppInfo *appInfo;
   Err error;
-
-  // Get version of system ROM.
-  FtrGet(sysFtrCreator, sysFtrNumROMVersion, &g_ROMVersion);
-  if (g_ROMVersion < SYS_ROM_MIN) {
-    if ((launchFlags & (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) ==
-                       (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) {
-      FrmAlert(RomIncompatibleAlert);
-  
-      // Pilot 1.0 will continuously relaunch this app unless we
-      // switch to another safe one.
-      if (g_ROMVersion < sysMakeROMVersion(2,0,0,sysROMStageRelease,0))
-        AppLaunchWithCommand(sysFileCDefaultApp, sysAppLaunchCmdNormalLaunch, NULL);
-    }
-    return sysErrRomIncompatible;
-  }
 
   prefsSize = sizeof(prefs);
   prefVer = PrefGetAppPreferences(APP_CREATOR, APP_PREF_ID, &prefs, &prefsSize, true);
@@ -161,17 +146,75 @@ static void AppEventLoop()
   } while (event.eType != appStopEvent);
 }
 
+static Err GoTo(GoToParamsPtr params)
+{
+  return errNone;
+}
+
 /** Main entry point **/
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
 {
-  Err error = errNone;
+  Err error;
 
+  // Get version of system ROM.
+  FtrGet(sysFtrCreator, sysFtrNumROMVersion, &g_ROMVersion);
+  if (g_ROMVersion < SYS_ROM_MIN) {
+    if ((launchFlags & (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) ==
+                       (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) {
+      FrmAlert(RomIncompatibleAlert);
+  
+      // Pilot 1.0 will continuously relaunch this app unless we
+      // switch to another safe one.
+      if (g_ROMVersion < sysMakeROMVersion(2,0,0,sysROMStageRelease,0))
+        AppLaunchWithCommand(sysFileCDefaultApp, sysAppLaunchCmdNormalLaunch, NULL);
+    }
+    return sysErrRomIncompatible;
+  }
+
+  error = errNone;
   switch (cmd) {
   case sysAppLaunchCmdNormalLaunch:
-    error = AppStart(launchFlags);
-    if (errNone == error) {
+    error = AppStart();
+    if (error) return error;
+    AppEventLoop();
+    AppStop();
+    break;
+
+  case sysAppLaunchCmdFind:
+    error = BookDatabaseFind((FindParamsType *)cmdPBP, FindHeader, ListFormDrawTitle);
+    break;
+
+  case sysAppLaunchCmdGoTo:
+    if (launchFlags & sysAppLaunchFlagNewGlobals) {
+      error = AppStart();
+      if (error) return error;
+    }
+    error = GoTo((GoToParamsType *)cmdPBP);
+    if (launchFlags & sysAppLaunchFlagNewGlobals) {
       AppEventLoop();
-      AppStop();
+      AppStop();   
+    }      
+    break;
+
+  case sysAppLaunchCmdSyncNotify:
+    // TODO: register for Exg.
+    break;
+
+  case sysAppLaunchCmdExgAskUser:
+    // TODO: Exg dialog.
+    break;
+
+  case sysAppLaunchCmdExgReceiveData:
+    if (launchFlags & sysAppLaunchFlagSubCall) {
+      FrmSaveAllForms();
+    }
+    else {
+      error = BookDatabaseOpen();
+      if (error) return error;
+    }
+    // TODO: Exg receive.
+    if (!(launchFlags & sysAppLaunchFlagSubCall)) {
+      BookDatabaseClose();
     }
     break;
   }

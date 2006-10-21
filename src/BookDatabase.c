@@ -420,10 +420,9 @@ Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
   return found;
 }
 
-Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState)
+static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed, 
+                                         BookFindState *findState)
 {
-  MemHandle recordH;
-  BookRecordPacked *packed;
   const Char *fldp, *keyp, *valp;
   Char *outp, ch;
   UInt16 len;
@@ -493,16 +492,9 @@ Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState)
     break;
   }
 
-  recordH = DmQueryRecord(g_BookDatabase, index);
-  if (NULL == recordH)
-    return false;
-  packed = (BookRecordPacked *)MemHandleLock(recordH);
-
   searchMask &= packed->fieldMask;
-  if (0 == searchMask) {
-    MemHandleUnlock(recordH);
+  if (0 == searchMask)
     return false;
-  }
 
   match = false;
   fldp = packed->fields;
@@ -577,8 +569,24 @@ Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState)
     if (packed->fieldMask & (1 << i))
       fldp += len + 1;
   }
+  
+  return match;
+}
 
+Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState)
+{
+  MemHandle recordH;
+  BookRecordPacked *packed;
+  Boolean match;
+
+  recordH = DmQueryRecord(g_BookDatabase, index);
+  if (NULL == recordH)
+    return false;
+
+  packed = (BookRecordPacked *)MemHandleLock(recordH);
+  match = BookRecordPackedFindMatch(packed, findState);
   MemHandleUnlock(recordH);
+
   return match;
 }
 
@@ -777,4 +785,77 @@ void BookDatabaseSetSortFields(Int16 sortFields)
   MemPtrUnlock(appInfo);
   
   DmQuickSort(g_BookDatabase, BookRecordCompare, sortFields);
+}
+
+Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc, 
+                     void (*drawRecord)(BookRecord*, RectangleType*, UInt16))
+{
+  DmSearchStateType searchState;
+  LocalID dbID;
+  UInt16 cardNo;
+  DmOpenRef db;
+  MemHandle headerH;
+  const Char *header;
+  BookFindState findState;
+  UInt16 listFields;
+  UInt16 recordNum;
+  MemHandle recordH;
+  BookRecordPacked *packed;
+  BookRecord record;
+  RectangleType bounds;
+  Err error;
+  Boolean done;
+
+  error = DmGetNextDatabaseByTypeCreator(true, &searchState, DB_TYPE, APP_CREATOR, 
+                                         true, &cardNo, &dbID);
+  if (error) {
+    params->more = false;
+    return error;
+  }
+  db = DmOpenDatabase(cardNo, dbID, params->dbAccesMode);
+  if (NULL == db) {
+    params->more = false;
+    return DmGetLastErr();
+  }
+
+  headerH = DmGetResource(strRsc, headerRsc);
+  header = MemHandleLock(headerH);
+  done = FindDrawHeader(params, header);
+  MemHandleUnlock(headerH);
+  DmReleaseResource(headerH);
+  
+  findState.findType = FIND_ALL;
+  findState.findKey = params->strAsTyped;
+  findState.keyPrep = params->strToFind;
+
+  listFields = KEY_TITLE_AUTHOR; // TODO: Move from prefs to db?
+
+  recordNum = params->recordNum;
+  while (!done) {
+    recordH = DmQueryNextInCategory(db, &recordNum, dmAllCategories);
+    if (NULL == recordH) {
+      params->more = false;         
+      break;
+    }
+
+    packed = (BookRecordPacked *)MemHandleLock(recordH);
+
+    if (BookRecordPackedFindMatch(packed, &findState)) {
+      done = FindSaveMatch(params, recordNum, findState.matchPos, findState.matchField, 
+                           findState.matchLen, cardNo, dbID);
+      if (!done) {
+        UnpackRecord(packed, &record);
+        FindGetLineBounds(params, &bounds);
+        FntSetFont(stdFont);
+        drawRecord(&record, &bounds, listFields);
+        params->lineNumber++;
+      }
+    }
+
+    MemHandleUnlock(recordH);
+    recordNum++;
+  }
+
+  DmCloseDatabase(db);
+  return error;
 }
