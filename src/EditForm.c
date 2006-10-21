@@ -178,18 +178,16 @@ static void EditFormOpen(FormType *form)
 
 Boolean EditFormHandleEvent(EventType *event)
 {
-  Boolean handled;
   FormType *form;
+  Boolean handled;
 
   handled = false;
 
   switch (event->eType) {
   case frmOpenEvent:
-    {
-      form = FrmGetActiveForm();
-      EditFormOpen(form);
-      FrmDrawForm(form);
-    }
+    form = FrmGetActiveForm();
+    EditFormOpen(form);
+    FrmDrawForm(form);
     handled = true;
     break;
 
@@ -290,7 +288,7 @@ Boolean EditFormHandleEvent(EventType *event)
 
 /*** Commands ***/
 
-static FieldType *GetFocusField()
+FieldType *GetFocusField()
 {
   FormType *form;
   UInt16 focus;
@@ -315,40 +313,44 @@ static Boolean EditFormMenuCommand(UInt16 command)
   FieldType *field;
   Boolean handled;
  
-  field = GetFocusField();
   handled = false;
 
   switch (command) {
   case EditUndo:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldUndo(field);
       handled = true;
     }
     break;
 
   case EditCut:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldCut(field);
       handled = true;
     }
     break;
 
   case EditCopy:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldCopy(field);
       handled = true;
     }
     break;
    
   case EditPaste:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldPaste(field);
       handled = true;
     }
     break;
    
   case EditSelectAll:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldSetSelection(field, 0, FldGetTextLength(field));
       handled = true;
     }

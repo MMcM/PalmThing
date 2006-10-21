@@ -97,19 +97,16 @@ static void ViewFormOpen(FormType *form)
 
 Boolean ViewFormHandleEvent(EventType *event)
 {
+  FormType *form;
   Boolean handled = false;
 
   switch (event->eType) {
   case frmOpenEvent:
-    {
-      FormType  *form;
-
-      form = FrmGetActiveForm();
-      ViewFormOpen(form);
-      FrmDrawForm(form);
-      if (!SYS_ROM_3_5)
-        ViewFormGadgetDraw();
-    }
+    form = FrmGetActiveForm();
+    ViewFormOpen(form);
+    FrmDrawForm(form);
+    if (!SYS_ROM_3_5)
+      ViewFormGadgetDraw();
     handled = true;
     break;
 

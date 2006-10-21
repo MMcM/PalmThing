@@ -97,9 +97,9 @@ static void NoteFormOpen(FormType *form)
 
 Boolean NoteFormHandleEvent(EventType *event)
 {
-  Boolean handled;
   FormType *form;
   FieldType *field;
+  Boolean handled;
 
   handled = false;
 

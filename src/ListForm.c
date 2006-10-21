@@ -17,7 +17,7 @@ enum { COL_TITLE };
 #define UPDATE_FORCE_REDRAW 0x01
 #define UPDATE_FONT_CHANGED 0x02
 #define UPDATE_CATEGORY_CHANGED 0x04
-#define UPDATE_LOOKUP_TYPE_CHANGED 0x08
+#define UPDATE_FIND_TYPE_CHANGED 0x08
 
 #define SPACE_BETWEEN_FIELDS 4
 #define LEFT_FRACTION_NUM 3
@@ -28,7 +28,7 @@ enum { COL_TITLE };
 static UInt16 g_TopVisibleRecord = 0;
 static FontID g_ListFont = stdFont;
 static UInt16 g_ListFields = KEY_TITLE_AUTHOR;
-static Boolean g_IncrementalLookup = true;
+static Boolean g_IncrementalFind = true;
 
 /*** Local routines ***/
 
@@ -38,13 +38,15 @@ static void ListFormLoadTable();
 static Boolean ListFormMenuCommand(UInt16 command);
 static void ListFormItemSelected(EventType *event);
 static void ListFormSelectCategory();
-static void ListFormLookupTypeSelected(EventType *event);
+static void ListFormFindTypeSelected(EventType *event);
 static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean byPage);
 static Boolean ListFormUpdateDisplay(UInt16 updateCode);
 static void ListBeamCategory(Boolean send);
 static void ListFontSelect();
 static void ListFormUpdateScrollButtons();
 static void ListFormSelectRecord(UInt16 recordNum);
+static void ListFormFieldChanged();
+static void ListFormFind();
 static void ListFormDrawTitle(BookRecord *record, RectangleType *bounds);
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
@@ -64,7 +66,7 @@ void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
   else {
     g_ListFont = prefs->listFont;
     g_ListFields = prefs->listFields;
-    g_IncrementalLookup = prefs->incrementalLookup;
+    g_IncrementalFind = prefs->incrementalFind;
   }
 }
 
@@ -72,7 +74,7 @@ void ListFormSetdown(AppPreferences *prefs)
 {
   prefs->listFont = g_ListFont;
   prefs->listFields = g_ListFields;
-  prefs->incrementalLookup = g_IncrementalLookup;
+  prefs->incrementalFind = g_IncrementalFind;
 }
 
 static void ListFormOpen(FormType *form)
@@ -114,22 +116,21 @@ static void ListFormOpen(FormType *form)
 
 Boolean ListFormHandleEvent(EventType *event)
 {
+  FormType *form;
+  FieldType *field;
+  UInt16 index;
   Boolean handled;
 
   handled = false;
 
   switch (event->eType) {
   case frmOpenEvent:
-    {
-      FormType *form;
-
-      form = FrmGetActiveForm();
-      ListFormOpen(form);
-      FrmDrawForm(form);
+    form = FrmGetActiveForm();
+    ListFormOpen(form);
+    FrmDrawForm(form);
       
-      if (NO_RECORD != g_CurrentRecord)
-        ListFormSelectRecord(g_CurrentRecord);
-    }
+    if (NO_RECORD != g_CurrentRecord)
+      ListFormSelectRecord(g_CurrentRecord);
     handled = true;
     break;
 
@@ -155,13 +156,30 @@ Boolean ListFormHandleEvent(EventType *event)
       EditFormNewRecord();
       handled = true;
       break;
+
+    case ListFindClearButton:
+      form = FrmGetActiveForm();
+      index = FrmGetObjectIndex(form, ListFindTextField);
+      field = FrmGetObjectPtr(form, index);
+      if (noFocus == FrmGetFocus(form)) {
+        FrmSetFocus(form, index);
+      }
+      FldDelete(field, 0, FldGetTextLength(field));
+      // Sends fldChangedEvent, so no need for ListFormFieldChanged() here.
+      handled = true;
+      break;
+
+    case ListFindButton:
+      ListFormFind();
+      handled = true;
+      break;
     }
     break;
   
   case popSelectEvent:
     switch (event->data.popSelect.controlID) {
-    case ListLookupTypePopTrigger:
-      ListFormLookupTypeSelected(event);
+    case ListFindTypePopTrigger:
+      ListFormFindTypeSelected(event);
       handled = true;
       break;
     }
@@ -199,16 +217,39 @@ Boolean ListFormHandleEvent(EventType *event)
         break;
      
       case linefeedChr:
-        if (NO_RECORD != g_CurrentRecord)
+        form = FrmGetActiveForm();
+        if (noFocus != FrmGetFocus(form)) {
+          FrmSetFocus(form, noFocus);
+          ListFormFind();
+        }
+        else if (NO_RECORD != g_CurrentRecord) {
           ViewFormActivate();
+        }
         handled = true;
         break;
      
       default:
-        // TODO: Expose lookup control and begin typing.
+        if (TxtGlueCharIsPrint(event->data.keyDown.chr)) {
+          form = FrmGetActiveForm();
+          index = FrmGetObjectIndex(form, ListFindTextField);
+          field = FrmGetObjectPtr(form, index);
+          if (noFocus == FrmGetFocus(form)) {
+            FrmSetFocus(form, index);
+          }
+          FldHandleEvent(field, event);
+          ListFormFieldChanged();
+          handled = true;
+        }
         break;
       }
     }
+    break;
+
+  case fldChangedEvent:
+    ListFormFieldChanged();
+    break;
+
+  case nilEvent:
     break;
 
   default:
@@ -222,11 +263,62 @@ Boolean ListFormHandleEvent(EventType *event)
 
 static Boolean ListFormMenuCommand(UInt16 command)
 {
+  FieldType *field;
   Boolean handled;
  
   handled = false;
 
   switch (command) {
+  case EditUndo:
+    field = GetFocusField();
+    if (NULL != field) {
+      FldUndo(field);
+      handled = true;
+    }
+    break;
+
+  case EditCut:
+    field = GetFocusField();
+    if (NULL != field) {
+      FldCut(field);
+      handled = true;
+    }
+    break;
+
+  case EditCopy:
+    field = GetFocusField();
+    if (NULL != field) {
+      FldCopy(field);
+      handled = true;
+    }
+    break;
+   
+  case EditPaste:
+    field = GetFocusField();
+    if (NULL != field) {
+      FldPaste(field);
+      handled = true;
+    }
+    break;
+   
+  case EditSelectAll:
+    field = GetFocusField();
+    if (NULL != field) {
+      FldSetSelection(field, 0, FldGetTextLength(field));
+      handled = true;
+    }
+    break;
+   
+  case EditKeyboard:
+    SysKeyboardDialog(kbdDefault);
+    handled = true;
+    break;
+   
+  case EditGraffitiHelp:
+    SysGraffitiReferenceDialog(referenceDefault);
+    handled = true;
+    break;
+
   case RecordBeamCategory:
     ListBeamCategory(false);
     handled = true;
@@ -378,7 +470,7 @@ static void ListFormSelectCategory()
   }
 }
 
-static void ListFormLookupTypeSelected(EventType *event)
+static void ListFormFindTypeSelected(EventType *event)
 {
   Char *label, *selection;
   UInt16 len;
@@ -392,8 +484,27 @@ static void ListFormLookupTypeSelected(EventType *event)
   CtlSetLabel(event->data.popSelect.controlP, label);
 
   if (event->data.popSelect.selection != event->data.popSelect.priorSelection) {
-    FrmUpdateForm(FrmGetActiveFormID(), UPDATE_LOOKUP_TYPE_CHANGED);
+    FrmUpdateForm(FrmGetActiveFormID(), UPDATE_FIND_TYPE_CHANGED);
   }
+}
+
+static void ListFormFieldChanged()
+{
+
+}
+
+static void ListFormFind()
+{
+  Char *key;
+
+  FormType *form;
+  FieldType *field;
+
+  form = FrmGetActiveForm();
+  field = FrmGetObjectPtrFromID(form, ListFindTextField);
+  key = FldGetTextPtr(field);
+  if ((NULL == key) || ('\0' == *key))
+    return;
 }
 
 /*** Display ***/
@@ -708,7 +819,7 @@ static void PreferencesFormOpen(FormType *form)
   CtlSetLabel(ctl, label);
 
   ctl = FrmGetObjectPtrFromID(form, PreferencesIncrementalCheckbox);
-  CtlSetValue(ctl, g_IncrementalLookup);
+  CtlSetValue(ctl, g_IncrementalFind);
   
   FrmSetControlGroupSelection(form, PreferencesViewGroup,
                               (g_ViewSummary) ? PrefsViewSummaryPushButton :
@@ -759,7 +870,7 @@ static void PreferencesFormSave()
   }
 
   ctl = FrmGetObjectPtrFromID(form, PreferencesIncrementalCheckbox);
-  g_IncrementalLookup = CtlGetValue(ctl);
+  g_IncrementalFind = CtlGetValue(ctl);
   
   g_ViewSummary = 
     (FrmGetObjectId(form, FrmGetControlGroupSelection(form, PreferencesViewGroup)) == 

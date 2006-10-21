@@ -68,18 +68,16 @@ static void ISBNFormOpen(FormType *form)
 
 Boolean ISBNFormHandleEvent(EventType *event)
 {
-  Boolean handled;
   FormType *form;
+  Boolean handled;
 
   handled = false;
 
   switch (event->eType) {
   case frmOpenEvent:
-    {
-      form = FrmGetActiveForm();
-      ISBNFormOpen(form);
-      FrmDrawForm(form);
-    }
+    form = FrmGetActiveForm();
+    ISBNFormOpen(form);
+    FrmDrawForm(form);
     handled = true;
     break;
 
@@ -148,65 +146,49 @@ Boolean ISBNFormHandleEvent(EventType *event)
 
 /*** Commands ***/
 
-static FieldType *GetFocusField()
-{
-  FormType *form;
-  UInt16 focus;
- 
-  form = FrmGetActiveForm();
-  focus = FrmGetFocus(form);
-  if (noFocus == focus)
-    return NULL;
-  
-  switch (FrmGetObjectType(form, focus)) {
-  case frmTableObj:
-    return TblGetCurrentField(FrmGetObjectPtr(form, focus));
-  case frmFieldObj:
-    return FrmGetObjectPtr(form, focus);
-  default:
-    return NULL;
-  }
-}
-
 static Boolean ISBNFormMenuCommand(UInt16 command)
 {
   FieldType *field;
   Boolean handled;
  
-  field = GetFocusField();
   handled = false;
 
   switch (command) {
   case EditUndo:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldUndo(field);
       handled = true;
     }
     break;
 
   case EditCut:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldCut(field);
       handled = true;
     }
     break;
 
   case EditCopy:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldCopy(field);
       handled = true;
     }
     break;
    
   case EditPaste:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldPaste(field);
       handled = true;
     }
     break;
    
   case EditSelectAll:
-    if (field) {
+    field = GetFocusField();
+    if (NULL != field) {
       FldSetSelection(field, 0, FldGetTextLength(field));
       handled = true;
     }

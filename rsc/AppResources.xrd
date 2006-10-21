@@ -1009,7 +1009,7 @@
 				</BOUNDS>
 				<USABLE> TRUE </USABLE>
 				<ENABLED> TRUE </ENABLED>
-				<TEXT> "Incremental Lookup" </TEXT>
+				<TEXT> "Incremental Find" </TEXT>
 				<FONT_ID> BOLD_FONT </FONT_ID>
 				<GROUP_ID> 0 </GROUP_ID>
 				<SELECTED> FALSE </SELECTED>
@@ -1146,6 +1146,72 @@
 				</MENU_ITEMS>
 			</MENU>
 			<MENU>
+				<TITLE> "Edit" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 49 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 98 </WIDTH>
+					<HEIGHT> 82 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 47 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 27 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1000 </ID>
+						<TITLE> "Undo" </TITLE>
+						<COMMAND> "U" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1001 </ID>
+						<TITLE> "Cut" </TITLE>
+						<COMMAND> "X" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1002 </ID>
+						<TITLE> "Copy" </TITLE>
+						<COMMAND> "C" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1003 </ID>
+						<TITLE> "Paste" </TITLE>
+						<COMMAND> "P" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1004 </ID>
+						<TITLE> "Select All" </TITLE>
+						<COMMAND> "S" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 0 </ID>
+						<TITLE> "-" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1006 </ID>
+						<TITLE> "Keyboard" </TITLE>
+						<COMMAND> "K" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1007 </ID>
+						<TITLE> "Graffiti Help" </TITLE>
+						<COMMAND> "G" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+                        <MENU>
 				<TITLE> "Options" </TITLE>
 				<HIDDEN> FALSE </HIDDEN>
 				<BOUNDS>
@@ -1213,6 +1279,72 @@
 						<ID> 1108 </ID>
 						<TITLE> "Send Category" </TITLE>
 						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+				</MENU_ITEMS>
+			</MENU>
+			<MENU>
+				<TITLE> "Edit" </TITLE>
+				<HIDDEN> FALSE </HIDDEN>
+				<BOUNDS>
+					<LEFT> 49 </LEFT>
+					<TOP> 14 </TOP>
+					<WIDTH> 98 </WIDTH>
+					<HEIGHT> 82 </HEIGHT>
+				</BOUNDS>
+				<TITLE_BOUNDS>
+					<LEFT> 47 </LEFT>
+					<TOP> 0 </TOP>
+					<WIDTH> 27 </WIDTH>
+					<HEIGHT> 12 </HEIGHT>
+				</TITLE_BOUNDS>
+				<MENU_ITEMS>
+					<MENU_ITEM>
+						<ID> 1000 </ID>
+						<TITLE> "Undo" </TITLE>
+						<COMMAND> "U" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1001 </ID>
+						<TITLE> "Cut" </TITLE>
+						<COMMAND> "X" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1002 </ID>
+						<TITLE> "Copy" </TITLE>
+						<COMMAND> "C" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1003 </ID>
+						<TITLE> "Paste" </TITLE>
+						<COMMAND> "P" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1004 </ID>
+						<TITLE> "Select All" </TITLE>
+						<COMMAND> "S" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 0 </ID>
+						<TITLE> "-" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1006 </ID>
+						<TITLE> "Keyboard" </TITLE>
+						<COMMAND> "K" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1007 </ID>
+						<TITLE> "Graffiti Help" </TITLE>
+						<COMMAND> "G" </COMMAND>
 						<HIDDEN> FALSE </HIDDEN>
 					</MENU_ITEM>
 				</MENU_ITEMS>

@@ -38,7 +38,7 @@
 typedef struct {
   FontID listFont, viewFont, editFont, noteFont, isbnFont;
   UInt8 listFields;
-  Boolean incrementalLookup;
+  Boolean incrementalFind;
   Boolean viewSummary;
 } AppPreferences;
 
@@ -97,6 +97,7 @@ extern UInt16 g_CurrentRecord, g_CurrentCategory;
 /*** Application routines ***/
 
 extern void AboutFormDisplay();
+extern FieldType *GetFocusField();
 
 /*** List form routines ***/
 extern void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
