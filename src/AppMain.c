@@ -171,19 +171,20 @@ static void GoToPrepare(GoToParamsPtr params)
 /** Main entry point **/
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
 {
+  UInt32 romVersion;
   Boolean launched;
   Err error;
 
-  // Get version of system ROM.
-  FtrGet(sysFtrCreator, sysFtrNumROMVersion, &g_ROMVersion);
-  if (g_ROMVersion < SYS_ROM_MIN) {
+  // Get version of system ROM (into local since some launch codes don't init globals).
+  FtrGet(sysFtrCreator, sysFtrNumROMVersion, &romVersion);
+  if (romVersion < SYS_ROM_MIN) {
     if ((launchFlags & (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) ==
                        (sysAppLaunchFlagNewGlobals | sysAppLaunchFlagUIApp)) {
       FrmAlert(RomIncompatibleAlert);
   
       // Pilot 1.0 will continuously relaunch this app unless we
       // switch to another safe one.
-      if (g_ROMVersion < sysMakeROMVersion(2,0,0,sysROMStageRelease,0))
+      if (romVersion < sysMakeROMVersion(2,0,0,sysROMStageRelease,0))
         AppLaunchWithCommand(sysFileCDefaultApp, sysAppLaunchCmdNormalLaunch, NULL);
     }
     return sysErrRomIncompatible;
@@ -192,6 +193,7 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
   error = errNone;
   switch (cmd) {
   case sysAppLaunchCmdNormalLaunch:
+    g_ROMVersion = romVersion;
     error = AppStart();
     if (error) return error;
     FrmGotoForm(ListForm);
@@ -206,6 +208,7 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
   case sysAppLaunchCmdGoTo:
     launched = (0 != (launchFlags & sysAppLaunchFlagNewGlobals));
     if (launched) {
+      g_ROMVersion = romVersion;
       error = AppStart();
       if (error) return error;
     }
