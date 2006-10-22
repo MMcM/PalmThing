@@ -23,13 +23,16 @@ static FontID g_ISBNFont = largeBoldFont;
 
 /*** Local routines ***/
 
-static Boolean ISBNFormMenuCommand(UInt16 command);
-static void ISBNFontSelect();
-static void ISBNFormNextField(WinDirectionType direction);
-static void ISBNFormSelectField(UInt16 row, UInt16 column);
-static void ISBNFormSelectCategory();
-static Boolean ISBNFormUpdateDisplay(UInt16 updateCode);
-static void ISBNFormSave();
+static void ISBNFormOpen(FormType *form) ISBN_SECTION;
+static Boolean ISBNFormMenuCommand(UInt16 command) ISBN_SECTION;
+static void ISBNFontSelect() ISBN_SECTION;
+static void ISBNFormNextField(WinDirectionType direction) ISBN_SECTION;
+static void ISBNFormSelectField(UInt16 row, UInt16 column) ISBN_SECTION;
+static void ISBNFormSelectCategory() ISBN_SECTION;
+static Boolean ISBNFormUpdateDisplay(UInt16 updateCode) ISBN_SECTION;
+static void ISBNFormSave() ISBN_SECTION;
+
+static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID) ISBN_SECTION;
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 {

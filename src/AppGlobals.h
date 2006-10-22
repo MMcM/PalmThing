@@ -113,6 +113,8 @@ typedef struct {
 extern UInt32 g_ROMVersion;
 extern UInt16 g_CurrentRecord, g_CurrentCategory;
 
+#include "Sections.h"
+
 /*** Application routines ***/
 
 extern void AboutFormDisplay();
@@ -134,11 +136,11 @@ extern void ViewFormActivate();
 extern UInt16 ViewFormGoToPrepare(GoToParamsPtr params);
 
 /*** Edit form routines ***/
-extern void EditFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
-extern void EditFormSetdown(AppPreferences *prefs);
-extern Boolean EditFormHandleEvent(EventType *event);
-extern void EditFormActivate();
-extern void EditFormNewRecord();
+extern void EditFormSetup(AppPreferences *prefs, BookAppInfo *appInfo) EDIT_SECTION;
+extern void EditFormSetdown(AppPreferences *prefs) EDIT_SECTION;
+extern Boolean EditFormHandleEvent(EventType *event) EDIT_SECTION;
+extern void EditFormActivate() EDIT_SECTION;
+extern void EditFormNewRecord() EDIT_SECTION;
 
 /*** Note form routines ***/
 extern void NoteFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
@@ -148,10 +150,10 @@ extern void NoteFormActivate();
 extern UInt16 NoteFormGoToPrepare(GoToParamsPtr params);
 
 /*** ISBN form routines ***/
-extern void ISBNFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
-extern void ISBNFormSetdown(AppPreferences *prefs);
-extern Boolean ISBNFormHandleEvent(EventType *event);
-extern void ISBNFormActivate();
+extern void ISBNFormSetup(AppPreferences *prefs, BookAppInfo *appInfo) ISBN_SECTION;
+extern void ISBNFormSetdown(AppPreferences *prefs) ISBN_SECTION;
+extern Boolean ISBNFormHandleEvent(EventType *event) ISBN_SECTION;
+extern void ISBNFormActivate() ISBN_SECTION;
 
 /*** Book database routines ***/
 extern Err BookDatabaseOpen();

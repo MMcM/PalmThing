@@ -46,30 +46,34 @@ static Char **g_EditLabels = NULL;
 
 /*** Local routines ***/
 
+static void EditFormOpen(FormType *form) EDIT_SECTION;
 static Err EditFormGetRecordField(MemPtr table, Int16 row, Int16 column, Boolean edit,
                                   MemHandle *dataH, Int16 *dataOffset, Int16 *dataSize, 
-                                  FieldPtr field);
-static Boolean EditFormSaveRecordField(MemPtr table, Int16 row, Int16 column);
-static void EditFormLoadTable();
-static Boolean EditFormUpdateDisplay(UInt16 updateCode);
-static Boolean EditFormMenuCommand(UInt16 command);
-static void EditFormSelectCategory();
-static void EditFormScroll(WinDirectionType direction);
-static void EditFormNextField(WinDirectionType direction);
-static void EditFormSelectField(UInt16 row, UInt16 column);
-static void EditFormResizeField(EventType *event);
-static void EditFormSaveRecord();
-static UInt16 EditFormComputeLabelWidth();
-static void EditBeamRecord(Boolean send);
-static void EditFontSelect();
+                                  FieldPtr field) EDIT_SECTION;
+static Boolean EditFormSaveRecordField(MemPtr table, Int16 row, Int16 column) EDIT_SECTION;
+static void EditFormLoadTable() EDIT_SECTION;
+static Boolean EditFormUpdateDisplay(UInt16 updateCode) EDIT_SECTION;
+static Boolean EditFormMenuCommand(UInt16 command) EDIT_SECTION;
+static void EditFormSelectCategory() EDIT_SECTION;
+static void EditFormScroll(WinDirectionType direction) EDIT_SECTION;
+static void EditFormNextField(WinDirectionType direction) EDIT_SECTION;
+static void EditFormSelectField(UInt16 row, UInt16 column) EDIT_SECTION;
+static void EditFormResizeField(EventType *event) EDIT_SECTION;
+static void EditFormSaveRecord() EDIT_SECTION;
+static UInt16 EditFormComputeLabelWidth() EDIT_SECTION;
+static void EditBeamRecord(Boolean send) EDIT_SECTION;
+static void EditFontSelect() EDIT_SECTION;
 static UInt16 EditFormComputeFieldHeight(TableType *table, UInt16 fieldNumber,
                                          UInt16 columnWidth, UInt16 maxHeight,
-                                         BookRecord *record, FontID *fontID);
+                                         BookRecord *record, FontID *fontID) EDIT_SECTION;
 static void EditFormLoadTableRow(TableType *table, UInt16 row, UInt16 fieldNumber, 
-                                 short rowHeight, FontID fontID);
+                                 short rowHeight, FontID fontID) EDIT_SECTION;
 static void EditFormUpdateScrollButtons(FormType *form, UInt16 bottomFieldNumber,
-                                        Boolean lastItemClipped);
-static void DeleteCurrentRecord(Boolean archive);
+                                        Boolean lastItemClipped) EDIT_SECTION;
+static void DeleteCurrentRecord(Boolean archive) EDIT_SECTION;
+
+static inline void FldSetAutoShift(FieldType *field) EDIT_SECTION;
+static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID) EDIT_SECTION;
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 {

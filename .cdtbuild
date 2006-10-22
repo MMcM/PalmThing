@@ -19,6 +19,7 @@
 <optionReference id="tool.compiler.gcc.68K.option.debugLevel" defaultValue="tool.compiler.m68k_palmos_gcc.option.debug_level.default"/>
 <optionReference id="tool.compiler.gcc.68K.option.defineSymbols">
 <listOptionValue value="__PALMOS__=0x05000000" builtIn="false"/>
+<listOptionValue value="MULTISECTION_BUILD=true" builtIn="false"/>
 </optionReference>
 <optionReference id="tool.compiler.gcc.68K.option.includeDirs">
 <listOptionValue value="&quot;$(TOOLS_DIR)include/stlport&quot;" builtIn="false"/>
