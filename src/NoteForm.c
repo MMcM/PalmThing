@@ -439,6 +439,9 @@ static void NoteFormDrawTitle(FormType *form)
     oldBackColor = WinSetBackColor(UIColorGetTableEntryIndex(UIFormFill));
     oldTextColor = WinSetTextColor(UIColorGetTableEntryIndex(UIFormFrame));
   }
+  else {
+    oldForeColor = oldBackColor = oldTextColor = 0; // Keep compiler happy.
+  }
 
   // Clear the title area and draw the note view title bar.
   WinEraseRectangle(&eraseRect, 0);

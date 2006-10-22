@@ -463,6 +463,7 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
 
   switch (findState->findType) {
   case FIND_NONE:
+  default:
     searchMask = 0;
     break;
 
