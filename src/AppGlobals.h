@@ -13,8 +13,8 @@
 #define SYS_ROM_MIN _SYS_ROM_3_0
 #endif
 
-#if 0
-#define SYS_ROM_3_0 false
+#if 1
+#define SYS_ROM_3_0 true
 #else
 #define SYS_ROM_3_0 (g_ROMVersion >= _SYS_ROM_3_0)
 #endif
@@ -127,6 +127,7 @@ extern void AboutFormDisplay();
 extern FieldType *GetFocusField();
 
 /*** List form routines ***/
+extern void ListFormDowngrade(FormType *form);
 extern void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
 extern void ListFormSetdown(AppPreferences *prefs);
 extern Boolean ListFormHandleEvent(EventType *event);

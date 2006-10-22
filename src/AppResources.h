@@ -24,6 +24,8 @@
 #define ListFindClearButton                       1109
 #define ListFindButton                            1110
 #define ListNewButton                             1111
+#define ListFindClear30Button                     1112
+#define ListFind30Button                          1113
 
 //      Resource: tFRM 1200
 #define ViewForm                                  1200
@@ -149,3 +151,18 @@
 
 //      Resource: tSTL 1000
 #define EditLabels                                1000
+
+//      Resource: tBMP 1000
+#define ClearBitmap                               1000
+
+//      Resource: tBMP 1001
+#define ClearSelectedBitmap                       1001
+
+//      Resource: tBMP 1100
+#define FindBitmap                                1100
+
+//      Resource: tBMP 1101
+#define FindSelectedBitmap                        1001
+
+//      Resource: tBMP 1102
+#define FindActiveBitmap                          1002

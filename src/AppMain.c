@@ -100,6 +100,7 @@ static Boolean AppHandleEvent(EventType* event)
     // event.
     switch (formId) {
     case ListForm:
+      ListFormDowngrade(form);
       FrmSetEventHandler(form, ListFormHandleEvent);
       break;
     case ViewForm:

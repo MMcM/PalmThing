@@ -86,6 +86,28 @@ void ListFormSetdown(AppPreferences *prefs)
   ListFormDeleteFindState();
 }
 
+static void ReplaceGraphicalButton(FormType *form, UInt16 newID, UInt16 oldID)
+{
+  UInt16 index;
+
+  index = FrmGetObjectIndex(form, newID);
+
+  FrmHideObject(form, index);
+
+  index = FrmGetObjectIndex(form, oldID);
+
+  FrmShowObject(form, index-1);
+  FrmShowObject(form, index);
+}
+
+void ListFormDowngrade(FormType *form)
+{
+  if (!SYS_ROM_3_5) {
+    ReplaceGraphicalButton(form, ListFindClearButton, ListFindClear30Button);
+    ReplaceGraphicalButton(form, ListFindButton, ListFind30Button);
+  }
+}
+
 static void ListFormOpen(FormType *form)
 {
   TableType *table;
@@ -175,6 +197,7 @@ Boolean ListFormHandleEvent(EventType *event)
       break;
 
     case ListFindClearButton:
+    case ListFindClear30Button:
       form = FrmGetActiveForm();
       index = FrmGetObjectIndex(form, ListFindTextField);
       field = FrmGetObjectPtr(form, index);
@@ -187,6 +210,7 @@ Boolean ListFormHandleEvent(EventType *event)
       break;
 
     case ListFindButton:
+    case ListFind30Button:
       ListFormFind();
       handled = true;
       break;
@@ -409,7 +433,7 @@ static UInt16 ListFormNumberOfRows(TableType *table)
   Int16 rows, nrows;
   UInt16 tableHeight;
   FontID oldFont;
-  RectangleType  bounds;
+  RectangleType bounds;
 
   nrows = TblGetNumberOfRows(table);
 
