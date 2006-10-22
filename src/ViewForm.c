@@ -80,10 +80,19 @@ void ViewFormSetdown(AppPreferences *prefs)
   prefs->viewSummary = g_ViewSummary;
 }
 
-void ViewFormActivate()
+void ViewFormActivate(BookFilter *filter)
 {
   g_TopFieldNumber = g_TopFieldOffset = 0;
-  g_HilightRecordFieldIndex = NO_FIELD;
+  if ((NULL != filter) &&
+      // Update match pos. for this record.
+      BookRecordFilterMatch(g_CurrentRecord, filter)) {
+    g_HilightRecordFieldIndex = filter->matchField;
+    g_HilightPosition = filter->matchPos;
+    g_HilightLength = filter->matchLen;
+  }
+  else {
+    g_HilightRecordFieldIndex = NO_FIELD;
+  }
   FrmGotoForm(ViewForm);
 }
 

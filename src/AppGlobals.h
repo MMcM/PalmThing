@@ -138,7 +138,7 @@ extern Boolean PreferencesFormHandleEvent(EventType *event);
 extern void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
 extern void ViewFormSetdown(AppPreferences *prefs);
 extern Boolean ViewFormHandleEvent(EventType *event);
-extern void ViewFormActivate();
+extern void ViewFormActivate(BookFilter *filter);
 extern UInt16 ViewFormGoToPrepare(GoToParamsPtr params);
 
 /*** Edit form routines ***/

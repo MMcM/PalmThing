@@ -25,6 +25,7 @@ enum { COL_TITLE };
 
 typedef struct {
   BookSeekState seekState;
+  MemHandle keyHandle;
 } BookFindState;
 
 /*** Local storage ***/
@@ -32,7 +33,7 @@ typedef struct {
 static UInt16 g_TopVisibleRecord = 0;
 static FontID g_ListFont = stdFont;
 static UInt16 g_ListFields = KEY_TITLE_AUTHOR;
-static Boolean g_IncrementalFind = true;
+static Boolean g_IncrementalFind = false; // TODO: Off for now.
 static BookFindState *g_FindState = NULL;
 
 /*** Local routines ***/
@@ -50,9 +51,10 @@ static void ListBeamCategory(Boolean send);
 static void ListFontSelect();
 static void ListFormSelectRecord(UInt16 recordNum);
 static void ListFormFieldChanged();
-static void ListFormFindStart();
-static void ListFormFindCleanup();
 static void ListFormFind();
+static void ListFormUpdateFindState();
+static void ListFormCloseFindState();
+static void ListFormDeleteFindState();
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 {
@@ -80,11 +82,14 @@ void ListFormSetdown(AppPreferences *prefs)
   prefs->listFont = g_ListFont;
   prefs->listFields = g_ListFields;
   prefs->incrementalFind = g_IncrementalFind;
+
+  ListFormDeleteFindState();
 }
 
 static void ListFormOpen(FormType *form)
 {
   TableType *table;
+  FieldType *field;
   FontID oldFont;
   RectangleType tableBounds;
   Int16 row, nrows;
@@ -110,6 +115,13 @@ static void ListFormOpen(FormType *form)
   // TODO: Any extra columns worth having?  Note for comment?  Quick browser link?
 
   TblSetColumnWidth(table, COL_TITLE, tableBounds.extent.x - extraWidth);
+
+  if (NULL != g_FindState) {
+    // Restore previous Find filter.
+    field = FrmGetObjectPtrFromID(form, ListFindTextField);
+    FldSetTextHandle(field, g_FindState->keyHandle);
+    g_FindState->seekState.filter.findKey = FldGetTextPtr(field);
+  }
 
   ListFormLoadTable();
 
@@ -228,7 +240,7 @@ Boolean ListFormHandleEvent(EventType *event)
           ListFormFind();
         }
         else if (NO_RECORD != g_CurrentRecord) {
-          ViewFormActivate();
+          ViewFormActivate((NULL != g_FindState) ? &g_FindState->seekState.filter : NULL);
         }
         handled = true;
         break;
@@ -252,6 +264,10 @@ Boolean ListFormHandleEvent(EventType *event)
 
   case fldChangedEvent:
     ListFormFieldChanged();
+    break;
+
+  case frmCloseEvent:
+    ListFormCloseFindState();
     break;
 
   case nilEvent:
@@ -383,7 +399,7 @@ static void ListFormItemSelected(EventType *event)
   
   switch (event->data.tblSelect.column) {
   case COL_TITLE:
-    ViewFormActivate();
+    ViewFormActivate((NULL != g_FindState) ? &g_FindState->seekState.filter : NULL);
     break;
   }
 }
@@ -416,8 +432,6 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
   TableType *table;
   UInt16 rowsPerPage;
   UInt16 newTopVisibleRecord;
- 
-  ListFormFindStart();
 
   form = FrmGetActiveForm();
   table = FrmGetObjectPtrFromID(form, ListTable);
@@ -462,8 +476,6 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
     ListFormLoadTable();
     TblRedrawTable(table);
   }
-
-  ListFormFindCleanup();
 }
 
 static void ListFormSelectCategory()
@@ -505,23 +517,25 @@ static void ListFormFindTypeSelected(EventType *event)
 
 static void ListFormFieldChanged()
 {
-
+  if (g_IncrementalFind)
+    ListFormFind();
 }
 
 static void ListFormFind()
 {
+  ListFormUpdateFindState();
+  g_TopVisibleRecord = 0;
   FrmUpdateForm(FrmGetActiveFormID(), UPDATE_FORCE_REDRAW);
 }
 
-static void ListFormFindStart()
+static void ListFormUpdateFindState()
 {
   Char *key;
   FormType *form;
   FieldType *field;
   ListType *list;
 
-  if (NULL != g_FindState)
-    return;
+  ListFormDeleteFindState();
 
   form = FrmGetActiveForm();
   field = FrmGetObjectPtrFromID(form, ListFindTextField);
@@ -533,17 +547,46 @@ static void ListFormFindStart()
   if (NULL == g_FindState)
     return;
 
+  MemSet(g_FindState, sizeof(BookFindState), 0);
+
+  g_FindState->keyHandle = FldGetTextHandle(field);
+
   list = FrmGetObjectPtrFromID(form, ListFindTypeList);
   g_FindState->seekState.filter.findType = LstGetSelection(list) + 1;
   g_FindState->seekState.filter.findKey = key;
   g_FindState->seekState.filter.keyPrep = NULL;
 }
 
-static void ListFormFindCleanup()
+static void ListFormCloseFindState()
+{
+  FormType *form;
+  FieldType *field;
+  Char *key;
+
+  form = FrmGetActiveForm();
+  field = FrmGetObjectPtrFromID(form, ListFindTextField);
+
+  if (NULL != g_FindState) {
+    key = FldGetTextPtr(field);
+    if ((NULL == key) || ('\0' == *key)) {
+      ListFormDeleteFindState();
+    }
+    else {
+      FldCompactText(field);
+      g_FindState->seekState.filter.findKey = NULL; // About to be unlocked.
+      FldSetTextHandle(field, NULL);
+    }
+  }
+}
+
+static void ListFormDeleteFindState()
 {
   if (NULL != g_FindState) {
     if (NULL != g_FindState->seekState.filter.keyPrep)
       MemPtrFree(g_FindState->seekState.filter.keyPrep);
+    if (NULL == g_FindState->seekState.filter.findKey)
+      // This is the case where the state is left over with form not open.
+      MemHandleFree(g_FindState->keyHandle);
     MemPtrFree(g_FindState);
     g_FindState = NULL;
   }
@@ -561,8 +604,6 @@ static void ListFormLoadTable()
   Int16 row, nrows, nvisible;
   Boolean scrollableUp, scrollableDown;
   UInt16 upIndex, downIndex;
-
-  ListFormFindStart();
 
   form = FrmGetActiveForm();
   table = FrmGetObjectPtrFromID(form, ListTable);
@@ -607,8 +648,6 @@ static void ListFormLoadTable()
   upIndex = FrmGetObjectIndex(form, ListScrollUpRepeating);
   downIndex = FrmGetObjectIndex(form, ListScrollDownRepeating);
   FrmUpdateScrollers(form, upIndex, downIndex, scrollableUp, scrollableDown);
-
-  ListFormFindCleanup();
 }
 
 static Boolean ListFormUpdateDisplay(UInt16 updateCode)
@@ -641,6 +680,7 @@ static Boolean ListFormUpdateDisplay(UInt16 updateCode)
   }
 
   if (updateCode & UPDATE_CATEGORY_CHANGED) {
+    g_TopVisibleRecord = 0;
     ListFormLoadTable();
     TblRedrawTable(table);
     CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger),
