@@ -54,7 +54,6 @@ static Err AppStart()
 
   MemPtrUnlock(appInfo);
   
-  FrmGotoForm(ListForm);
   return errNone;
 }
 
@@ -146,14 +145,33 @@ static void AppEventLoop()
   } while (event.eType != appStopEvent);
 }
 
-static Err GoTo(GoToParamsPtr params)
+static void GoToPrepare(GoToParamsPtr params)
 {
-  return errNone;
+  EventType event;
+  UInt16 formID;
+ 
+  MemSet(&event, sizeof(EventType), 0);
+
+  formID = ViewFormGoToPrepare(params);
+
+  event.eType = frmLoadEvent;
+  event.data.frmLoad.formID = formID;
+  EvtAddEventToQueue(&event);
+ 
+  // Send frmGotoEvent in place of frmOpenEvent that FrmGotoForm would send.
+  event.eType = frmGotoEvent;
+  event.data.frmGoto.formID = formID;
+  event.data.frmGoto.recordNum = params->recordNum;
+  event.data.frmGoto.matchPos = params->matchPos;
+  event.data.frmGoto.matchLen = params->matchCustom;
+  event.data.frmGoto.matchFieldNum = params->matchFieldNum;
+  EvtAddEventToQueue(&event);
 }
 
 /** Main entry point **/
 UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
 {
+  Boolean launched;
   Err error;
 
   // Get version of system ROM.
@@ -176,6 +194,7 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
   case sysAppLaunchCmdNormalLaunch:
     error = AppStart();
     if (error) return error;
+    FrmGotoForm(ListForm);
     AppEventLoop();
     AppStop();
     break;
@@ -185,12 +204,18 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
     break;
 
   case sysAppLaunchCmdGoTo:
-    if (launchFlags & sysAppLaunchFlagNewGlobals) {
+    launched = (0 != (launchFlags & sysAppLaunchFlagNewGlobals));
+    if (launched) {
       error = AppStart();
       if (error) return error;
     }
-    error = GoTo((GoToParamsType *)cmdPBP);
-    if (launchFlags & sysAppLaunchFlagNewGlobals) {
+    else {
+      // TODO: Is there a case where this affects GoToParamsType.recordNum?
+      // New records are at the end, but an old one might get completely cleared out.
+      FrmCloseAllForms();
+    }
+    GoToPrepare((GoToParamsType *)cmdPBP);
+    if (launched) {
       AppEventLoop();
       AppStop();   
     }      

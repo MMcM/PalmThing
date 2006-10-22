@@ -22,6 +22,10 @@ static FontID g_ViewFont = stdFont;
 /*static*/ Boolean g_ViewSummary = false;
 
 static UInt16 g_TopFieldNumber = 0, g_TopFieldOffset = 0;
+#if 0
+static UInt16 g_HilightRecordFieldIndex = NO_FIELD, 
+   g_HilightPosition = 0, g_HilightLength = 0;
+#endif
 
 static UInt8 g_ViewFields[] = {
   FIELD_TITLE,
@@ -81,7 +85,36 @@ void ViewFormSetdown(AppPreferences *prefs)
 void ViewFormActivate()
 {
   g_TopFieldNumber = g_TopFieldOffset = 0;
+#if 0
+  g_HilightRecordFieldIndex = NO_FIELD;
+#endif
   FrmGotoForm(ViewForm);
+}
+
+UInt16 ViewFormGoToPrepare(GoToParamsPtr params)
+{
+  // In case return to list.
+  if (dmAllCategories != g_CurrentCategory) {
+    g_CurrentCategory = BookRecordGetCategory(params->recordNum);
+  }
+
+  g_CurrentRecord = params->recordNum;
+  g_TopFieldNumber = g_TopFieldOffset = 0;
+  if (FIELD_COMMENTS == params->matchFieldNum) {
+#if 0
+    g_HilightRecordFieldIndex = NO_FIELD;
+#endif
+    return NoteFormGoToPrepare(params);
+  }
+  else {
+#if 0
+    g_HilightRecordFieldIndex = params->matchFieldNum;
+    g_HilightPosition = params->matchPos;
+    g_HilightLength = params->matchCustom;
+#endif
+    // TODO: May need to scroll into view by adjusting g_TopFieldNumber.
+    return ViewForm;
+  }
 }
 
 static void ViewFormOpen(FormType *form)
@@ -102,6 +135,7 @@ Boolean ViewFormHandleEvent(EventType *event)
 
   switch (event->eType) {
   case frmOpenEvent:
+  case frmGotoEvent:            // All the special handling already done by Prepare.
     form = FrmGetActiveForm();
     ViewFormOpen(form);
     FrmDrawForm(form);
@@ -125,11 +159,18 @@ Boolean ViewFormHandleEvent(EventType *event)
 
     case ViewEditButton:
       g_TopFieldNumber = g_TopFieldOffset = 0;
+#if 0
+      g_HilightRecordFieldIndex = NO_FIELD;
+#endif
       EditFormActivate();
       handled = true;
       break;
 
     case ViewNoteButton:
+      g_TopFieldNumber = g_TopFieldOffset = 0;
+#if 0
+      g_HilightRecordFieldIndex = NO_FIELD;
+#endif
       NoteFormActivate();
       handled = true;
       break;
@@ -311,10 +352,15 @@ static Boolean ViewFormUpdateDisplay(UInt16 updateCode)
 }
 
 
-static Boolean ViewFormGadgetDrawField(Char *str, Coord *y, RectangleType *bounds)
+static Boolean ViewFormGadgetDrawField(Char *str, Coord *y, RectangleType *bounds,
+                                       UInt16 highlightPosition, UInt16 highlightLength)
 {
   UInt16 lineHeight, bottom;
   UInt16 nchars, ndraw;
+#if 0
+  UInt16 nhilight;
+  RectangleType invert;
+#endif
   
   lineHeight = FntLineHeight();
   bottom = bounds->topLeft.y + bounds->extent.y;
@@ -329,6 +375,37 @@ static Boolean ViewFormGadgetDrawField(Char *str, Coord *y, RectangleType *bound
       ndraw--;
 
     WinDrawChars(str, ndraw, bounds->topLeft.x, *y);
+#if 0
+    if (highlightLength > 0) {
+      if (highlightPosition < nchars) {
+        invert.topLeft.y = *y;
+        invert.extent.y = *y + lineHeight;
+        invert.topLeft.x = bounds->topLeft.x;
+        if (highlightPosition > 0)
+          invert.topLeft.x += FntCharsWidth(str, highlightPosition);
+        nhilight = highlightLength;
+        if (highlightPosition + nhilight > nchars)
+          nhilight = nchars - highlightPosition;
+        highlightLength -= nhilight;
+        invert.extent.x = FntCharsWidth(str + highlightPosition, nhilight);
+        highlightPosition = 0;
+        if (invert.topLeft.x > 0) {
+          // Aligned directly at the left of characters looks worse.
+          invert.topLeft.x--;
+          invert.extent.x++;
+        }
+        if (invert.topLeft.x + invert.extent.x > bounds->topLeft.x + bounds->extent.x) {
+          // This is the case where part of what is to be hilit is in
+          // the whitespace that we didn't draw.
+          invert.extent.x = bounds->topLeft.x + bounds->extent.x - invert.topLeft.x;
+        }
+        WinInvertRectangle(&invert, 0);
+      }
+      else {
+        highlightPosition -= nchars;
+      }
+    }
+#endif
     *y += lineHeight;
     str += nchars;
 
@@ -349,6 +426,7 @@ static void ViewFormGadgetDraw()
   FontID oldFont;
   Coord y;
   Char *str;
+  UInt16 hilightPosition, hilightLength;
   MemHandle noneH;
   Boolean scrollableUp, scrollableDown;
   UInt16 upIndex, downIndex;
@@ -400,7 +478,20 @@ static void ViewFormGadgetDraw()
       break;
     }
 
-    if (!ViewFormGadgetDrawField(str, &y, &bounds))
+#if 0
+    if (recordFieldIndex == g_HilightRecordFieldIndex) {
+      hilightPosition = g_HilightPosition;
+      hilightLength = g_HilightLength;
+      if (fieldNumber == 0)
+        hilightPosition -= g_TopFieldOffset;
+    }
+    else 
+#endif
+         {
+      hilightPosition = hilightLength = 0;
+    }
+
+    if (!ViewFormGadgetDrawField(str, &y, &bounds, hilightPosition, hilightLength))
       break;
   }
 

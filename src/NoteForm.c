@@ -82,6 +82,12 @@ void NoteFormActivate()
   FrmGotoForm(SYS_ROM_3_5 ? NewNoteView : NoteView);
 }
 
+UInt16 NoteFormGoToPrepare(GoToParamsPtr params)
+{
+  g_ReturnToForm = ListForm;
+  return (SYS_ROM_3_5 ? NewNoteView : NoteView);
+}
+
 static void NoteFormOpen(FormType *form)
 {
   FieldType *field;

@@ -131,6 +131,7 @@ extern void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
 extern void ViewFormSetdown(AppPreferences *prefs);
 extern Boolean ViewFormHandleEvent(EventType *event);
 extern void ViewFormActivate();
+extern UInt16 ViewFormGoToPrepare(GoToParamsPtr params);
 
 /*** Edit form routines ***/
 extern void EditFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
@@ -142,8 +143,9 @@ extern void EditFormNewRecord();
 /*** Note form routines ***/
 extern void NoteFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
 extern void NoteFormSetdown(AppPreferences *prefs);
-extern void NoteFormActivate();
 extern Boolean NoteFormHandleEvent(EventType *event);
+extern void NoteFormActivate();
+extern UInt16 NoteFormGoToPrepare(GoToParamsPtr params);
 
 /*** ISBN form routines ***/
 extern void ISBNFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
