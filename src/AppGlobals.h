@@ -106,7 +106,13 @@ typedef struct {
   UInt16 matchField;
   UInt32 matchPos;
   UInt16 matchLen;
-} BookFindState;
+} BookFilter;
+
+typedef struct {
+  BookFilter filter;
+  UInt16 currentRecord;
+  UInt16 yieldCount;
+} BookSeekState;
 
 /*** Application globals ***/
 
@@ -168,8 +174,8 @@ extern Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord 
 extern Err BookDatabaseDirtyRecord(UInt16 index);
 extern Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive);
 extern Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
-                                      UInt16 category, BookFindState *findState);
-extern Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState);
+                                      UInt16 category, BookSeekState *seekState);
+extern Boolean BookRecordFilterMatch(UInt16 index, BookFilter *filter);
 extern Char *BookDatabaseGetCategoryName(UInt16 index);
 extern Boolean BookRecordIsEmpty(BookRecord *record);
 extern void BookDatabaseSelectCategory(FormType *form, UInt16 ctlID, UInt16 lstID,

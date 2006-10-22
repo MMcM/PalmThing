@@ -23,6 +23,10 @@ enum { COL_TITLE };
 #define LEFT_FRACTION_NUM 3
 #define LEFT_FRACTION_DEN 4
 
+typedef struct {
+  BookSeekState seekState;
+} BookFindState;
+
 /*** Local storage ***/
 
 static UInt16 g_TopVisibleRecord = 0;
@@ -427,29 +431,29 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
   if (direction == winDown) {
     // Forward n or last page.
     if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekForward,
-                                g_CurrentCategory, g_FindState)) {
+                                g_CurrentCategory, &g_FindState->seekState)) {
       newTopVisibleRecord = dmMaxRecordIndex;        
       if (byPage) {
         if (!BookDatabaseSeekRecord(&newTopVisibleRecord, rowsPerPage, dmSeekBackward,
-                                    g_CurrentCategory, g_FindState)) {
+                                    g_CurrentCategory, &g_FindState->seekState)) {
           newTopVisibleRecord = 0;
           BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward,
-                                 g_CurrentCategory, g_FindState);
+                                 g_CurrentCategory, &g_FindState->seekState);
         }
       }
       else {
         BookDatabaseSeekRecord(&newTopVisibleRecord, 1, dmSeekBackward,
-                               g_CurrentCategory, g_FindState);
+                               g_CurrentCategory, &g_FindState->seekState);
       }
     }
   }
   else {
     // Backward n or top.
     if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekBackward,
-                                g_CurrentCategory, g_FindState)) {
+                                g_CurrentCategory, &g_FindState->seekState)) {
       newTopVisibleRecord = 0;
       BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward,
-                             g_CurrentCategory, g_FindState);
+                             g_CurrentCategory, &g_FindState->seekState);
     }
   }
 
@@ -530,16 +534,16 @@ static void ListFormFindStart()
     return;
 
   list = FrmGetObjectPtrFromID(form, ListFindTypeList);
-  g_FindState->findType = LstGetSelection(list) + 1;
-  g_FindState->findKey = key;
-  g_FindState->keyPrep = NULL;
+  g_FindState->seekState.filter.findType = LstGetSelection(list) + 1;
+  g_FindState->seekState.filter.findKey = key;
+  g_FindState->seekState.filter.keyPrep = NULL;
 }
 
 static void ListFormFindCleanup()
 {
   if (NULL != g_FindState) {
-    if (NULL != g_FindState->keyPrep)
-      MemPtrFree(g_FindState->keyPrep);
+    if (NULL != g_FindState->seekState.filter.keyPrep)
+      MemPtrFree(g_FindState->seekState.filter.keyPrep);
     MemPtrFree(g_FindState);
     g_FindState = NULL;
   }
@@ -573,7 +577,7 @@ static void ListFormLoadTable()
   recordNum = g_TopVisibleRecord;
   for (row = 0; row < nvisible; row++) {
     if (!BookDatabaseSeekRecord(&recordNum, (row > 0) ? 1 : 0, dmSeekForward,
-                                g_CurrentCategory, g_FindState))
+                                g_CurrentCategory, &g_FindState->seekState))
       break;
 
     TblSetRowUsable(table, row, true);
@@ -590,7 +594,7 @@ static void ListFormLoadTable()
   recordNum = g_TopVisibleRecord;
   // Up if top not first record.
   scrollableUp = BookDatabaseSeekRecord(&recordNum, 1, dmSeekBackward,
-                                        g_CurrentCategory, g_FindState);
+                                        g_CurrentCategory, &g_FindState->seekState);
  
   row = TblGetLastUsableRow(table);
   if (row != -1)
@@ -598,7 +602,7 @@ static void ListFormLoadTable()
 
   // Down if bottom not last record.
   scrollableDown = BookDatabaseSeekRecord(&recordNum, 1, dmSeekForward,
-                                          g_CurrentCategory, g_FindState);
+                                          g_CurrentCategory, &g_FindState->seekState);
 
   upIndex = FrmGetObjectIndex(form, ListScrollUpRepeating);
   downIndex = FrmGetObjectIndex(form, ListScrollDownRepeating);

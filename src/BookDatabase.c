@@ -23,6 +23,9 @@ typedef struct {
   Char fields[0];
 } BookRecordPacked;
 
+// TODO: Could move to prefs.
+#define SEEK_YIELD_QUANTUM 100
+
 /*** Local storage ***/
 
 static DmOpenRef g_BookDatabase = NULL;
@@ -391,11 +394,11 @@ Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive)
 }
 
 Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
-                               UInt16 category, BookFindState *findState)
+                               UInt16 category, BookSeekState *seekState)
 {
   Boolean found;
 
-  if (NULL == findState)
+  if (NULL == seekState)
     return (errNone == DmSeekRecordInCategory(g_BookDatabase, index, offset, direction,
                                               category));
   
@@ -408,7 +411,7 @@ Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
       break;
     }
 
-    if (!BookRecordFindMatch(*index, findState)) {
+    if (!BookRecordFilterMatch(*index, &seekState->filter)) {
       if (offset == 0) offset = 1;
       continue;
     }
@@ -420,8 +423,7 @@ Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
   return found;
 }
 
-static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed, 
-                                         BookFindState *findState)
+static Boolean BookRecordPackedFilterMatch(BookRecordPacked *packed, BookFilter *filter)
 {
   const Char *fldp, *keyp, *valp;
   Char *outp, ch;
@@ -430,17 +432,17 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
   int i;
   Boolean match;
 
-  if (NULL == findState->keyPrep) {
-    len = StrLen(findState->findKey);
-    switch (findState->findType) {
+  if (NULL == filter->keyPrep) {
+    len = StrLen(filter->findKey);
+    switch (filter->findType) {
     case FIND_NONE:
     case FIND_ISBN:
       break;
       
     case FIND_TAGS:
       // Prep'ed key is null-terminated strings between commas, followed by another nul.
-      outp = findState->keyPrep = (Char *)MemPtrNew(len + 1);
-      keyp = findState->findKey;
+      outp = filter->keyPrep = (Char *)MemPtrNew(len + 1);
+      keyp = filter->findKey;
       while (true) {
         ch = *keyp++;
         if ('\0' == ch) break;
@@ -455,13 +457,13 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
       break;
 
     default:
-      findState->keyPrep = (Char *)MemPtrNew(len + 1);
-      if (NULL == findState->keyPrep) return false;
-      TxtGluePrepFindString(findState->findKey, findState->keyPrep, len + 1);
+      filter->keyPrep = (Char *)MemPtrNew(len + 1);
+      if (NULL == filter->keyPrep) return false;
+      TxtGluePrepFindString(filter->findKey, filter->keyPrep, len + 1);
     }
   }
 
-  switch (findState->findType) {
+  switch (filter->findType) {
   case FIND_NONE:
   default:
     searchMask = 0;
@@ -502,14 +504,14 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
   for (i = 0; i < BOOK_NFIELDS; i++) {
     len = StrLen(fldp);
     if (searchMask & (1 << i)) {
-      switch (findState->findType) {
+      switch (filter->findType) {
       case FIND_NONE:
         break;
 
       case FIND_ISBN:
         // Caseless compare ignoring the - character.
         // Could just go digits with special case for 'X'.
-        keyp = findState->findKey;
+        keyp = filter->findKey;
         valp = fldp;
         while (true) {
           while ('-' == *keyp) keyp++;
@@ -528,7 +530,7 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
       case FIND_TAGS:
         // Must have all given keys as left substrings of some tag.
         match = true;
-        keyp = findState->keyPrep;
+        keyp = filter->keyPrep;
         while ('\0' != *keyp) {
           valp = fldp;
           while (true) {
@@ -541,10 +543,10 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
                 (',' == *(valp-1)) ||
                 ((' ' == *(valp-1)) &&
                  (',' == *(valp-2)))) {
-              if (keyp == findState->keyPrep) {
+              if (keyp == filter->keyPrep) {
                 // Match indicator to first such.
-                findState->matchPos = (valp - fldp);
-                findState->matchLen = StrLen(keyp);
+                filter->matchPos = (valp - fldp);
+                filter->matchLen = StrLen(keyp);
               }
               break;
             }
@@ -556,11 +558,11 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
         break;
 
       default:
-        match = TxtGlueFindString(fldp, findState->keyPrep, 
-                                  &findState->matchPos, &findState->matchLen);
+        match = TxtGlueFindString(fldp, filter->keyPrep,
+                                  &filter->matchPos, &filter->matchLen);
       }
       if (match) {
-        findState->matchField = i;
+        filter->matchField = i;
         break;
       }
       searchMask &= ~(1 << i);
@@ -574,7 +576,7 @@ static Boolean BookRecordPackedFindMatch(BookRecordPacked *packed,
   return match;
 }
 
-Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState)
+Boolean BookRecordFilterMatch(UInt16 index, BookFilter *filter)
 {
   MemHandle recordH;
   BookRecordPacked *packed;
@@ -585,7 +587,7 @@ Boolean BookRecordFindMatch(UInt16 index, BookFindState *findState)
     return false;
 
   packed = (BookRecordPacked *)MemHandleLock(recordH);
-  match = BookRecordPackedFindMatch(packed, findState);
+  match = BookRecordPackedFilterMatch(packed, filter);
   MemHandleUnlock(recordH);
 
   return match;
@@ -788,7 +790,7 @@ void BookDatabaseSetSortFields(Int16 sortFields)
   DmQuickSort(g_BookDatabase, BookRecordCompare, sortFields);
 }
 
-Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc, 
+Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc,
                      void (*drawRecord)(BookRecord*, RectangleType*, UInt16))
 {
   DmSearchStateType searchState;
@@ -797,9 +799,8 @@ Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc,
   DmOpenRef db;
   MemHandle headerH;
   const Char *header;
-  BookFindState findState;
+  BookSeekState seekState;
   UInt16 listFields;
-  UInt16 recordNum;
   MemHandle recordH;
   BookRecordPacked *packed;
   BookRecord record;
@@ -825,15 +826,23 @@ Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc,
   MemHandleUnlock(headerH);
   DmReleaseResource(headerH);
   
-  findState.findType = FIND_ALL;
-  findState.findKey = params->strAsTyped;
-  findState.keyPrep = params->strToFind;
-
   listFields = KEY_TITLE_AUTHOR; // TODO: Move from prefs to db?
 
-  recordNum = params->recordNum;
+  seekState.filter.findType = FIND_ALL;
+  seekState.filter.findKey = params->strAsTyped;
+  seekState.filter.keyPrep = params->strToFind;
+  seekState.currentRecord = params->recordNum;
+  seekState.yieldCount = SEEK_YIELD_QUANTUM;
   while (!done) {
-    recordH = DmQueryNextInCategory(db, &recordNum, dmAllCategories);
+    if (--seekState.yieldCount == 0) {
+      if (EvtSysEventAvail(true)) {
+        params->more = true;
+        break;
+      }
+      seekState.yieldCount = SEEK_YIELD_QUANTUM;
+    }
+
+    recordH = DmQueryNextInCategory(db, &seekState.currentRecord, dmAllCategories);
     if (NULL == recordH) {
       params->more = false;         
       break;
@@ -841,9 +850,10 @@ Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc,
 
     packed = (BookRecordPacked *)MemHandleLock(recordH);
 
-    if (BookRecordPackedFindMatch(packed, &findState)) {
-      done = FindSaveMatch(params, recordNum, findState.matchPos, findState.matchField, 
-                           findState.matchLen, cardNo, dbID);
+    if (BookRecordPackedFilterMatch(packed, &seekState.filter)) {
+      done = FindSaveMatch(params, seekState.currentRecord, 
+                           seekState.filter.matchPos, seekState.filter.matchField, 
+                           seekState.filter.matchLen, cardNo, dbID);
       if (!done) {
         UnpackRecord(packed, &record);
         FindGetLineBounds(params, &bounds);
@@ -854,7 +864,7 @@ Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc,
     }
 
     MemHandleUnlock(recordH);
-    recordNum++;
+    seekState.currentRecord++;
   }
 
   DmCloseDatabase(db);
