@@ -11,8 +11,360 @@
 <body>
 
 <h1>Palm OS offline LibraryThing database application</h1>
+Version 1.0.0. &nbsp;MMcM 10/06
 
 <h3>Summary</h3>
+
+<p>
+After one too many charity book sales where I wasn't able to answer whether we
+already have a book and/or it's on the wish list, I decided we needed
+to make better use of having put everything into LibraryThing.  Not
+having a cell phone and being disinclined to pay data charges for one
+to access LT Mobile, I thought that this would be a good use for an
+older PDA.  These can be bought on eBay for around the retail price of
+a hardcover book and turn up for even less at yard sales.
+</p>
+
+<p>
+Most of the use cases revolve around being at a bookstore or library
+and wanting to check what's there with what you have / want.  All the
+hard work is left to the LT site.  The handheld database is almost,
+but not quite read-only.  The exception is noting down a new book to
+be added to the wish list or investigated further.
+</p>
+
+<h3>Requirements</h3>
+
+<p>
+Any Palm device running (or upgradeable to) Palm OS 3.0 or newer
+should work.  Data storage requires a couple hundred bytes per book,
+so a low-end 2MB model should hold a library with a few thousand
+books.
+</p>
+
+<p>
+A Desktop PC running a reasonably modern version of Microsoft Windows
+is needed for getting data onto the handheld.  (Windows 2000 is
+probably good enough.)
+</p>
+
+<h3>Getting started</h3>
+<ul>
+
+<li>
+Install whatever software came with the Palm (or download from
+<a href="http://www.palm.com/us/support/downloads/">here</a>) 
+and make sure that HotSync works.
+</li>
+
+<li>
+Download the self-extracting installer from 
+<a href="http://home.comcast.net/~mmcm/PalmThing/PalmThing.exe">here</a>.
+</li>
+
+<li>
+Run the installer.
+</li>
+
+<li>
+You will be asked for a location of the LibraryThing tab-delimited
+export file on your PC.  If you regularly download this for backup
+(and you should), enter that file's location.  If you leave the
+default without a directory, it will look for the file in with the
+other Palm Desktop files.  More of this <a href="#export_to_userdir">
+later</a>.
+</li>
+
+<li>
+You will be prompted to install PalmThing on any devices already known to the
+HotSync Manager.  If you choose not to do this as part of the installation,
+you will have another chance <a href="#install_application"> later</a>.
+</li>
+
+</ul>
+<ul>
+
+<li>
+<a name="install_application"/>
+If you did not install the application as part of the program installation
+process, run the Install PalmThing application from the Start Menu and pick
+the target device(s).
+</li>
+
+<li>
+Run HotSync to copy the application to the handheld.
+</li>
+
+</ul>
+<ul>
+
+<li>
+On the Palm, launch PalmThing and make sure that it comes up.  If it
+isn't there, check the HotSync Log and see if it tried.  If the device
+freezes, you've probably found an incompatibility; reset the device
+and let me know.
+</li>
+
+</ul>
+<ul>
+
+<li>
+Download the LibraryThing <a href="http://www.librarything.com/export-tab.php">
+tab-delimited export</a> if you have not done so recently.
+</li>
+
+<li>
+<a name="export_to_userdir">
+If no directory was specified for the export file it will be someplace like
+<kbd>C:\Program Files\Palm\<i>user</i>\palmthing\LibraryThing_TD.xls</kbd>.
+One way to find out for sure it just to let the HotSync fail and check the
+log for a report of a missing file; it will contain the full pathname.
+</li>
+
+<li>
+If you have a large library, you may want to test with a smaller file.  The export
+can be opened in Notepad; delete all but the first few lines and save it out (keeping
+Unicode as the format).
+</li>
+
+<li>
+Run HotSync again to copy data to the device.
+</li>
+
+</ul>
+<ul>
+
+<li>
+Launch the application on the Palm and hopefully see your library.
+</li>
+
+</ul>
+
+<h3>User Interface</h3>
+
+<h4>Book List</h4>
+<table><tr><td><ul>
+
+<li>
+Lists books in your library.
+</li>
+
+<li>
+Click on a book to view its details.
+</li>
+
+<li>
+You can control how a book is listed from <kbd>Options &gt; Preferences...</kbd>.
+</li>
+
+<li>
+The lower-left gives a filter for books that are displayed.
+</li>
+
+<li>
+The pop-up list chooses the field(s) to filter: Title, Author, ISBN, Tags, Comments,
+Summary or all of them.
+</li>
+
+<li>
+The left-pointing arrow clears the filter field and focuses it.  This
+is the quickest way to start a new filter.
+</li>
+
+<li>
+The magnifying glass applies the filter manually if you do not have
+Incremental Find turned on.
+</li>
+
+<li>
+<kbd>New</kbd> to enter a new book.
+</li>
+
+<li>
+Scroll through the list with the up and down arrows, if you device
+does not have hardware buttons for that.
+</li>
+
+</ul></td>
+<td><img src="ListForm.png" width="160" height="160" alt="Book List"></td></tr></table>
+
+</ul>
+
+<h4>Book View</h4>
+<table><tr><td><ul>
+
+<li>
+Displays the chosen book.
+</li>
+
+<li>
+The filter term is highlighted.
+</li>
+
+<li>
+<kbd>Done</kbd> to return to the list.
+</li>
+
+<li>
+<kbd>Edit</kbd> to edit the book record.
+</li>
+
+<li>
+<kbd>Note</kbd> to display / edit a note on the book.
+</li>
+
+</ul></td>
+<td><img src="ViewForm.png" width="160" height="160" alt="Book View"></td></tr></table>
+
+<h4>Book Edit</h4>
+<table><tr><td><ul>
+
+<li>
+Edits the chosen book.
+</li>
+
+<li>
+<kbd>Done</kbd> to return to View.
+</li>
+
+<li>
+<kbd>Note</kbd> to display / edit a note on the book.
+<br/>
+A note is presently the same as the LT Comments field.
+</li>
+
+</ul></td>
+<td><img src="EditForm.png" width="160" height="160" alt="Book Edit"></td></tr></table>
+
+<h4>Note Edit</h4>
+<table><tr><td><ul>
+
+<li>
+Edits a note for the current book.
+</li>
+
+<li>
+A note is presently the same as the LT Comments field.
+</li>
+
+</ul></td>
+<td><img src="NoteForm.png" width="160" height="160" alt="Note Edit"></td></tr></table>
+
+<h3>Notes</h3>
+<ul>
+
+<li>
+Complete source to the application is available 
+<a href="http://home.comcast.net/~mmcm/PalmThing/PalmThing-src.zip">here</a>.
+</li>
+
+<li>
+The overall look and feel of the application is modeled after the ROM
+Address Book.
+</li>
+
+<li>
+Because of limited screen real-estate, clean layout has been somewhat sacrificed
+for getting more to fit.  For instance, when both the title and author are displayed,
+they share as much as possible of the same without a fixed column dividing line.
+I'm open to other ideas on this.
+</li>
+
+<li>
+By coincidence, the book
+<a href="http://www.librarything.com/work-info.php?book=7160456">Palm OS Programming Bible</a>
+has a library application as its tutorial sample.
+</li>
+
+<li>
+Find can take a while in a large library and is not presently
+interruptible.  As a result, Incremental Find (which updates on each
+character) is not really usable.  Fixing this is high priority.
+</li>
+
+<li>
+Global Find using the silkscreen Find button should work.  I cannot
+think of any reason to prefer it to filtering within the application,
+though.
+</li>
+
+<li>
+Latin-1 accented characters should display properly without
+<a href="#unicode">Unicode</a> support.  It is even possible that
+Japanese will display properly on a Japanese device if the HotSync PC
+is running Japanese Windows.  I have not tested this.
+</li>
+
+</ul>
+
+<h3>Ideas</h3>
+<ul>
+
+<li>
+A table full of blanks for entering ISBNs with validation.  Each ISBN
+turns into a new book with only that field filled.  HotSync somehow
+uploads these records to LT's importer.
+</li>
+
+<li>
+More generally, a way to take new <i>partial</i> records to add them
+to your online library.  Note that these books are not expected to be
+complete, just notes for later adding.  So the process is as much one
+of Search / Add as Import.
+</li>
+
+<li>
+It should be possible to eliminate the manual download of the LT
+export into a file.  It's not trivial because LT recognizes you based
+on cookies, which are stored by the browser, which can be any of
+several choices.
+</li>
+
+<li>
+<a name="unicode">
+Full Unicode display for polyglot libraries.  Probably without edit to begin with.
+</li>
+
+<li>
+Map tags associated with the long-anticipated collections feature in
+LT (those that start with <code>@</code>) into categories.  So,
+Wishlist, Library, Owned.  Or Joe, Mary.  Since there can only be one
+category, take the first such tag.  (I may just do this even before LT
+supports them, although I'd hate for the model to change.)
+</li>
+
+<li>
+For WiFi models like the T|X and cell phones, a occasionally-connected
+mode that offers at least a link from the record to the associated web
+page in LT / LT Mobile.
+</li>
+
+<li>
+Use the built-in VGA camera on models like the Zire 71 and 72 to
+recognize barcodes when entering ISBNs.
+</li>
+
+<li>
+Beaming records.
+</li>
+
+<li>
+Sometimes the same book is released with a different title.  The LT
+works system helps with this enormously.  Unfortunately, I cannot see
+how to use an offline copy of the library to know the equation between
+what's in the database and what's on the shelf in front of you.  (LT
+itself has the problem still with anthologies.)
+</li>
+
+<li>
+I don't know what's possible for HotSync using whatever ships for Mac
+OS X.  The conduit is written in Java, so it should be portable, but
+it probably isn't.  For Linux, etc., it should be possible to write a
+program to produce a <kbd>.pdb</kbd> file straight from the export.
+This could even run as a network server someplace.
+</li>
+
+</ul>
 
 <h3>Terms</h3> 
 
@@ -20,6 +372,26 @@
 <a href="http://www.opensource.org/licenses/mit-license.php">
 The MIT License</a>. You use it at your own risk.
 See <a href="license.txt"/>license.txt</a> for details.</p>
+
+<p>Some code fragments were copied from files bearing:
+<blockquote>
+From Palm OS Programming Bible, Second Edition
+Copyright ©2000, 2002 Lonnon R. Foster.  All rights reserved.
+This code is not in the public domain, but you are hereby granted
+permission to use it in any of your own projects, commercial or
+otherwise.
+
+Portions Copyright ©2000 Palm, Inc. or its subsidiaries.
+All rights reserved.
+</blockquote>
+
+Or generated by wizards that produced:
+<blockquote>
+Copyright (c) 1999-2004 PalmSource, Inc. All rights reserved.
+</blockquote>
+
+I cannot see any particular problems with these.
+</p>
 
 </body>
 
