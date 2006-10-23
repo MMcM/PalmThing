@@ -112,6 +112,7 @@ static void ListFormOpen(FormType *form)
 {
   TableType *table;
   FieldType *field;
+  ListType *list;
   FontID oldFont;
   RectangleType tableBounds;
   Int16 row, nrows;
@@ -140,6 +141,8 @@ static void ListFormOpen(FormType *form)
 
   if (NULL != g_FindState) {
     // Restore previous Find filter.
+    list = FrmGetObjectPtrFromID(form, ListFindTypeList);
+    LstSetSelection(list, g_FindState->seekState.filter.findType - 1);
     field = FrmGetObjectPtrFromID(form, ListFindTextField);
     FldSetTextHandle(field, g_FindState->keyHandle);
     g_FindState->seekState.filter.findKey = FldGetTextPtr(field);
