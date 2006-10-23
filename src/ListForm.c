@@ -113,10 +113,13 @@ static void ListFormOpen(FormType *form)
   TableType *table;
   FieldType *field;
   ListType *list;
+  ControlType *ctl;
   FontID oldFont;
   RectangleType tableBounds;
   Int16 row, nrows;
   Int16 extraWidth;
+  Char *label, *selection;
+  UInt16 len;
 
   oldFont = FntSetFont(g_ListFont);
 
@@ -141,8 +144,15 @@ static void ListFormOpen(FormType *form)
 
   if (NULL != g_FindState) {
     // Restore previous Find filter.
+    ctl = FrmGetObjectPtrFromID(form, ListFindTypePopTrigger);
     list = FrmGetObjectPtrFromID(form, ListFindTypeList);
     LstSetSelection(list, g_FindState->seekState.filter.findType - 1);
+    label = (Char *)CtlGetLabel(ctl);
+    selection = LstGetSelectionText(list, LstGetSelection(list));
+    len = StrChr(selection, ':') + 1 - selection;
+    MemMove(label, selection, len);
+    label[len] = '\0';
+    CtlSetLabel(ctl, label);
     field = FrmGetObjectPtrFromID(form, ListFindTextField);
     FldSetTextHandle(field, g_FindState->keyHandle);
     g_FindState->seekState.filter.findKey = FldGetTextPtr(field);
