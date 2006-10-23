@@ -441,7 +441,7 @@ static Boolean BookRecordPackedFilterMatch(BookRecordPacked *packed, BookFilter 
       
     case FIND_TAGS:
       // Prep'ed key is null-terminated strings between commas, followed by another nul.
-      outp = filter->keyPrep = (Char *)MemPtrNew(len + 1);
+      outp = filter->keyPrep = (Char *)MemPtrNew(len + 2);
       keyp = filter->findKey;
       while (true) {
         ch = *keyp++;
