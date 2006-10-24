@@ -129,7 +129,7 @@
 	</APP_PREFS_RESOURCE>
 
 	<APP_VERSION_RESOURCE RESOURCE_ID="1" LOCALE="enUS">
-		<TEXT> "1.0.0" </TEXT>
+		<TEXT> "1.0.1" </TEXT>
 	</APP_VERSION_RESOURCE>
 
 	<BITMAP_RESOURCE RESOURCE_ID="1000" COMMENT="Clear">
@@ -235,22 +235,22 @@
 			<FORM_LABEL COMMENT="Blurb">
 				<ID> 1002 </ID>
 				<LOCATION>
-					<X> 23 </X>
+					<X> 47 </X>
 					<Y> 54 </Y>
 				</LOCATION>
 				<USABLE> TRUE </USABLE>
 				<FONT_ID> STD_FONT </FONT_ID>
-				<TEXT> "Initial rough cut" </TEXT>
+				<TEXT> "Initial release" </TEXT>
 			</FORM_LABEL>
 			<FORM_LABEL COMMENT="VersionString">
 				<ID> 1003 </ID>
 				<LOCATION>
-					<X> 50 </X>
+					<X> 46 </X>
 					<Y> 104 </Y>
 				</LOCATION>
 				<USABLE> TRUE </USABLE>
 				<FONT_ID> BOLD_FONT </FONT_ID>
-				<TEXT> "Version 1.0" </TEXT>
+				<TEXT> "Version 1.0.1" </TEXT>
 			</FORM_LABEL>
 			<FORM_BUTTON COMMENT="OK">
 				<ID> 1004 </ID>
@@ -1257,7 +1257,7 @@
 					</MENU_ITEM>
 				</MENU_ITEMS>
 			</MENU>
-                        <MENU>
+			<MENU>
 				<TITLE> "Options" </TITLE>
 				<HIDDEN> FALSE </HIDDEN>
 				<BOUNDS>
