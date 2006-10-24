@@ -450,7 +450,8 @@ static Boolean BookRecordPackedFilterMatch(BookRecordPacked *packed, BookFilter 
           *outp++ = '\0';
           while (' ' == *keyp) keyp++;
         }
-        *outp++ = ch;
+        else
+          *outp++ = ch;
       }
       *outp++ = '\0';
       *outp++ = '\0';
