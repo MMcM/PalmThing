@@ -289,10 +289,26 @@ though.
 </li>
 
 <li>
+Find filter match currently works as follows.  Tags is a
+comma-separated list of left substrings, all of which must be present.
+ISBN is a left-substring, compared without regard to dashes in either
+string.  For all others, the filter can appear anywhere in the target
+and case is ignored; perhaps it would be better to search for each
+space-separated word in the filter.
+</li>
+
+<li>
 Latin-1 accented characters should display properly without
 <a href="#unicode">Unicode</a> support.  It is even possible that
 Japanese will display properly on a Japanese device if the HotSync PC
 is running Japanese Windows.  I have not tested this.
+</li>
+
+<li>
+If the database gets messed up, use <kbd>Custom...</kbd> in the
+HotSync Manager and <kbd>Change...</kbd> to select <kbd>Desktop
+overwrites Handheld</kbd>.  There is at present no useful processing
+of records copied onto the PC, so this is always safe.
 </li>
 
 </ul>
