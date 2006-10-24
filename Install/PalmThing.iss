@@ -30,6 +30,7 @@ OutputDir=.
 
 [Files]
 Source: "Java\PalmThingConduit.jar"; DestDir: "{app}"; Flags: nocompression
+Source: "{#CDK_PATH}\Java\Bin\jsync\Sync*.gif"; DestDir: "{code:PalmHotSyncDir}"; Flags: uninsneveruninstall onlyifdoesntexist
 Source: "Release\PalmThing.prc"; DestDir: "{app}"
 Source: "Docs\readme.html"; DestDir: "{app}"; Flags: isreadme
 Source: "Docs\license.txt"; DestDir: "{app}"

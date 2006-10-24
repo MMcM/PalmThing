@@ -226,6 +226,17 @@ public class PalmThingConduit implements Conduit {
   }
 
   public int configure(ConfigureConduitInfo info) {
+    ConduitConfigure config = new ConduitConfigure(info, NAME);
+    config.createDialog();
+
+    if (config.dataChanged) {
+      info.syncNew = config.saveState;
+      if (config.setDefault) {
+        info.syncPermanent = config.saveState;
+        info.syncPref = ConfigureConduitInfo.PREF_PERMANENT;
+      }
+    }
+        
     return 0;
   }
 
