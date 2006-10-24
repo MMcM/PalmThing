@@ -33,6 +33,7 @@ Source: "Java\PalmThingConduit.jar"; DestDir: "{app}"; Flags: nocompression
 Source: "Release\PalmThing.prc"; DestDir: "{app}"
 Source: "Docs\readme.html"; DestDir: "{app}"; Flags: isreadme
 Source: "Docs\license.txt"; DestDir: "{app}"
+Source: "Docs\*.png"; DestDir: "{app}"
 
 [Icons]
 ; An icon to allow manual installation of your Palm app after setup
