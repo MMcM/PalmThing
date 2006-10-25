@@ -10,12 +10,132 @@ import palm.conduit.*;
 
 import java.util.*;
 import java.io.*;
+import java.lang.reflect.*;
 
 /** Import records from LibraryThing's tab-delimited export file.<p>
  * For now, read from a file, although with the right cookies direct
  * download should be possible.
  */
 public class LibraryThingImporter {
+
+  // Libraries that use MARC-8 / ANSEL will tend to have decomposed
+  // accents, which can end up in the library.  Converting to
+  // ISO-8859-1 works better with composed.  Every version of Java
+  // knows how to do this internally, but the exact details are
+  // different for each major release.
+  interface Normalizer {
+    public String normalize(String str);
+  }
+
+  private Normalizer m_normalizer;
+
+  public LibraryThingImporter() {
+    Class clazz = null;
+    try {
+      clazz = Class.forName("java.text.Normalizer");
+    }
+    catch (ClassNotFoundException ex) {
+    }
+    if (clazz != null) {
+      Method meth = null;
+      // 1.3
+      try {
+        meth = clazz.getMethod("compose", new Class[] { String.class });
+      }
+      catch (NoSuchMethodException ex) {
+      }
+      if (meth != null) {
+        meth.setAccessible(true);
+        final Method f_meth = meth;
+        m_normalizer = new Normalizer() {
+            public String normalize(String str) {
+              try {
+                return (String)f_meth.invoke(null, new Object[] { str });
+              }
+              catch (IllegalAccessException ex) {
+                return str;
+              }
+              catch (InvocationTargetException ex) {
+                return str;
+              }
+            }
+          };
+        return;
+      }
+      // 1.6
+      Object form = null;
+      try {
+        Class nclass = Class.forName("java.text.Normalizer.Form");
+        form = nclass.getMethod("valueOf", new Class[] { String.class })
+          .invoke(null, new Object[] { "NFC" });
+        meth = clazz.getMethod("normalize", new Class[] {
+                                 Class.forName("java.lang.CharSequence"),
+                                 nclass
+                               });
+      }
+      catch (ClassNotFoundException ex) {
+      }
+      catch (NoSuchMethodException ex) {
+      }
+      catch (IllegalAccessException ex) {
+      }
+      catch (InvocationTargetException ex) {
+      }
+      if (meth != null) {
+        final Method f_meth = meth;
+        final Object f_form = form;
+        m_normalizer = new Normalizer() {
+            public String normalize(String str) {
+              try {
+                return (String)f_meth.invoke(null, new Object[] { str, f_form });
+              }
+              catch (IllegalAccessException ex) {
+                return str;
+              }
+              catch (InvocationTargetException ex) {
+                return str;
+              }
+            }
+          };
+        return;
+      }
+    }
+    // 1.4
+    try {
+      clazz = Class.forName("sun.text.Normalizer");
+    }
+    catch (ClassNotFoundException ex) {
+    }
+    if (clazz != null) {
+      Method meth = null;
+      try {
+        meth = clazz.getMethod("compose", new Class[] { 
+                                 String.class, Boolean.TYPE, Integer.TYPE 
+                               });
+      }
+      catch (NoSuchMethodException ex) {
+      }
+      if (meth != null) {
+        final Method f_meth = meth;
+        m_normalizer = new Normalizer() {
+            public String normalize(String str) {
+              try {
+                return (String)f_meth.invoke(null, new Object[] { 
+                                               str, Boolean.FALSE, Integer.valueOf(0) 
+                                             });
+              }
+              catch (IllegalAccessException ex) {
+                return str;
+              }
+              catch (InvocationTargetException ex) {
+                return str;
+              }
+            }
+          };
+        return;
+      }
+    }
+  }
 
   public static String g_recordIDField = "record id";
   public static String g_bookIDField = "book id";
@@ -107,6 +227,8 @@ public class LibraryThingImporter {
           System.err.println(line);
         String col = cols[fieldCol];
         if (col == null) continue;
+        if (m_normalizer != null)
+          col = m_normalizer.normalize(col);
         col = convertFromExternal(col, i);
         book.setStringField(i, col);
       }

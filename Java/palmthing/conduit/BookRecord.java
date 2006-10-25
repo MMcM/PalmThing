@@ -86,6 +86,8 @@ public class BookRecord extends AbstractRecord {
       if (m_stringFields[i] != null) {
         // TODO: I'm not sure that
         // AbstractRecord.writeCString/readCString work outside ASCII.
+        // Among other things, really need to call java.text.Normalizer.normalize, which
+        // isn't a public class until 1.6 (in 1.4 there is a sun.text version).
         writeCString(out, m_stringFields[i]);
       }
     }
