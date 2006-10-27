@@ -483,7 +483,8 @@ static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean by
     // Forward n or last page.
     if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekForward,
                                 g_CurrentCategory, &g_FindState->seekState)) {
-      newTopVisibleRecord = dmMaxRecordIndex;        
+      // NB: dmMaxRecordIndex and NO_RECORD are the same.
+      newTopVisibleRecord = dmMaxRecordIndex;
       if (byPage) {
         if (!BookDatabaseSeekRecord(&newTopVisibleRecord, rowsPerPage, dmSeekBackward,
                                     g_CurrentCategory, &g_FindState->seekState)) {

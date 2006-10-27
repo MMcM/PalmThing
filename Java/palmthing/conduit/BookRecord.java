@@ -29,6 +29,7 @@ public class BookRecord extends AbstractRecord {
   public static final int BOOK_ID_NONE = 0;
 
   private int m_bookID;
+  private String m_categoryTag;
   private String m_stringFields[] = new String[BOOK_NFIELDS];
 
   protected String getStringField(int index) {
@@ -43,6 +44,13 @@ public class BookRecord extends AbstractRecord {
   }
   protected void setBookID(int bookID) {
     m_bookID = bookID;
+  }
+
+  public String getCategoryTag() {
+    return m_categoryTag;
+  }
+  public void setCategoryTag(String categoryTag) {
+    m_categoryTag = categoryTag;
   }
 
   public String getTitle() {
@@ -70,6 +78,16 @@ public class BookRecord extends AbstractRecord {
     return m_stringFields[FIELD_COMMENTS];
   }
 
+  private static boolean g_unicode = false;
+
+  public static boolean getUnicode() {
+    return g_unicode;
+  }
+
+  public static void setUnicode(boolean unicode) {
+    g_unicode = unicode;
+  }
+
   // Must agree with BookRecordPacked in BookDatabase.c.
   public void writeData(DataOutputStream out) throws IOException {
     out.writeInt(m_bookID);
@@ -84,10 +102,7 @@ public class BookRecord extends AbstractRecord {
 
     for (int i = 0; i < BOOK_NFIELDS; i++) {
       if (m_stringFields[i] != null) {
-        // TODO: I'm not sure that
-        // AbstractRecord.writeCString/readCString work outside ASCII.
-        // Among other things, really need to call java.text.Normalizer.normalize, which
-        // isn't a public class until 1.6 (in 1.4 there is a sun.text version).
+        // TODO: Unicode support.
         writeCString(out, m_stringFields[i]);
       }
     }
@@ -103,6 +118,21 @@ public class BookRecord extends AbstractRecord {
         m_stringFields[i] = readCString(in);
       }
     }
+  }
+
+  public int hashCode() {
+    return m_bookID;
+  }
+
+  public boolean equals(Object obj) {
+    if (!(obj instanceof BookRecord)) return false;
+    BookRecord other = (BookRecord)obj;
+    if (m_bookID != other.m_bookID) return false;
+    if (!super.equals(obj)) return false;
+    if (m_categoryTag == null)
+      return (other.m_categoryTag == null);
+    else
+      return m_categoryTag.equals(other.m_categoryTag);
   }
 
   public String toString() {

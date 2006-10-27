@@ -29,6 +29,8 @@ public class PalmThingConduit implements Conduit {
         name = name.substring(0, name.length() - 4);
       File backup = new File(props.pathName, name + ".bak");
 
+      // TODO: Read a .properties file from props path and initialize
+      // field prefs, etc.
       LibraryThingImporter importer = new LibraryThingImporter();
 
       int syncType = props.syncType;
@@ -77,7 +79,8 @@ public class PalmThingConduit implements Conduit {
         int sortKey = BookRecordComparator.KEY_TITLE_AUTHOR;
         try {
           byte[] appInfo = SyncManager.readDBAppInfoBlock(db, props.remoteNames[0]);
-          sortKey = appInfo[276]; // Must match remote.
+          // Must match remote.
+          sortKey = appInfo[BookCategories.SIZE];
         }
         catch (SyncException ex) {
         }
