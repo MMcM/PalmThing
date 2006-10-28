@@ -31,6 +31,7 @@ OutputDir=.
 [Files]
 Source: "Java\PalmThingConduit.jar"; DestDir: "{app}"; Flags: nocompression
 Source: "{#CDK_PATH}\Java\Bin\jsync\Sync*.gif"; DestDir: "{code:PalmHotSyncDir}"; Flags: uninsneveruninstall onlyifdoesntexist
+Source: "Java\ltimport.cmd"; DestDir: "{app}"; AfterInstall: ExpandFileContents('ltimport.cmd')
 Source: "Release\PalmThing.prc"; DestDir: "{app}"
 Source: "Docs\readme.html"; DestDir: "{app}"; Flags: isreadme
 Source: "Docs\license.txt"; DestDir: "{app}"
@@ -86,4 +87,18 @@ begin
     PalmUninstallConduit('plTN');
   end;
   PalmUninstallStepChanged(CurUninstallStep); { must be last }
+end;
+
+procedure ExpandFileContents(File: String);
+var
+  appFile, jsyncPath: String;
+  fileContents: TArrayOfString;
+  i: Integer; 
+begin
+  appFile := ExpandConstant('{app}\' + File);
+  jsyncPath := ExpandConstant('{code:PalmHotSyncDir}\JSync\1.3');
+  LoadStringsFromFile(appFile, fileContents);
+  for i := 0 to GetArrayLength(fileContents)-1 do
+    fileContents[i] := ExpandConstantEx(fileContents[i], 'JSync', jsyncPath);
+  SaveStringsToFile(appFile, fileContents, False); 
 end;
