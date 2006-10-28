@@ -49,6 +49,9 @@ probably good enough.)
 </p>
 
 <h3>Getting started</h3>
+
+<h4>Microsoft Windows</h4>
+
 <ul>
 
 <li>
@@ -78,9 +81,15 @@ later</a>.
 <li>
 You will be prompted to install PalmThing on any devices already known to the
 HotSync Manager.  If you choose not to do this as part of the installation,
-you will have another chance <a href="#install_application"> later</a>.
+you will have another chance <a href="#install_application">later</a>.
 </li>
 
+<li>
+If for some reason you prefer not to use HotSync, you can copy the
+application and database to the device manually using the Palm install
+program.  To get the necessary database file, follow the instructions
+<a href="#ltimport">below</a> for Linux, substituting
+<kbd>ltimport.cmd</kbd> for <kbd>ltimport.sh</kbd>.
 </ul>
 <ul>
 
@@ -136,6 +145,44 @@ Run HotSync again to copy data to the device.
 
 <li>
 Launch the application on the Palm and hopefully see your library.
+</li>
+
+</ul>
+
+<h4>Linux</h4>
+
+<ul>
+
+<li>
+Get the basic ability to transfer files to the Palm working.  
+A popular open source program for doing this is 
+<a href="http://www.pilot-link.org/">pilot-link</a>.
+There are GUI wrappers for it, such as J-Pilot and Gnome-Pilot.
+Palm has a KB <a href="http://kb.palm.com/SRVS/CGI-BIN/WEBCGI.EXE?New,kb=PalmSupportKB,CASE=obj(6503),ts=Palm_External2001">article</a> with more links.
+</li>
+
+<li>
+You will also need a working Java Runtime, which is standard in most modern distros.
+</li>
+
+<li>
+Download and untar the compressed archive from 
+<a href="http://home.comcast.net/~mmcm/palmthing/PalmThing.tar.gz">here</a>.
+</li>
+
+<li>
+Download the LibraryThing <a href="http://www.librarything.com/export-tab.php">
+tab-delimited export</a> if you have not done so recently.
+</li>
+
+<li>
+<a name="ltimport">
+<kbd>ltimport.sh -read LibraryThing_TD.xls -sort 5 -dump PalmThing-Books.pdb</kbd>
+</li>
+
+<li>
+<kbd>pilot-xfer --install PalmThing.prc PalmThing-Books.pdb</kbd>
+<br/>or its GUI equivalent in your preferred tool.
 </li>
 
 </ul>
