@@ -583,7 +583,7 @@ public class LibraryThingImporter {
       }
       else if (arg.equals("-dump")) {
         Vector categories = BookCategories.getCategories(books);
-        BookCategories.setCategoryIndices(books, categories, null);
+        BookCategories.setCategoryIndices(books, categories);
         PalmDatabaseDumper pdb = new PalmDatabaseDumper("PalmThing-Books", (short)0, 
                                                         "plTN", "DATA");
         byte[] catBytes = Category.toBytes(categories);

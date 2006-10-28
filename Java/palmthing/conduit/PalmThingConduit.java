@@ -109,18 +109,7 @@ public class PalmThingConduit implements Conduit {
         byte[] catBytes = Category.toBytes(categories);
         System.arraycopy(catBytes, 0, appInfo, 0, catBytes.length);
         SyncManager.writeDBAppInfoBlock(db, props.remoteNames[0], appInfo);
-
-        {
-          Set onlyCategoryChanged = null;
-          if (remoteBooks != changedBooks) 
-            onlyCategoryChanged = new HashSet();
-          BookCategories.setCategoryIndices(remoteBooks, categories, 
-                                            onlyCategoryChanged);
-          if (onlyCategoryChanged != null) {
-            onlyCategoryChanged.removeAll(changedBooks);
-            changedBooks.addAll(onlyCategoryChanged);
-          }
-        }
+        BookCategories.setCategoryIndices(changedBooks, categories);
 
         Iterator iter = changedBooks.iterator();
         while (iter.hasNext()) {
@@ -176,15 +165,13 @@ public class PalmThingConduit implements Conduit {
   protected List merge(List localBooks, List backupBooks, List remoteBooks,
                        Comparator comp) 
       throws IOException {
-    // Collection so that is can be an intermediate Set in the case
-    // where we need to check a lot for already being present.
-    Collection changedBooks;
+    List changedBooks;
     if (remoteBooks == null) {
       // Everything is copied over and that is all remotely.
       changedBooks = remoteBooks = localBooks;
     }
     else {
-      changedBooks = new HashSet();
+      changedBooks = new ArrayList();
       Map remoteByBookID = hashByBookID(remoteBooks);
       {
         Map backupByBookID = hashByBookID(backupBooks);
@@ -199,9 +186,12 @@ public class PalmThingConduit implements Conduit {
               remoteByBookID.get(new Integer(book.getBookID()));
             if (remote != null)
               remoteBooks.remove(remote);
-            remoteBooks.add(book);
             changedBooks.add(book);
           }
+          else {
+            book.setId(backup.getId());
+          }
+          remoteBooks.add(book);
         }
       }
       {
@@ -225,19 +215,23 @@ public class PalmThingConduit implements Conduit {
     Collections.sort(remoteBooks, comp);
     for (int i = 0; i < remoteBooks.size(); i++) {
       BookRecord book = (BookRecord)remoteBooks.get(i);
+      // TODO: How does the index field affect an existing record?
+      // Does not seem to get inserted at requested position, but
+      // always at the end, which would necessitate a HH-side sort
+      // after sync.
       if (book.getId() == 0)
         book.setIndex(i);
+      /**
       else if (book.getIndex() != i) {
         book.setIndex(i);
         if ((changedBooks != remoteBooks) && !changedBooks.contains(book))
           changedBooks.add(book);
       }
+      **/
     }
 
     if (changedBooks != remoteBooks) {
-      if (!(changedBooks instanceof List))
-        changedBooks = new ArrayList(changedBooks);
-      Collections.sort((List)changedBooks, 
+      Collections.sort(changedBooks, 
                        new Comparator() {
                          public int compare(Object o1, Object o2) {
                            BookRecord book1 = (BookRecord)o1;
@@ -247,7 +241,7 @@ public class PalmThingConduit implements Conduit {
                        });
     }
 
-    return (List)changedBooks;
+    return changedBooks;
   }
 
   protected Map hashByBookID(Collection books) {

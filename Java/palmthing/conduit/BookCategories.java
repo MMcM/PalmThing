@@ -100,8 +100,7 @@ public class BookCategories {
     }
   }
 
-  public static void setCategoryIndices(Collection books, Vector categories, 
-                                        Set changed) {
+  public static void setCategoryIndices(Collection books, Vector categories) {
     Map byTag = new HashMap();
 
     Iterator iter = categories.iterator();

@@ -142,6 +142,7 @@ public class BookRecord extends AbstractRecord {
   public String toFormattedString() {
     return ("Book record: {\r\n" +
             "  id: " + getBookID() + "\r\n" +
+            "  category: " + getCategoryTag() + "\r\n" +
             "  summary: " + getSummary() + "\r\n" +
             "}\r\n" +
             super.toFormattedString());
