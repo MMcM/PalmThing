@@ -94,10 +94,23 @@ public class LibraryThingImporter {
     m_validate = validate;
   }
 
+  private String m_addTags = null;
+
+  /** Get additional tags to be added to each record read from the file.
+   * Mainly useful when appending several files to add tags related to the whole file.
+   */
+  public String getAddTags() {
+    return m_addTags;
+  }
+
+  public void setAddTags(String addTags) {
+    m_addTags = addTags;
+  }
+
   /** Import from the given file.
    * @return {@link List} of {@link BookRecord}.
    */
-  public Vector importFile(String file) throws PalmThingException, IOException {
+  public List importFile(String file) throws PalmThingException, IOException {
     FileInputStream fstr = null;
     try {
       fstr = new FileInputStream(file);
@@ -110,7 +123,7 @@ public class LibraryThingImporter {
   }
 
   /** Import from the given stream. */
-  public Vector importStream(InputStream istr) throws PalmThingException, IOException {
+  public List importStream(InputStream istr) throws PalmThingException, IOException {
     BufferedReader in = 
       new BufferedReader(new InputStreamReader(istr, m_encoding));
     
@@ -153,7 +166,7 @@ public class LibraryThingImporter {
         throw new PalmThingException("Export is missing required book id column.");
     }
 
-    Vector records = new Vector();
+    List records = new ArrayList();
 
     while (true) {
       String line = in.readLine();
@@ -173,10 +186,23 @@ public class LibraryThingImporter {
       }
       for (int i = 0; i < stringFieldCols.length; i++) {
         int fieldCol = stringFieldCols[i];
-        if (fieldCol < 0) continue;
+        if (fieldCol < 0) {
+          if ((i == BookRecord.FIELD_TAGS) &&
+              (m_addTags != null)) {
+            setField(book, i, m_addTags);
+          }
+          continue;
+        }
         if (fieldCol >= cols.length)
-          System.err.println(line);
+          System.err.println(line); // TODO: Specific exception?  continue?
         String col = cols[fieldCol];
+        if ((i == BookRecord.FIELD_TAGS) &&
+            (m_addTags != null)) {
+          if (col == null)
+            col = m_addTags;
+          else
+            col = m_addTags + "," + col;
+        }
         if (col == null) continue;
         if (m_normalizer != null)
           col = m_normalizer.normalize(col);
@@ -192,7 +218,7 @@ public class LibraryThingImporter {
   }
 
   /** Export to the given file. */
-  public void exportFile(Vector books, String file)
+  public void exportFile(Collection books, String file)
       throws PalmThingException, IOException {
     FileOutputStream fstr = null;
     try {
@@ -206,7 +232,7 @@ public class LibraryThingImporter {
   }
 
   /** Export to the given stream. */
-  public void exportStream(Vector books, OutputStream ostr)
+  public void exportStream(Collection books, OutputStream ostr)
       throws PalmThingException, IOException {
     BufferedWriter out = 
       new BufferedWriter(new OutputStreamWriter(ostr, m_encoding));
@@ -222,9 +248,9 @@ public class LibraryThingImporter {
       out.newLine();
     }
 
-    Enumeration benum = books.elements();
-    while (benum.hasMoreElements()) {
-      BookRecord book = (BookRecord)benum.nextElement();
+    Iterator iter = books.iterator();
+    while (iter.hasNext()) {
+      BookRecord book = (BookRecord)iter.next();
       if (book.getId() != BookRecord.RECORD_ID_NONE)
         out.write(Integer.toString(book.getId(), 16));
       out.write('\t');
@@ -254,20 +280,20 @@ public class LibraryThingImporter {
         while (true) {
           atsign = col.indexOf('@', atsign);
           if (atsign < 0) break;
-          if (!((atsign == 0) || (col.charAt(atsign-1) == ','))) {
-            // Don't be fooled by @ in the middle of a tag.
-            atsign++;
-            continue;
+          if ((atsign == 0) || (col.charAt(atsign-1) == ',')) {
+            int comma = col.indexOf(',', atsign);
+            if (comma < 0) comma = col.length();
+            book.setCategoryTag(col.substring(atsign, comma));
+            StringBuffer buf = new StringBuffer();
+            if (atsign > 0)
+              buf.append(col.substring(0, atsign-1));
+            if (comma < col.length())
+              buf.append(col.substring((buf.length() > 0) ? comma : comma+1));
+            col = buf.toString();
+            break;
           }
-          int comma = col.indexOf(',', atsign);
-          if (comma < 0) comma = col.length();
-          book.setCategoryTag(col.substring(atsign, comma));
-          StringBuffer buf = new StringBuffer();
-          if (atsign > 0)
-            buf.append(col.substring(0, atsign-1));
-          if (comma < col.length())
-            buf.append(col.substring((buf.length() > 0) ? comma : comma+1));
-          col = buf.toString();
+          // Don't be fooled by @ in the middle of a tag.
+          atsign++;
         }
         col = stringReplaceAll(col, ",", ", ");
       }
@@ -470,10 +496,11 @@ public class LibraryThingImporter {
       if (meth != null) {
         final Method f_meth = meth;
         m_normalizer = new Normalizer() {
+            final Integer ZERO = new Integer(0);
             public String normalize(String str) {
               try {
                 return (String)f_meth.invoke(null, new Object[] { 
-                                               str, Boolean.FALSE, Integer.valueOf(0) 
+                                               str, Boolean.FALSE, ZERO
                                              });
               }
               catch (IllegalAccessException ex) {
@@ -502,7 +529,7 @@ public class LibraryThingImporter {
       return;
     }
     LibraryThingImporter importer = new LibraryThingImporter();
-    Vector books = null;
+    List books = null;
     int sort = 0;
     boolean unicode = false;
     int i = 0;
@@ -531,6 +558,12 @@ public class LibraryThingImporter {
       else if (arg.equals("-validate")) {
         importer.setValidate(Boolean.valueOf(args[i++]).booleanValue());
       }
+      else if (arg.equals("-add-tags")) {
+        String tags = args[i++];
+        if (tags.length() == 0)
+          tags = null;
+        importer.setAddTags(tags);
+      }
       else if (arg.equals("-unicode")) {
         unicode = Boolean.valueOf(args[i++]).booleanValue();
         BookRecord.setUnicode(unicode);
@@ -550,10 +583,11 @@ public class LibraryThingImporter {
       }
       else if (arg.equals("-dump")) {
         Vector categories = BookCategories.getCategories(books);
-        BookCategories.setCategoryIndices(books, categories);
-        PalmDatabaseDumper pdb = new PalmDatabaseDumper();
+        BookCategories.setCategoryIndices(books, categories, null);
+        PalmDatabaseDumper pdb = new PalmDatabaseDumper("PalmThing-Books", (short)0, 
+                                                        "plTN", "DATA");
         byte[] catBytes = Category.toBytes(categories);
-        byte[] appInfo = new byte[BookCategories.SIZE + 1];
+        byte[] appInfo = new byte[BookCategories.SIZE + 2];
         System.arraycopy(catBytes, 0, appInfo, 0, catBytes.length);
         appInfo[BookCategories.SIZE] = (byte)sort;
         pdb.setAppInfoBlock(appInfo);
@@ -561,21 +595,21 @@ public class LibraryThingImporter {
       }
       else if (arg.equals("-dump-raw")) {
         DataOutputStream ostr = new DataOutputStream(new FileOutputStream(args[i++]));
-        Enumeration benum = books.elements();
-        while (benum.hasMoreElements()) {
-          BookRecord book = (BookRecord)benum.nextElement();
+        Iterator iter = books.iterator();
+        while (iter.hasNext()) {
+          BookRecord book = (BookRecord)iter.next();
           book.writeData(ostr);
         }
         ostr.close();
       }
       else if (arg.equals("-load-raw")) {
-        books = new Vector();
+        books = new ArrayList();
         DataInputStream istr = new DataInputStream(new FileInputStream(args[i++]));
         while (true) {
           try {
             BookRecord book = new BookRecord();
             book.readData(istr);
-            books.addElement(book);
+            books.add(book);
           }
           catch (EOFException ex) {
             break;
@@ -584,9 +618,9 @@ public class LibraryThingImporter {
         istr.close();
       }
       else if (arg.equals("-print")) {
-        Enumeration benum = books.elements();
-        while (benum.hasMoreElements()) {
-          BookRecord book = (BookRecord)benum.nextElement();
+        Iterator iter = books.iterator();
+        while (iter.hasNext()) {
+          BookRecord book = (BookRecord)iter.next();
           if (false) System.out.println(book.getISBN());
           System.out.println(book.toFormattedString());
         }

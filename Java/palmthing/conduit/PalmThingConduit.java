@@ -34,7 +34,7 @@ public class PalmThingConduit implements Conduit {
       LibraryThingImporter importer = new LibraryThingImporter();
 
       int syncType = props.syncType;
-      Vector localBooks, backupBooks, remoteBooks;
+      List localBooks, backupBooks, remoteBooks;
 
       if (syncType != SyncProperties.SYNC_HH_TO_PC) {
         localBooks = importer.importFile(local.getPath());
@@ -77,22 +77,54 @@ public class PalmThingConduit implements Conduit {
         }
 
         int sortKey = BookRecordComparator.KEY_TITLE_AUTHOR;
-        try {
-          byte[] appInfo = SyncManager.readDBAppInfoBlock(db, props.remoteNames[0]);
-          // Must match remote.
-          sortKey = appInfo[BookCategories.SIZE];
+        byte[] appInfo = null;
+        Vector remoteCategories = null;
+        if (remoteBooks != null) {
+          try {
+            appInfo = SyncManager.readDBAppInfoBlock(db, props.remoteNames[0]);
+            // Must match remote.
+            sortKey = appInfo[BookCategories.SIZE];
+          }
+          catch (SyncException ex) {
+          }
+          if (appInfo != null) {
+            remoteCategories = Category.parseCategories(appInfo);
+            BookCategories.setCategoryTags(remoteBooks, remoteCategories);
+          }
         }
-        catch (SyncException ex) {
+        if (appInfo == null) {
+          appInfo = new byte[BookCategories.SIZE + 1];
+          appInfo[BookCategories.SIZE] = (byte)sortKey;
         }
 
-        Vector changedBooks = merge(localBooks, backupBooks, remoteBooks,
-                                    new BookRecordComparator(sortKey));
+        List changedBooks = merge(localBooks, backupBooks, remoteBooks,
+                                  new BookRecordComparator(sortKey));
         if (remoteBooks == null)
           remoteBooks = changedBooks;
 
-        Enumeration benum = changedBooks.elements();
-        while (benum.hasMoreElements()) {
-          BookRecord book = (BookRecord)benum.nextElement();
+        Vector categories =  BookCategories.getCategories(remoteBooks);
+        if (remoteCategories != null) {
+          categories = BookCategories.mergeCategories(remoteCategories, categories);
+        }
+        byte[] catBytes = Category.toBytes(categories);
+        System.arraycopy(catBytes, 0, appInfo, 0, catBytes.length);
+        SyncManager.writeDBAppInfoBlock(db, props.remoteNames[0], appInfo);
+
+        {
+          Set onlyCategoryChanged = null;
+          if (remoteBooks != changedBooks) 
+            onlyCategoryChanged = new HashSet();
+          BookCategories.setCategoryIndices(remoteBooks, categories, 
+                                            onlyCategoryChanged);
+          if (onlyCategoryChanged != null) {
+            onlyCategoryChanged.removeAll(changedBooks);
+            changedBooks.addAll(onlyCategoryChanged);
+          }
+        }
+
+        Iterator iter = changedBooks.iterator();
+        while (iter.hasNext()) {
+          BookRecord book = (BookRecord)iter.next();
           if (book.isDeleted())
             SyncManager.deleteRecord(db, book);
           else
@@ -114,20 +146,20 @@ public class PalmThingConduit implements Conduit {
     }
   }
 
-  protected Vector readAllRemote(int db) throws IOException {
+  protected List readAllRemote(int db) throws IOException {
     int nrecs = SyncManager.getDBRecordCount(db);
-    Vector result = new Vector(nrecs);
+    List result = new ArrayList(nrecs);
     for (int i = 0; i < nrecs; i++) {
       BookRecord book = new BookRecord();
       book.setIndex(i);
       SyncManager.readRecordByIndex(db, book);
-      result.addElement(book);
+      result.add(book);
     }
     return result;
   }
 
-  protected Vector readModifiedRemote(int db) throws IOException {
-    Vector result = new Vector();
+  protected List readModifiedRemote(int db) throws IOException {
+    List result = new ArrayList();
     while (true) {
       BookRecord book = new BookRecord();
       try {
@@ -136,26 +168,29 @@ public class PalmThingConduit implements Conduit {
       catch (SyncException ex) {
         break;
       }
-      result.addElement(book);
+      result.add(book);
     }
     return result;
   }
 
-  protected Vector merge(Vector localBooks, Vector backupBooks, Vector remoteBooks,
-                         Comparator comp) 
+  protected List merge(List localBooks, List backupBooks, List remoteBooks,
+                       Comparator comp) 
       throws IOException {
-    Vector changedBooks;
+    // Collection so that is can be an intermediate Set in the case
+    // where we need to check a lot for already being present.
+    Collection changedBooks;
     if (remoteBooks == null) {
-      remoteBooks = changedBooks = localBooks;
+      // Everything is copied over and that is all remotely.
+      changedBooks = remoteBooks = localBooks;
     }
     else {
-      changedBooks = new Vector();
-      Hashtable remoteByBookID = hashByBookID(remoteBooks);
+      changedBooks = new HashSet();
+      Map remoteByBookID = hashByBookID(remoteBooks);
       {
-        Hashtable backupByBookID = hashByBookID(backupBooks);
-        Enumeration benum = localBooks.elements();
-        while (benum.hasMoreElements()) {
-          BookRecord book = (BookRecord)benum.nextElement();
+        Map backupByBookID = hashByBookID(backupBooks);
+        Iterator iter = localBooks.iterator();
+        while (iter.hasNext()) {
+          BookRecord book = (BookRecord)iter.next();
           BookRecord backup = (BookRecord)
             backupByBookID.get(new Integer(book.getBookID()));
           if ((backup == null) || !book.equals(backup)) {
@@ -164,17 +199,16 @@ public class PalmThingConduit implements Conduit {
               remoteByBookID.get(new Integer(book.getBookID()));
             if (remote != null)
               remoteBooks.remove(remote);
-            remoteBooks.addElement(book);
-            changedBooks.addElement(book);
+            remoteBooks.add(book);
+            changedBooks.add(book);
           }
         }
       }
       {
-        Hashtable localByBookID = hashByBookID(localBooks);
-        Enumeration benum = ((backupBooks == null) ? remoteBooks : backupBooks)
-          .elements();
-        while (benum.hasMoreElements()) {
-          BookRecord book = (BookRecord)benum.nextElement();
+        Map localByBookID = hashByBookID(localBooks);
+        Iterator iter = ((backupBooks == null) ? remoteBooks : backupBooks).iterator();
+        while (iter.hasNext()) {
+          BookRecord book = (BookRecord)iter.next();
           if (!localByBookID.containsKey(new Integer(book.getBookID()))) {
             // Local removed.
             book.setIsDeleted(true);
@@ -182,7 +216,7 @@ public class PalmThingConduit implements Conduit {
               remoteByBookID.get(new Integer(book.getBookID()));
             if (remote != null)
               remoteBooks.remove(remote);
-            changedBooks.addElement(book);
+            changedBooks.add(book);
           }
         }
       }
@@ -190,18 +224,20 @@ public class PalmThingConduit implements Conduit {
     
     Collections.sort(remoteBooks, comp);
     for (int i = 0; i < remoteBooks.size(); i++) {
-      BookRecord book = (BookRecord)remoteBooks.elementAt(i);
+      BookRecord book = (BookRecord)remoteBooks.get(i);
       if (book.getId() == 0)
         book.setIndex(i);
       else if (book.getIndex() != i) {
         book.setIndex(i);
         if ((changedBooks != remoteBooks) && !changedBooks.contains(book))
-          changedBooks.addElement(book);
+          changedBooks.add(book);
       }
     }
 
     if (changedBooks != remoteBooks) {
-      Collections.sort(changedBooks, 
+      if (!(changedBooks instanceof List))
+        changedBooks = new ArrayList(changedBooks);
+      Collections.sort((List)changedBooks, 
                        new Comparator() {
                          public int compare(Object o1, Object o2) {
                            BookRecord book1 = (BookRecord)o1;
@@ -211,15 +247,15 @@ public class PalmThingConduit implements Conduit {
                        });
     }
 
-    return changedBooks;
+    return (List)changedBooks;
   }
 
-  protected Hashtable hashByBookID(Vector books) {
-    Hashtable result = new Hashtable();
+  protected Map hashByBookID(Collection books) {
+    Map result = new HashMap();
     if (books != null) {
-      Enumeration benum = books.elements();
-      while (benum.hasMoreElements()) {
-        BookRecord book = (BookRecord)benum.nextElement();
+      Iterator iter = books.iterator();
+      while (iter.hasNext()) {
+        BookRecord book = (BookRecord)iter.next();
         if (book.getBookID() != 0) {
           result.put(new Integer(book.getBookID()), book);
         }

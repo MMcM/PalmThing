@@ -27,16 +27,98 @@ public class BookCategories {
 
   public static Vector getCategories(Collection books) {
     Vector result = new Vector(Category.MAX_CATEGORIES);
-    // TODO: do something
+
+    result.add(new Category(g_Unfiled, UNFILED, UNFILED));
+    result.add(new Category(g_Main, MAIN, MAIN));
+    
+    Map byTag = new HashMap();
+    Iterator iter = books.iterator();
+    while (iter.hasNext()) {
+      BookRecord book = (BookRecord)iter.next();
+      String ctag = book.getCategoryTag();
+      if (ctag == null) continue;
+      Category category = (Category)byTag.get(ctag);
+      if (category != null) continue;
+      category = new Category(ctag.substring(1), result.size(), result.size());
+      result.add(category);
+      byTag.put(ctag, category);
+    }
+
+    while (result.size() < Category.MAX_CATEGORIES) {
+      result.add(new Category(""));
+    }
+
     return result;
   }
 
-  public static void setCategoryIndices(Collection books, Vector getCategories) {
-  }
-
-  public static Vector mergeCategories(Vector cats1, Vector cats2) {
+  public static Vector mergeCategories(Vector ocats, Vector ncats) {
     Vector result = new Vector(Category.MAX_CATEGORIES);
-    // TODO: do something
+
+    Map byName = new HashMap();
+    Stack empty = new Stack();
+
+    Iterator iter = ocats.iterator();
+    while (iter.hasNext()) {
+      Category ocat = (Category)iter.next();
+      Category cat = new Category(ocat.getName(), ocat.getId(), ocat.getIndex());
+      result.add(cat);
+      if (cat.getName().length() > 0)
+        byName.put(cat.getName(), cat);
+      else
+        empty.push(cat);
+    }
+
+    iter = ncats.iterator();
+    while (iter.hasNext()) {
+      Category ncat = (Category)iter.next();
+      if (ncat.getName().length() == 0) continue;
+      Category ocat = (Category)byName.get(ncat.getName());
+      if (ocat != null) continue;
+      ocat = (Category)empty.pop();
+      ocat.setName(ncat.getName());
+      byName.put(ocat.getName(), ocat);
+    }
+
     return result;
+  }
+
+  public static void setCategoryTags(Collection books, Vector categories) {
+    String[] ctags = new String[Category.MAX_CATEGORIES];
+
+    Iterator iter = books.iterator();
+    while (iter.hasNext()) {
+      BookRecord book = (BookRecord)iter.next();
+      int index = book.getCategoryIndex();
+      if (index <= MAIN) continue;
+      String ctag = ctags[index];
+      if (ctag == null) {
+        Category category = (Category)categories.get(index);
+        ctag = "@" + category.getName();
+        ctags[index] = ctag;
+      }
+      book.setCategoryTag(ctag);
+    }
+  }
+
+  public static void setCategoryIndices(Collection books, Vector categories, 
+                                        Set changed) {
+    Map byTag = new HashMap();
+
+    Iterator iter = categories.iterator();
+    while (iter.hasNext()) {
+      Category category = (Category)iter.next();
+      if (category.getName().length() == 0) continue;
+      String ctag = "@" + category.getName();
+      byTag.put(ctag, category);
+    }
+
+    iter = books.iterator();
+    while (iter.hasNext()) {
+      BookRecord book = (BookRecord)iter.next();
+      String ctag = book.getCategoryTag();
+      if (ctag == null) continue;
+      Category category = (Category)byTag.get(ctag);
+      book.setCategoryIndex(category.getIndex());
+    }
   }
 }
