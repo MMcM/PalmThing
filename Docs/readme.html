@@ -11,7 +11,7 @@
 <body>
 
 <h1>Palm OS offline LibraryThing database application</h1>
-Version 1.0.1. &nbsp;MMcM 10/06
+Version 1.0.2. &nbsp;MMcM 10/06
 
 <h3>Summary</h3>
 
@@ -250,6 +250,22 @@ A note is presently the same as the LT Comments field.
 </ul></td>
 <td><img src="NoteForm.png" width="160" height="160" alt="Note Edit"></td></tr></table>
 
+<h3>Categories and Tags</h3>
+
+<p>
+Most fields are the same on the Palm and on the LibraryThing site.
+Comments is called Note, but is otherwise the same.
+</p>
+
+<p>
+Tags are somewhat special.  Tags in LibraryThing map to both the
+category on the Palm and the tags field in the Palm record.  A
+<i>collection tag</i> is a tag that starts with <code>@</code>.  These
+organize the eagerly anticipated collections feature, which allows for
+wishlists and so on.  On the Palm, the first collection tag becomes
+the category and only the other tags appear in the record body.
+</p>
+
 <h3>Notes</h3>
 <ul>
 
@@ -343,14 +359,6 @@ several choices.
 <li>
 <a name="unicode">
 Full Unicode display for polyglot libraries.  Probably without edit to begin with.
-</li>
-
-<li>
-Map tags associated with the long-anticipated collections feature in
-LT (those that start with <code>@</code>) into categories.  So,
-Wishlist, Library, Owned.  Or Joe, Mary.  Since there can only be one
-category, take the first such tag.  (I may just do this even before LT
-supports them, although I'd hate for the model to change.)
 </li>
 
 <li>
