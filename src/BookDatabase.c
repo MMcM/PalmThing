@@ -393,34 +393,40 @@ Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive)
   return errNone;
 }
 
-Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
-                               UInt16 category, BookSeekState *seekState)
+Boolean BookDatabaseSeekRecord(UInt16 *index, UInt16 offset, Int16 direction,
+                               UInt16 category)
 {
-  Boolean found;
-
-  if (NULL == seekState)
     return (errNone == DmSeekRecordInCategory(g_BookDatabase, index, offset, direction,
                                               category));
-  
-  found = true;
+}
+
+Boolean BookDatabaseSeekRecordFiltered(BookSeekState *seekState, UInt16 category)
+{
   while (true) {
-    if (errNone != DmSeekRecordInCategory(g_BookDatabase, index, 
-                                          (0 == offset) ? 0 : 1, 
-                                          direction, category)) {
-      found = false;
-      break;
+    if (errNone != DmSeekRecordInCategory(g_BookDatabase, &seekState->currentRecord, 
+                                          (0 == seekState->amountRemaining) ? 0 : 1, 
+                                          seekState->direction, category)) {
+      seekState->currentRecord = NO_RECORD;
+      seekState->amountRemaining = 0;
+      return false;
     }
 
-    if (!BookRecordFilterMatch(*index, &seekState->filter)) {
-      if (offset == 0) offset = 1;
-      continue;
+    // Zero case: if the original position matches, we will be done;
+    // if not, the work left is 1 unit.
+    if (seekState->amountRemaining == 0) 
+      seekState->amountRemaining = 1;
+
+    if (BookRecordFilterMatch(seekState->currentRecord, &seekState->filter)) {
+      if (--seekState->amountRemaining == 0) 
+        return true;
     }
 
-    if (--offset <= 0) 
-      break;
+    // Periodically check for events to allow preemption.
+    if (seekState->yieldCount == 0)
+      seekState->yieldCount = SEEK_YIELD_QUANTUM;
+    if (--seekState->yieldCount == 0)
+      return false;
   }
-
-  return found;
 }
 
 static Boolean BookRecordPackedFilterMatch(BookRecordPacked *packed, BookFilter *filter)

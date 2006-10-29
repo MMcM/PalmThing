@@ -108,9 +108,12 @@ typedef struct {
   UInt16 matchLen;
 } BookFilter;
 
+
 typedef struct {
   BookFilter filter;
   UInt16 currentRecord;
+  UInt16 amountRemaining;
+  Int16 direction;
   UInt16 yieldCount;
 } BookSeekState;
 
@@ -175,8 +178,9 @@ extern Err BookDatabaseNewRecord(UInt16 *index, BookRecord *record);
 extern Err BookDatabaseSaveRecord(UInt16 *index, MemHandle *recordH, BookRecord *record);
 extern Err BookDatabaseDirtyRecord(UInt16 index);
 extern Err BookDatabaseDeleteRecord(UInt16 *index, Boolean archive);
-extern Boolean BookDatabaseSeekRecord(UInt16 *index, Int16 offset, Int16 direction,
-                                      UInt16 category, BookSeekState *seekState);
+extern Boolean BookDatabaseSeekRecord(UInt16 *index, UInt16 offset, Int16 direction,
+                                      UInt16 category);
+extern Boolean BookDatabaseSeekRecordFiltered(BookSeekState *seekState, UInt16 category);
 extern Boolean BookRecordFilterMatch(UInt16 index, BookFilter *filter);
 extern Char *BookDatabaseGetCategoryName(UInt16 index);
 extern Boolean BookRecordIsEmpty(BookRecord *record);

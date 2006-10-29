@@ -23,9 +23,20 @@ enum { COL_TITLE };
 #define LEFT_FRACTION_NUM 3
 #define LEFT_FRACTION_DEN 4
 
+enum {
+  REDISPLAY_NONE, REDISPLAY_BEGIN,
+  REDISPLAY_SCROLL_FORWARD, REDISPLAY_SCROLL_BACKWARD, 
+  REDISPLAY_FIRST_PAGE, REDISPLAY_LAST_PAGE, 
+  REDISPLAY_FILL_TOP, REDISPLAY_FILL_NEXT, 
+  REDISPLAY_UP_ARROW
+};
+
 typedef struct {
   BookSeekState seekState;
+  UInt16 action;
   MemHandle keyHandle;
+  UInt16 cacheFillPointer;
+  UInt16 recordCache[0];
 } BookFindState;
 
 /*** Local storage ***/
@@ -35,21 +46,21 @@ static FontID g_ListFont = stdFont;
 static UInt16 g_ListFields = KEY_TITLE_AUTHOR;
 static Boolean g_IncrementalFind = false; // TODO: Off for now.
 static BookFindState *g_FindState = NULL;
+static Boolean g_ScrollCurrentIntoView = false;
 
 /*** Local routines ***/
 
 static void ListFormDrawRecord(MemPtr table, Int16 row, Int16 column,
                                RectangleType *bounds);
-static void ListFormLoadTable();
+static void ListFormRedisplay(UInt16 action, Boolean checkCache);
 static Boolean ListFormMenuCommand(UInt16 command);
 static void ListFormItemSelected(EventType *event);
 static void ListFormSelectCategory();
 static void ListFormFindTypeSelected(EventType *event);
-static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean byPage);
+static void ListFormScroll(WinDirectionType direction);
 static Boolean ListFormUpdateDisplay(UInt16 updateCode);
 static void ListBeamCategory(Boolean send);
 static void ListFontSelect();
-static void ListFormSelectRecord(UInt16 recordNum);
 static void ListFormFieldChanged();
 static void ListFormFind();
 static void ListFormUpdateFindState();
@@ -114,14 +125,12 @@ static void ListFormOpen(FormType *form)
   FieldType *field;
   ListType *list;
   ControlType *ctl;
-  FontID oldFont;
   RectangleType tableBounds;
   Int16 row, nrows;
   Int16 extraWidth;
   Char *label, *selection;
   UInt16 len;
-
-  oldFont = FntSetFont(g_ListFont);
+  Boolean checkCache;
 
   table = FrmGetObjectPtrFromID(form, ListTable);
   TblGetBounds(table, &tableBounds);
@@ -158,12 +167,33 @@ static void ListFormOpen(FormType *form)
     g_FindState->seekState.filter.findKey = FldGetTextPtr(field);
   }
 
-  ListFormLoadTable();
+  checkCache = true;
+
+  if (g_CurrentRecordEdited) {
+    g_CurrentRecordEdited = false;
+    checkCache = false;
+    if (NO_RECORD != g_CurrentRecord) {
+      if ((dmAllCategories != g_CurrentCategory) &&
+          (BookRecordGetCategory(g_CurrentRecord) != g_CurrentCategory)) {
+        // The current record was edited to no longer match the current category.
+        // (The category is usually changed in this case, but be safe.)
+        g_CurrentRecord = NO_RECORD;
+      }
+      else if (NULL != g_FindState) {
+        if (!BookRecordFilterMatch(g_CurrentRecord, &g_FindState->seekState.filter)) {
+          // The current record was edited to no longer match the filter.
+          g_CurrentRecord = NO_RECORD;
+        }
+      }
+    }
+  }
+
+  if (NO_RECORD != g_CurrentRecord)
+    g_ScrollCurrentIntoView = true;
+  ListFormRedisplay(REDISPLAY_BEGIN, checkCache);
 
   CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger), 
                           BookDatabaseGetCategoryName(g_CurrentCategory));
-
-  FntSetFont(oldFont);
 }
 
 Boolean ListFormHandleEvent(EventType *event)
@@ -180,9 +210,6 @@ Boolean ListFormHandleEvent(EventType *event)
     form = FrmGetActiveForm();
     ListFormOpen(form);
     FrmDrawForm(form);
-      
-    if (NO_RECORD != g_CurrentRecord)
-      ListFormSelectRecord(g_CurrentRecord);
     handled = true;
     break;
 
@@ -242,12 +269,12 @@ Boolean ListFormHandleEvent(EventType *event)
   case ctlRepeatEvent:
     switch (event->data.ctlEnter.controlID) {
     case ListScrollUpRepeating:
-      ListFormScroll(winUp, 1, true);
+      ListFormScroll(winUp);
       // Leave unhandled so button can repeat.
       break;
     
     case ListScrollDownRepeating:
-      ListFormScroll(winDown, 1, true);
+      ListFormScroll(winDown);
       // Leave unhandled so button can repeat.
       break;
     }
@@ -261,12 +288,12 @@ Boolean ListFormHandleEvent(EventType *event)
     else {
       switch (event->data.keyDown.chr) {
       case pageUpChr:
-        ListFormScroll(winUp, 1, true);
+        ListFormScroll(winUp);
         handled = true;
         break;
      
       case pageDownChr:
-        ListFormScroll(winDown, 1, true);
+        ListFormScroll(winDown);
         handled = true;
         break;
      
@@ -463,57 +490,47 @@ static UInt16 ListFormNumberOfRows(TableType *table)
     return nrows;
 }
 
-static void ListFormScroll(WinDirectionType direction, UInt16 amount, Boolean byPage)
+static void ListFormScroll(WinDirectionType direction)
 {
+  UInt16 action, pendingAction;
   FormType *form;
   TableType *table;
   UInt16 rowsPerPage;
-  UInt16 newTopVisibleRecord;
 
-  form = FrmGetActiveForm();
-  table = FrmGetObjectPtrFromID(form, ListTable);
-  rowsPerPage = ListFormNumberOfRows(table) - 1;
-  newTopVisibleRecord = g_TopVisibleRecord;
+  if (direction == winDown)
+    action = REDISPLAY_SCROLL_FORWARD;
+  else
+    action = REDISPLAY_SCROLL_BACKWARD;
 
-  if (byPage) {
-    amount *= rowsPerPage;
-  }
-
-  if (direction == winDown) {
-    // Forward n or last page.
-    if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekForward,
-                                g_CurrentCategory, &g_FindState->seekState)) {
-      // NB: dmMaxRecordIndex and NO_RECORD are the same.
-      newTopVisibleRecord = dmMaxRecordIndex;
-      if (byPage) {
-        if (!BookDatabaseSeekRecord(&newTopVisibleRecord, rowsPerPage, dmSeekBackward,
-                                    g_CurrentCategory, &g_FindState->seekState)) {
-          newTopVisibleRecord = 0;
-          BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward,
-                                 g_CurrentCategory, &g_FindState->seekState);
-        }
+  if (NULL != g_FindState) {
+    pendingAction = g_FindState->action;
+    if ((pendingAction == REDISPLAY_SCROLL_FORWARD) ||
+        (pendingAction == REDISPLAY_SCROLL_BACKWARD)) {
+      // If we already have a scroll in progress, then we attempt to
+      // augment it rather than starting over.
+      form = FrmGetActiveForm();
+      table = FrmGetObjectPtrFromID(form, ListTable);
+      rowsPerPage = ListFormNumberOfRows(table) - 1;
+      if (action == pendingAction) {
+        // Same direction: easy, just add more work.
+        g_FindState->seekState.amountRemaining += rowsPerPage;
+      }
+      else if (g_FindState->seekState.amountRemaining >= rowsPerPage) {
+        // Opposite direction, but several pages pending, cancel one.
+        // Even if that goes to zero, still need to move to a valid record.
+        g_FindState->seekState.amountRemaining -= rowsPerPage;
       }
       else {
-        BookDatabaseSeekRecord(&newTopVisibleRecord, 1, dmSeekBackward,
-                               g_CurrentCategory, &g_FindState->seekState);
+        // Actually reversing direction.
+        g_FindState->action = action;
+        g_FindState->seekState.amountRemaining =
+          rowsPerPage - g_FindState->seekState.amountRemaining;
       }
-    }
-  }
-  else {
-    // Backward n or top.
-    if (!BookDatabaseSeekRecord(&newTopVisibleRecord, amount, dmSeekBackward,
-                                g_CurrentCategory, &g_FindState->seekState)) {
-      newTopVisibleRecord = 0;
-      BookDatabaseSeekRecord(&newTopVisibleRecord, 0, dmSeekForward,
-                             g_CurrentCategory, &g_FindState->seekState);
+      return;
     }
   }
 
-  if (g_TopVisibleRecord != newTopVisibleRecord) {
-    g_TopVisibleRecord = newTopVisibleRecord;
-    ListFormLoadTable();
-    TblRedrawTable(table);
-  }
+  ListFormRedisplay(action, false);
 }
 
 static void ListFormSelectCategory()
@@ -555,15 +572,17 @@ static void ListFormFindTypeSelected(EventType *event)
 
 static void ListFormFieldChanged()
 {
+  ListFormUpdateFindState();
+  g_TopVisibleRecord = 0;
   if (g_IncrementalFind)
-    ListFormFind();
+    ListFormRedisplay(REDISPLAY_BEGIN, false);
 }
 
 static void ListFormFind()
 {
   ListFormUpdateFindState();
   g_TopVisibleRecord = 0;
-  FrmUpdateForm(FrmGetActiveFormID(), UPDATE_FORCE_REDRAW);
+  ListFormRedisplay(REDISPLAY_BEGIN, false);
 }
 
 static void ListFormUpdateFindState()
@@ -572,6 +591,8 @@ static void ListFormUpdateFindState()
   FormType *form;
   FieldType *field;
   ListType *list;
+  TableType *table;
+  UInt16 size;
 
   ListFormDeleteFindState();
 
@@ -581,11 +602,14 @@ static void ListFormUpdateFindState()
   if ((NULL == key) || ('\0' == *key))
     return;
 
-  g_FindState = MemPtrNew(sizeof(BookFindState));
+  table = FrmGetObjectPtrFromID(form, ListTable);
+
+  // Two extra to remember outsides for scroll arrows.
+  size = sizeof(BookFindState) + sizeof(UInt16) * (TblGetNumberOfRows(table) + 2);
+  g_FindState = MemPtrNew(size);
   if (NULL == g_FindState)
     return;
-
-  MemSet(g_FindState, sizeof(BookFindState), 0);
+  MemSet(g_FindState, size, 0);
 
   g_FindState->keyHandle = FldGetTextHandle(field);
 
@@ -632,60 +656,296 @@ static void ListFormDeleteFindState()
 
 /*** Display ***/
 
-static void ListFormLoadTable()
+// The time consuming part of display is seeking around in the
+// database.  So allow that to be preempted via a state machine around
+// the various seeks.
+static void ListFormRedisplay(UInt16 action, Boolean checkCache)
 {
   FormType *form;
   TableType *table;
   FontID oldFont;
-  UInt16 lineHeight;
-  UInt16 recordNum;
-  Int16 row, nrows, nvisible;
-  Boolean scrollableUp, scrollableDown;
-  UInt16 upIndex, downIndex;
+  RectangleType bounds, ibounds;
+  UInt16 currentRecord, amount, ndraw, upIndex, downIndex;
+  Int16 direction, row, nrows, column, lineHeight, cacheIndex;
+  Coord y;
+  Boolean incremental, preempted, found, haveTableVars, 
+    updateScrollable, scrollableUp, scrollableDown;
 
-  form = FrmGetActiveForm();
-  table = FrmGetObjectPtrFromID(form, ListTable);
-  TblUnhighlightSelection(table);
-  nrows = TblGetNumberOfRows(table);
-  nvisible = ListFormNumberOfRows(table);
+  incremental = (REDISPLAY_NONE == action);
+  if (incremental) {
+    if ((g_FindState == NULL) ||
+        (REDISPLAY_NONE == g_FindState->action))
+      // Nothing to do.
+      return;
+    // The cache is not used in incremental mode; all its processing
+    // is done before any preemption.
+    checkCache = false;
+    ndraw = 0;
+  }
+  else if (!checkCache && (NULL != g_FindState)) {
+    g_FindState->cacheFillPointer = 0;
+  }
 
-  oldFont = FntSetFont(g_ListFont);
-  lineHeight = FntLineHeight();
-  FntSetFont(oldFont);
+  while (true) {
+    if ((g_FindState == NULL) ||
+        (((REDISPLAY_NONE != action) &&
+          (action != g_FindState->action)) ||
+         (g_FindState->seekState.amountRemaining == 0))) {
+      // Unless resuming a previously preempted seek, figure out what to do.
+      switch (action) {
+      case REDISPLAY_BEGIN:
+        action = REDISPLAY_UP_ARROW;
+        continue;
 
-  recordNum = g_TopVisibleRecord;
-  for (row = 0; row < nvisible; row++) {
-    if (!BookDatabaseSeekRecord(&recordNum, (row > 0) ? 1 : 0, dmSeekForward,
-                                g_CurrentCategory, &g_FindState->seekState))
+      case REDISPLAY_SCROLL_FORWARD:
+      case REDISPLAY_SCROLL_BACKWARD:
+        form = FrmGetActiveForm();
+        table = FrmGetObjectPtrFromID(form, ListTable);
+        currentRecord = g_TopVisibleRecord;
+        amount = ListFormNumberOfRows(table) - 1;
+        direction = (REDISPLAY_SCROLL_FORWARD == action) ?
+          dmSeekForward : dmSeekBackward;
+        break;
+      case REDISPLAY_FIRST_PAGE:
+        currentRecord = 0;
+        amount = 0;
+        direction = dmSeekForward;
+        break;
+      case REDISPLAY_LAST_PAGE:
+        form = FrmGetActiveForm();
+        table = FrmGetObjectPtrFromID(form, ListTable);
+        // NB: dmMaxRecordIndex and NO_RECORD are the same.
+        currentRecord = dmMaxRecordIndex;
+        amount = ListFormNumberOfRows(table) - 1;
+        direction = dmSeekBackward;
+        break;
+      case REDISPLAY_FILL_TOP:
+        currentRecord = g_TopVisibleRecord;
+        amount = 0;
+        direction = dmSeekForward;
+        break;
+      case REDISPLAY_FILL_NEXT:
+        // currentRecord is where we left off.
+        amount = 1;
+        direction = dmSeekForward;
+        break;
+      case REDISPLAY_UP_ARROW:
+        currentRecord = g_TopVisibleRecord;
+        amount = 1;
+        direction = dmSeekBackward;
+        break;
+      }
+      
+      if (NULL != g_FindState) {
+        g_FindState->seekState.currentRecord = currentRecord;
+        g_FindState->seekState.amountRemaining = amount;
+        g_FindState->seekState.direction = direction;
+      }
+    }
+
+    if (g_FindState == NULL) {
+      found = BookDatabaseSeekRecord(&currentRecord, amount, direction, 
+                                     g_CurrentCategory);
+    }
+    else {
+      cacheIndex = -1;
+      if (checkCache) {
+        switch (action) {
+        case REDISPLAY_UP_ARROW:
+          cacheIndex = 0;
+          break;
+        case REDISPLAY_FILL_TOP:
+          cacheIndex = 1;
+          break;
+        case REDISPLAY_FILL_NEXT:
+          // This use of row is okay because we never enter get to
+          // REDISPLAY_FILL_NEXT except through REDISPLAY_FILL_TOP,
+          // except in incremental mode, when we don't check the
+          // cache at all.
+          cacheIndex = row + 1;
+          break;
+        }
+      }
+      if ((cacheIndex >= 0) &&
+          (cacheIndex < g_FindState->cacheFillPointer)) {
+        currentRecord = g_FindState->recordCache[cacheIndex];
+        found = (NO_RECORD != currentRecord);
+      }
+      else {
+        preempted = false;
+        while (true) {
+          found = BookDatabaseSeekRecordFiltered(&g_FindState->seekState, 
+                                                 g_CurrentCategory);
+          if (found) {
+            currentRecord = g_FindState->seekState.currentRecord;
+            break;
+          }
+          else if (g_FindState->seekState.amountRemaining > 0) {
+            // Preempted: return to main event loop, which will call
+            // us back if nothing changes.
+            // TODO: Right now, the same flag enables preemption and
+            // incremental find.  Could be separate, so that explicit
+            // finds were still preemptable.
+            if (g_IncrementalFind && EvtSysEventAvail(true)) {
+              preempted = true;
+              break;
+            }
+          }
+          else {
+            currentRecord = NO_RECORD;
+            break;
+          }
+        }
+        if (preempted) break;
+      }
+    }
+
+    switch (action) {
+    case REDISPLAY_SCROLL_FORWARD:
+      if (found) {
+        g_TopVisibleRecord = currentRecord;
+        action = REDISPLAY_UP_ARROW;
+      }
+      else {
+        action = REDISPLAY_LAST_PAGE;
+      }
+      continue;
+    case REDISPLAY_SCROLL_BACKWARD:
+    case REDISPLAY_LAST_PAGE:
+      if (found) {
+        g_TopVisibleRecord = currentRecord;
+        action = REDISPLAY_UP_ARROW;
+      }
+      else {
+        action = REDISPLAY_FIRST_PAGE;
+      }
+      continue;
+    case REDISPLAY_FIRST_PAGE:
+      // First page has nothing above by definition.
+      if (g_FindState == NULL) {
+        scrollableUp = false;
+      }
+      else {
+        g_FindState->recordCache[0] = NO_RECORD;
+        g_FindState->cacheFillPointer = 1;
+      }
+      action = REDISPLAY_FILL_TOP;
+      if (found) {
+        g_TopVisibleRecord = currentRecord;
+        continue;
+      }
+      // If failed to find first page, must be entirely empty, so skip
+      // redundant seeks.
       break;
+    case REDISPLAY_UP_ARROW:
+      if (g_FindState == NULL) {
+        scrollableUp = found;
+      }
+      else {
+        g_FindState->recordCache[0] = currentRecord;
+        g_FindState->cacheFillPointer = 1;
+      }
+      action = REDISPLAY_FILL_TOP;
+      continue;
+    default:
+      break;
+    }
+    
+    // Have processed one of the fill actions.
+    if (NULL != g_FindState) {
+      // Remember success or failure.
+      g_FindState->recordCache[g_FindState->cacheFillPointer++] = currentRecord;
+    }
+
+    if (!found) {
+      scrollableDown = false;
+      updateScrollable = true;
+      action = REDISPLAY_NONE;
+      break;
+    }
+
+    if (!haveTableVars) {
+      form = FrmGetActiveForm();
+      table = FrmGetObjectPtrFromID(form, ListTable);
+      TblGetBounds(table, &bounds);
+      nrows = TblGetNumberOfRows(table);
+      if (REDISPLAY_FILL_TOP == action) {
+        y = bounds.topLeft.y;
+        row = 0;
+        TblUnhighlightSelection(table);
+      }
+      else {
+        row = TblGetLastUsableRow(table);
+        TblGetItemBounds(table, row, COL_TITLE, &ibounds);
+        row++;
+        y = ibounds.topLeft.y + lineHeight;
+      }
+      oldFont = FntSetFont(g_ListFont);
+      lineHeight = FntLineHeight();
+      FntSetFont(oldFont);
+      haveTableVars = true;
+    }
+
+    if ((row >= nrows) ||
+        (y + lineHeight > bounds.topLeft.y + bounds.extent.y)) {
+      // Row does not fit.
+      scrollableDown = true;
+      updateScrollable = true;
+      action = REDISPLAY_NONE;
+      break;
+    }
 
     TblSetRowUsable(table, row, true);
     TblMarkRowInvalid(table, row);
-    TblSetRowID(table, row, recordNum);
+    TblSetRowID(table, row, currentRecord);
     TblSetRowHeight(table, row, lineHeight);
-  }
-
-  while (row < nrows) {
-    TblSetRowUsable(table, row, false);
+    if (currentRecord == g_CurrentRecord)
+      TblSelectItem(table, row, COL_TITLE);
     row++;
+    y += lineHeight;
+    ndraw++;
+
+    action = REDISPLAY_FILL_NEXT;
   }
 
-  recordNum = g_TopVisibleRecord;
-  // Up if top not first record.
-  scrollableUp = BookDatabaseSeekRecord(&recordNum, 1, dmSeekBackward,
-                                        g_CurrentCategory, &g_FindState->seekState);
- 
-  row = TblGetLastUsableRow(table);
-  if (row != -1)
-    recordNum = TblGetRowID(table, row);
+  if (incremental) {
+    if (ndraw > 0)
+      TblRedrawTable(table);
+  }
+  else {
+    if (!haveTableVars) {
+      // Only need a subset.
+      form = FrmGetActiveForm();
+      table = FrmGetObjectPtrFromID(form, ListTable);
+      nrows = TblGetNumberOfRows(table);
+    }
+    while (row < nrows) {
+      TblSetRowUsable(table, row, false);
+      row++;
+    }
+  }
 
-  // Down if bottom not last record.
-  scrollableDown = BookDatabaseSeekRecord(&recordNum, 1, dmSeekForward,
-                                          g_CurrentCategory, &g_FindState->seekState);
+  if (updateScrollable) {
+    upIndex = FrmGetObjectIndex(form, ListScrollUpRepeating);
+    downIndex = FrmGetObjectIndex(form, ListScrollDownRepeating);
+    FrmUpdateScrollers(form, upIndex, downIndex, scrollableUp, scrollableDown);
+  }
 
-  upIndex = FrmGetObjectIndex(form, ListScrollUpRepeating);
-  downIndex = FrmGetObjectIndex(form, ListScrollDownRepeating);
-  FrmUpdateScrollers(form, upIndex, downIndex, scrollableUp, scrollableDown);
+  if (NULL != g_FindState) {
+    g_FindState->action = action;
+    if (REDISPLAY_NONE == action)
+      g_EventInterval = evtWaitForever;
+    else
+      g_EventInterval = SysTicksPerSecond() / 10;
+  }
+
+  if (g_ScrollCurrentIntoView) {
+    g_ScrollCurrentIntoView = false; // Only true once.
+    if (!TblGetSelection(table, &row, &column)) {
+      g_TopVisibleRecord = g_CurrentRecord;
+      ListFormRedisplay(REDISPLAY_BEGIN, false);
+    }
+  }
 }
 
 static Boolean ListFormUpdateDisplay(UInt16 updateCode)
@@ -704,22 +964,22 @@ static Boolean ListFormUpdateDisplay(UInt16 updateCode)
   }
  
   if (updateCode & UPDATE_FORCE_REDRAW) {
-    ListFormLoadTable();
+    ListFormRedisplay(REDISPLAY_BEGIN, false);
     TblRedrawTable(table);
     handled = true;
   }
  
   if (updateCode & UPDATE_FONT_CHANGED) {
-    ListFormOpen(form);
-    TblRedrawTable(table);
     if (NO_RECORD != g_CurrentRecord)
-      ListFormSelectRecord(g_CurrentRecord);
+      g_ScrollCurrentIntoView = true;
+    ListFormRedisplay(REDISPLAY_BEGIN, true);
+    TblRedrawTable(table);
     handled = true;
   }
 
   if (updateCode & UPDATE_CATEGORY_CHANGED) {
     g_TopVisibleRecord = 0;
-    ListFormLoadTable();
+    ListFormRedisplay(REDISPLAY_BEGIN, false);
     TblRedrawTable(table);
     CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger),
                             BookDatabaseGetCategoryName(g_CurrentCategory));
@@ -864,34 +1124,6 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
   }
 }
 
-static void ListFormSelectRecord(UInt16 recordNum)
-{
-  FormType *form;
-  TableType *table;
-  Int16 row, column;
-  int i;
-
-  form = FrmGetActiveForm();
-  table = FrmGetObjectPtrFromID(form, ListTable);
-
-  if (TblGetSelection(table, &row, &column) &&
-      (recordNum == TblGetRowID(table, row))) {
-    // Currently selected.
-    return;
-  }
-
-  for (i = 1; i <= 2; i++) {
-    if (TblFindRowID(table, recordNum, &row)) {
-      TblSelectItem(table, row, COL_TITLE);
-      g_CurrentRecord = recordNum;
-      break;
-    }
-    g_TopVisibleRecord = recordNum;
-    ListFormLoadTable();
-    TblRedrawTable(table);
-  }
-}
-
 /*** Preferences ***/
 
 extern Boolean g_ViewSummary;
@@ -1032,4 +1264,3 @@ Boolean PreferencesFormHandleEvent(EventType *event)
  
   return handled;
 }
-
