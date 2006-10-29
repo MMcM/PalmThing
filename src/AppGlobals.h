@@ -117,7 +117,8 @@ typedef struct {
 /*** Application globals ***/
 
 extern UInt32 g_ROMVersion;
-extern UInt16 g_CurrentRecord, g_CurrentCategory;
+extern UInt16 g_EventInterval, g_CurrentCategory, g_CurrentRecord;
+extern Boolean g_CurrentRecordEdited;
 
 #include "Sections.h"
 

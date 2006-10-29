@@ -116,7 +116,7 @@ void EditFormNewRecord()
   }
 
   BookRecordSetCategory(g_CurrentRecord,
-                        (g_CurrentCategory == dmAllCategories) ? 
+                        (dmAllCategories == g_CurrentCategory) ? 
                         dmUnfiledCategory : g_CurrentCategory);
 
   EditFormActivate();
@@ -608,6 +608,7 @@ static void EditFormSelectCategory()
     BookRecordSetCategory(g_CurrentRecord, ncategory);
     g_CurrentCategory = ncategory;
     FrmUpdateForm(FrmGetActiveFormID(), UPDATE_CATEGORY_CHANGED);
+    g_CurrentRecordEdited = true;
   }
 }
 
@@ -1055,7 +1056,10 @@ static Boolean EditFormSaveRecordField(MemPtr table, Int16 row, Int16 column)
       if (NULL != recordH)
         MemHandleUnlock(recordH);
 
-      if (error) {
+      if (!error) {
+        g_CurrentRecordEdited = true;
+      }
+      else {
         // Save did not happen.  Before telling the user, discard their edit.
         if (!BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record)) {
           textH = FldGetTextHandle(field);

@@ -11,8 +11,10 @@
 /*** Global storage ***/
 
 UInt32 g_ROMVersion = 0;
-UInt16 g_CurrentRecord = NO_RECORD;
+UInt16 g_EventInterval = evtWaitForever;
 UInt16 g_CurrentCategory = dmAllCategories;
+UInt16 g_CurrentRecord = NO_RECORD;
+Boolean g_CurrentRecordEdited = false;
 
 /** About form. **/
 void AboutFormDisplay()
@@ -130,7 +132,7 @@ static void AppEventLoop()
   Err error;
 
   do {
-    EvtGetEvent(&event, evtWaitForever);
+    EvtGetEvent(&event, g_EventInterval);
 
     if (SysHandleEvent(&event))
       continue;
