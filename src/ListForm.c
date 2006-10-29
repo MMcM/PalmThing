@@ -698,6 +698,14 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     g_FindState->cacheFillPointer = 0;
   }
 
+  // Make compiler happy (can't understand haveTableVars logic).
+  form = NULL;
+  table = NULL;
+  amount = 0;
+  direction = nrows = selectRow = lineHeight = 0;
+  y = 0;
+  fromCache = scrollableUp = scrollableDown = false;
+  
   haveTableVars = updateScrollable = false;
   ndraw = 0;
   while (true) {
