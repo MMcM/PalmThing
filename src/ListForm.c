@@ -669,7 +669,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
   UInt16 currentRecord, amount, ndraw, upIndex, downIndex;
   Int16 direction, row, nrows, selectRow, column, lineHeight, cacheIndex;
   Coord y;
-  Boolean incremental, haveTableVars, preempted, found, 
+  Boolean incremental, haveTableVars, preempted, found, fromCache, 
     updateScrollable, scrollableUp, scrollableDown;
 
   incremental = (REDISPLAY_NONE == action);
@@ -750,6 +750,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
                                      g_CurrentCategory);
     }
     else {
+      fromCache = false;
       cacheIndex = -1;
       if (checkCache) {
         switch (action) {
@@ -770,6 +771,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
       }
       if ((cacheIndex >= 0) &&
           (cacheIndex < g_FindState->cacheFillPointer)) {
+        fromCache = true;
         currentRecord = g_FindState->recordCache[cacheIndex];
         found = (NO_RECORD != currentRecord);
       }
@@ -827,7 +829,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
       if (g_FindState == NULL) {
         scrollableUp = false;
       }
-      else {
+      else if (!fromCache) {
         g_FindState->recordCache[0] = NO_RECORD;
         g_FindState->cacheFillPointer = 1;
       }
@@ -843,7 +845,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
       if (g_FindState == NULL) {
         scrollableUp = found;
       }
-      else {
+      else if (!fromCache) {
         g_FindState->recordCache[0] = currentRecord;
         g_FindState->cacheFillPointer = 1;
       }
@@ -854,7 +856,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     }
     
     // Have processed one of the fill actions.
-    if (NULL != g_FindState) {
+    if ((NULL != g_FindState) && !fromCache) {
       // Remember success or failure.
       g_FindState->recordCache[g_FindState->cacheFillPointer++] = currentRecord;
     }
