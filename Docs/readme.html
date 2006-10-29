@@ -11,7 +11,7 @@
 <body>
 
 <h1>Palm OS offline LibraryThing database application</h1>
-Version 1.0.2. &nbsp;MMcM 10/06
+Version 1.0.3. &nbsp;MMcM 10/06
 
 <h3>Summary</h3>
 
@@ -315,6 +315,22 @@ wishlists and so on.  On the Palm, the first collection tag becomes
 the category and only the other tags appear in the record body.
 </p>
 
+<a name="incremental"/>
+<h3>Incremental Find</h3>
+
+Text input via Graffiti or the pop-up keyboard is fairly slow.  A find
+in a large library can take some time, especially on an older, slower
+device.  Incremental Find mode attempts to address these compounding
+problems.
+
+As you change the find filter, a search is begun immediately.  But it
+is done in the background, so you can continue to add to the filter,
+correct typos, scroll around before the list is complete, and so on.
+In particular, you can tell when you have entered enough of the search
+key to find what you are looking for.
+
+The Find button icon changes while an incremental find is in progress.
+
 <h3>Notes</h3>
 <ul>
 
@@ -339,12 +355,6 @@ I'm open to other ideas on this.
 By coincidence, the book
 <a href="http://www.librarything.com/work-info.php?book=7160456">Palm OS Programming Bible</a>
 has a library application as its tutorial sample.
-</li>
-
-<li>
-Find can take a while in a large library and is not presently
-interruptible.  As a result, Incremental Find (which updates on each
-character) is not really usable.  Fixing this is high priority.
 </li>
 
 <li>
