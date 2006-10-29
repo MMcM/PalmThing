@@ -53,6 +53,7 @@ static Err AppStart()
   ViewFormSetup(pprefs, appInfo);
   EditFormSetup(pprefs, appInfo);
   NoteFormSetup(pprefs, appInfo);
+  ISBNFormSetup(pprefs, appInfo);
 
   MemPtrUnlock(appInfo);
   
@@ -78,6 +79,7 @@ static void AppStop()
   ViewFormSetdown(&prefs);
   EditFormSetdown(&prefs);
   NoteFormSetdown(&prefs);
+  ISBNFormSetdown(&prefs);
   PrefSetAppPreferences(APP_CREATOR, APP_PREF_ID, APP_PREF_VER, 
                         &prefs, sizeof(prefs), true);
 }
@@ -117,6 +119,9 @@ static Boolean AppHandleEvent(EventType* event)
       break;
     case PreferencesForm:
       FrmSetEventHandler(form, PreferencesFormHandleEvent);
+      break;
+    case ISBNForm:
+      FrmSetEventHandler(form, ISBNFormHandleEvent);
       break;
     }
     handled = true;

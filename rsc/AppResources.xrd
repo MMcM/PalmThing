@@ -1189,6 +1189,12 @@
 						<COMMAND> "" </COMMAND>
 						<HIDDEN> FALSE </HIDDEN>
 					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1109 </ID>
+						<TITLE> "Add ISBNs" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
 				</MENU_ITEMS>
 			</MENU>
 			<MENU>
@@ -1324,6 +1330,12 @@
 					<MENU_ITEM>
 						<ID> 1108 </ID>
 						<TITLE> "Send Category" </TITLE>
+						<COMMAND> "" </COMMAND>
+						<HIDDEN> FALSE </HIDDEN>
+					</MENU_ITEM>
+					<MENU_ITEM>
+						<ID> 1109 </ID>
+						<TITLE> "Add ISBNs" </TITLE>
 						<COMMAND> "" </COMMAND>
 						<HIDDEN> FALSE </HIDDEN>
 					</MENU_ITEM>
