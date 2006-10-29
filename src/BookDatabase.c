@@ -517,16 +517,18 @@ static Boolean BookRecordPackedFilterMatch(BookRecordPacked *packed, BookFilter 
 
       case FIND_ISBN:
         // Caseless compare ignoring the - character.
-        // Could just go digits with special case for 'X'.
+        // Could just do digits with special case for 'X'.
         keyp = filter->findKey;
         valp = fldp;
         while (true) {
           while ('-' == *keyp) keyp++;
-          while ('-' == *valp) valp++;
           if ('\0' == *keyp) {
             match = true;
+            filter->matchPos = 0;
+            filter->matchLen = (valp - fldp);
             break;
           }
+          while ('-' == *valp) valp++;
           if ('\0' == *valp)
             break;
           if (TxtGlueUpperChar(*keyp++) != TxtGlueUpperChar(*valp++))
