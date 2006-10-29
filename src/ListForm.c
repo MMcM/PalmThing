@@ -43,7 +43,7 @@ typedef struct {
 static UInt16 g_TopVisibleRecord = 0;
 static FontID g_ListFont = stdFont;
 static UInt16 g_ListFields = KEY_TITLE_AUTHOR;
-static Boolean g_IncrementalFind = true; // TODO: Turn back off.
+static Boolean g_IncrementalFind = false; // TODO: Make on by default?
 static BookFindState *g_FindState = NULL;
 static Boolean g_ScrollCurrentIntoView = false;
 
