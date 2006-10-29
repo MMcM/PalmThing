@@ -17,7 +17,6 @@ enum { COL_TITLE };
 #define UPDATE_FORCE_REDRAW 0x01
 #define UPDATE_FONT_CHANGED 0x02
 #define UPDATE_CATEGORY_CHANGED 0x04
-#define UPDATE_FIND_TYPE_CHANGED 0x08
 
 #define SPACE_BETWEEN_FIELDS 4
 #define LEFT_FRACTION_NUM 3
@@ -44,7 +43,7 @@ typedef struct {
 static UInt16 g_TopVisibleRecord = 0;
 static FontID g_ListFont = stdFont;
 static UInt16 g_ListFields = KEY_TITLE_AUTHOR;
-static Boolean g_IncrementalFind = false; // TODO: Off for now.
+static Boolean g_IncrementalFind = true; // TODO: Turn back off.
 static BookFindState *g_FindState = NULL;
 static Boolean g_ScrollCurrentIntoView = false;
 
@@ -311,17 +310,19 @@ Boolean ListFormHandleEvent(EventType *event)
         break;
      
       default:
-        if (TxtGlueCharIsPrint(event->data.keyDown.chr)) {
-          form = FrmGetActiveForm();
-          index = FrmGetObjectIndex(form, ListFindTextField);
-          field = FrmGetObjectPtr(form, index);
-          if (noFocus == FrmGetFocus(form)) {
-            FrmSetFocus(form, index);
-          }
-          FldHandleEvent(field, event);
-          ListFormFieldChanged();
-          handled = true;
+        if (!TxtGlueCharIsPrint(event->data.keyDown.chr)) 
+          break;
+        /* else falls through */
+      case backspaceChr:
+        form = FrmGetActiveForm();
+        index = FrmGetObjectIndex(form, ListFindTextField);
+        field = FrmGetObjectPtr(form, index);
+        if (noFocus == FrmGetFocus(form)) {
+          FrmSetFocus(form, index);
         }
+        FldHandleEvent(field, event);
+        ListFormFieldChanged();
+        handled = true;
         break;
       }
     }
@@ -336,6 +337,7 @@ Boolean ListFormHandleEvent(EventType *event)
     break;
 
   case nilEvent:
+    ListFormRedisplay(REDISPLAY_NONE, false);
     break;
 
   default:
@@ -567,16 +569,25 @@ static void ListFormFindTypeSelected(EventType *event)
   CtlSetLabel(event->data.popSelect.controlP, label);
 
   if (event->data.popSelect.selection != event->data.popSelect.priorSelection) {
-    FrmUpdateForm(FrmGetActiveFormID(), UPDATE_FIND_TYPE_CHANGED);
+    ListFormFieldChanged();
   }
 }
 
 static void ListFormFieldChanged()
 {
+  FormType *form;
+  ControlType *ctl;
+
   ListFormUpdateFindState();
   g_TopVisibleRecord = 0;
-  if (g_IncrementalFind)
+  if (g_IncrementalFind) {
+    if (SYS_ROM_3_5) {
+      form = FrmGetActiveForm();
+      ctl = FrmGetObjectPtrFromID(form, ListFindButton);
+      CtlSetGraphics(ctl, FindActiveBitmap, NULL);
+    }
     ListFormRedisplay(REDISPLAY_BEGIN, false);
+  }
 }
 
 static void ListFormFind()
@@ -664,6 +675,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
 {
   FormType *form;
   TableType *table;
+  ControlType *ctl;
   FontID oldFont;
   RectangleType bounds, ibounds;
   UInt16 currentRecord, amount, ndraw, upIndex, downIndex;
@@ -955,23 +967,32 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     FrmUpdateScrollers(form, upIndex, downIndex, scrollableUp, scrollableDown);
   }
 
+  if (REDISPLAY_NONE == action) {
+    // Final actions when redisplay nominally finished.
+    if (g_ScrollCurrentIntoView) {
+      g_ScrollCurrentIntoView = false; // Only try once.
+      if (!TblGetSelection(table, &row, &column)) {
+        g_TopVisibleRecord = g_CurrentRecord;
+        // Could use goto, I suppose.
+        ListFormRedisplay(REDISPLAY_BEGIN, false);
+        return;
+      }
+    }
+  }
+
+  if (SYS_ROM_3_5) {
+    ctl = FrmGetObjectPtrFromID(form, ListFindButton);
+    CtlSetGraphics(ctl,
+                   (REDISPLAY_NONE == action) ? FindBitmap : FindActiveBitmap,
+                   NULL);
+  }
+
   if (NULL != g_FindState) {
     g_FindState->action = action;
     if (REDISPLAY_NONE == action)
       g_EventInterval = evtWaitForever;
     else
       g_EventInterval = SysTicksPerSecond() / 10;
-  }
-
-  if (REDISPLAY_NONE == action) {
-    // Final actions.
-    if (g_ScrollCurrentIntoView) {
-      g_ScrollCurrentIntoView = false; // Only try once.
-      if (!TblGetSelection(table, &row, &column)) {
-        g_TopVisibleRecord = g_CurrentRecord;
-        ListFormRedisplay(REDISPLAY_BEGIN, false);
-      }
-    }
   }
 }
 

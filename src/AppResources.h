@@ -162,7 +162,7 @@
 #define FindBitmap                                1100
 
 //      Resource: tBMP 1101
-#define FindSelectedBitmap                        1001
+#define FindSelectedBitmap                        1101
 
 //      Resource: tBMP 1102
-#define FindActiveBitmap                          1002
+#define FindActiveBitmap                          1102
