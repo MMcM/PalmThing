@@ -188,12 +188,14 @@ static void ListFormOpen(FormType *form)
     }
   }
 
+  CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger), 
+                          BookDatabaseGetCategoryName(g_CurrentCategory));
+
+  FrmDrawForm(form);
+
   if (NO_RECORD != g_CurrentRecord)
     g_ScrollCurrentIntoView = true;
   ListFormRedisplay(REDISPLAY_BEGIN, checkCache);
-
-  CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger), 
-                          BookDatabaseGetCategoryName(g_CurrentCategory));
 }
 
 Boolean ListFormHandleEvent(EventType *event)
@@ -209,7 +211,6 @@ Boolean ListFormHandleEvent(EventType *event)
   case frmOpenEvent:
     form = FrmGetActiveForm();
     ListFormOpen(form);
-    FrmDrawForm(form);
     handled = true;
     break;
 
@@ -666,9 +667,9 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
   FontID oldFont;
   RectangleType bounds, ibounds;
   UInt16 currentRecord, amount, ndraw, upIndex, downIndex;
-  Int16 direction, row, nrows, column, lineHeight, cacheIndex;
+  Int16 direction, row, nrows, selectRow, column, lineHeight, cacheIndex;
   Coord y;
-  Boolean incremental, preempted, found, haveTableVars, 
+  Boolean incremental, haveTableVars, preempted, found, 
     updateScrollable, scrollableUp, scrollableDown;
 
   incremental = (REDISPLAY_NONE == action);
@@ -680,12 +681,13 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     // The cache is not used in incremental mode; all its processing
     // is done before any preemption.
     checkCache = false;
-    ndraw = 0;
   }
   else if (!checkCache && (NULL != g_FindState)) {
     g_FindState->cacheFillPointer = 0;
   }
 
+  haveTableVars = updateScrollable = false;
+  ndraw = 0;
   while (true) {
     if ((g_FindState == NULL) ||
         (((REDISPLAY_NONE != action) &&
@@ -880,6 +882,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
         row++;
         y = ibounds.topLeft.y + lineHeight;
       }
+      selectRow = -1;
       oldFont = FntSetFont(g_ListFont);
       lineHeight = FntLineHeight();
       FntSetFont(oldFont);
@@ -900,7 +903,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     TblSetRowID(table, row, currentRecord);
     TblSetRowHeight(table, row, lineHeight);
     if (currentRecord == g_CurrentRecord)
-      TblSelectItem(table, row, COL_TITLE);
+      selectRow = row;
     row++;
     y += lineHeight;
     ndraw++;
@@ -908,24 +911,43 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     action = REDISPLAY_FILL_NEXT;
   }
 
-  if (incremental) {
-    if (ndraw > 0)
-      TblRedrawTable(table);
-  }
-  else {
+  if (!incremental) {
     if (!haveTableVars) {
       // Only need a subset.
       form = FrmGetActiveForm();
       table = FrmGetObjectPtrFromID(form, ListTable);
       nrows = TblGetNumberOfRows(table);
+      haveTableVars = true;
+      // This is the empty table case.
+      row = 0;
+      selectRow = -1;
     }
+    // Mark remainder of screen empty.
     while (row < nrows) {
       TblSetRowUsable(table, row, false);
       row++;
+      ndraw++;
+    }
+  }
+
+  if (ndraw > 0) {
+    TblRedrawTable(table);
+    // Doc isn't clear on this point, but evidently you can't select an invalid row.
+    // Have to draw it first or SelectItem just doesn't take.
+    if (selectRow >= 0) {
+      TblSelectItem(table, selectRow, COL_TITLE);
+      g_ScrollCurrentIntoView = false; // Done.
     }
   }
 
   if (updateScrollable) {
+    if (NULL != g_FindState) {
+      scrollableUp = ((g_FindState->cacheFillPointer > 0) &&
+                      (NO_RECORD != g_FindState->recordCache[0]));
+    }
+    if (!haveTableVars)
+      // Only need this.
+      form = FrmGetActiveForm();
     upIndex = FrmGetObjectIndex(form, ListScrollUpRepeating);
     downIndex = FrmGetObjectIndex(form, ListScrollDownRepeating);
     FrmUpdateScrollers(form, upIndex, downIndex, scrollableUp, scrollableDown);
@@ -939,33 +961,33 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
       g_EventInterval = SysTicksPerSecond() / 10;
   }
 
-  if (g_ScrollCurrentIntoView) {
-    g_ScrollCurrentIntoView = false; // Only true once.
-    if (!TblGetSelection(table, &row, &column)) {
-      g_TopVisibleRecord = g_CurrentRecord;
-      ListFormRedisplay(REDISPLAY_BEGIN, false);
+  if (REDISPLAY_NONE == action) {
+    // Final actions.
+    if (g_ScrollCurrentIntoView) {
+      g_ScrollCurrentIntoView = false; // Only try once.
+      if (!TblGetSelection(table, &row, &column)) {
+        g_TopVisibleRecord = g_CurrentRecord;
+        ListFormRedisplay(REDISPLAY_BEGIN, false);
+      }
     }
   }
 }
 
 static Boolean ListFormUpdateDisplay(UInt16 updateCode)
 {
-  TableType *table;
   FormType *form;
   Boolean handled;
  
-  form = FrmGetActiveForm();
-  table = FrmGetObjectPtrFromID(form, ListTable);
   handled = false;
  
   if (updateCode & frmRedrawUpdateCode) {
+    form = FrmGetActiveForm();
     FrmDrawForm(form);
     handled = true;
   }
  
   if (updateCode & UPDATE_FORCE_REDRAW) {
     ListFormRedisplay(REDISPLAY_BEGIN, false);
-    TblRedrawTable(table);
     handled = true;
   }
  
@@ -973,14 +995,13 @@ static Boolean ListFormUpdateDisplay(UInt16 updateCode)
     if (NO_RECORD != g_CurrentRecord)
       g_ScrollCurrentIntoView = true;
     ListFormRedisplay(REDISPLAY_BEGIN, true);
-    TblRedrawTable(table);
     handled = true;
   }
 
   if (updateCode & UPDATE_CATEGORY_CHANGED) {
     g_TopVisibleRecord = 0;
     ListFormRedisplay(REDISPLAY_BEGIN, false);
-    TblRedrawTable(table);
+    form = FrmGetActiveForm();
     CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ListCategoryPopTrigger),
                             BookDatabaseGetCategoryName(g_CurrentCategory));
     handled = true;
