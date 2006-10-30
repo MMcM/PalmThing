@@ -84,6 +84,11 @@
 #define DeleteNoteYes                             0
 #define DeleteNoteNo                              1
 
+//	Resource: Talt 1002
+#define ISBNInvalidAlert                          1002
+#define ISBNInvalidYes                            0
+#define ISBNInvalidNo                             1
+
 //      Resource: MBAR 1000
 #define ListFormMenuBar                           1100
 

@@ -17,6 +17,8 @@ enum { COL_ISBN = 0, COL_STATUS };
 #define UPDATE_FONT_CHANGED 0x02
 #define UPDATE_CATEGORY_CHANGED 0x04
 
+enum { STATUS_EMPTY, STATUS_VALID, STATUS_INVALID };
+
 typedef struct {
   MemHandle isbn;
   UInt16 record;
@@ -38,7 +40,7 @@ static void ISBNFontSelect() ISBN_SECTION;
 static void ISBNFormNextField(WinDirectionType direction) ISBN_SECTION;
 static void ISBNFormSelectCategory() ISBN_SECTION;
 static Boolean ISBNFormUpdateDisplay(UInt16 updateCode) ISBN_SECTION;
-static void ISBNFormSave() ISBN_SECTION;
+static Boolean ISBNFormSave() ISBN_SECTION;
 static void ISBNFormClear() ISBN_SECTION;
 static Err ISBNFormGetISBN(MemPtr table, Int16 row, Int16 column, 
                            Boolean editing, MemHandle *textH, Int16 *textOffset,
@@ -46,6 +48,7 @@ static Err ISBNFormGetISBN(MemPtr table, Int16 row, Int16 column,
 static Boolean ISBNFormSaveISBN(MemPtr table, Int16 row, Int16 column) ISBN_SECTION;
 static void ISBNFormDrawStatus(MemPtr table, Int16 row, Int16 column,
                                RectangleType *bounds) ISBN_SECTION;
+static Boolean ISBNValidate(Char *isbn) ISBN_SECTION;
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID) ISBN_SECTION;
 
@@ -94,26 +97,26 @@ static void ISBNFormOpen(FormType *form)
   MemSet(g_ISBNs, nrows * sizeof(ISBNEntry), 0);
 
   oldFont = FntSetFont(g_ISBNFont);
-  statusWidth = FntLineHeight();
+  lineHeight = FntLineHeight();
   FntSetFont(oldFont);
-  
+
   for (row = 0; row < nrows; row++) {
     TblSetItemStyle(table, row, COL_ISBN, textTableItem);
     TblSetItemFont(table, row, COL_ISBN, g_ISBNFont);
     TblSetRowHeight(table, row, lineHeight);
     TblSetItemStyle(table, row, COL_STATUS, customTableItem);
-    TblSetRowUsable(table, row, true);
+    TblSetRowUsable(table, row, false);
     g_ISBNs[row].record = NO_RECORD;
   }
   
   TblSetColumnUsable(table, COL_ISBN, true);
-  TblSetColumnUsable(table, COL_STATUS, true);
   TblSetLoadDataProcedure(table, COL_ISBN, ISBNFormGetISBN);
   TblSetSaveDataProcedure(table, COL_ISBN, ISBNFormSaveISBN);
+  TblSetColumnUsable(table, COL_STATUS, true);
   TblSetCustomDrawProcedure(table, COL_STATUS, ISBNFormDrawStatus);
 
-  oldFont = FntSetFont(symbolFont);
-  statusWidth = FntCharWidth('X');
+  oldFont = FntSetFont(g_ISBNFont);
+  statusWidth = FntCharWidth('?');
   FntSetFont(oldFont);
 
   TblGetBounds(table, &bounds);
@@ -121,6 +124,11 @@ static void ISBNFormOpen(FormType *form)
   TblSetColumnSpacing(table, COL_ISBN, 1);
   TblSetColumnWidth(table, COL_STATUS, statusWidth);
 
+  nrows = bounds.extent.y / lineHeight;
+  for (row = 0; row < nrows; row++) {
+    TblSetRowUsable(table, row, true);
+  }
+  
   if (dmAllCategories == g_CurrentCategory)
     g_CurrentCategory = dmUnfiledCategory;
   CategorySetTriggerLabel(FrmGetObjectPtrFromID(form, ISBNCategorySelTrigger),
@@ -184,14 +192,14 @@ Boolean ISBNFormHandleEvent(EventType *event)
       break;
 
     case ISBNDoneButton:
-      ISBNFormSave();
-      FrmGotoForm(ListForm);
+      if (ISBNFormSave())
+        FrmGotoForm(ListForm);
       handled = true;
       break;
 
     case ISBNSaveButton:
-      ISBNFormSave();
-      ISBNFormClear();
+      if (ISBNFormSave())
+        ISBNFormClear();
       handled = true;
       break;
     }
@@ -200,8 +208,8 @@ Boolean ISBNFormHandleEvent(EventType *event)
   case keyDownEvent:
     if (TxtCharIsHardKey(event->data.keyDown.modifiers,
                          event->data.keyDown.chr)) {
-      ISBNFormSave();
-      FrmGotoForm(ListForm);
+      if (ISBNFormSave())
+        FrmGotoForm(ListForm);
       handled = true;
     }
     else {
@@ -383,15 +391,41 @@ static Boolean ISBNFormUpdateDisplay(UInt16 updateCode)
   return handled;
 }
 
-static void ISBNFormSave()
+static Boolean ISBNFormSave()
 {
   FormType *form;
   TableType *table;
-  
+  FieldType *field;
+  UInt16 tableIndex;
+  Int16 row, nrows, invalid;
+
   form = FrmGetActiveForm();
-  table = FrmGetObjectPtrFromID(form, ISBNTable);
+  tableIndex = FrmGetObjectIndex(form, ISBNTable);
+  table = FrmGetObjectPtr(form, tableIndex);
   // This does the actual save via SaveISBN.
   TblReleaseFocus(table);
+
+  invalid = -1;
+  nrows = TblGetNumberOfRows(table);
+  for (row = 0; row < nrows; row++) {
+    if (STATUS_INVALID == g_ISBNs[row].status) {
+      invalid = row;
+      break;
+    }
+  }  
+
+  if (invalid < 0)
+    return true;
+
+  if (FrmAlert(ISBNInvalidAlert) == ISBNInvalidYes)
+    return true;
+
+  FrmSetFocus(form, tableIndex);
+  TblGrabFocus(table, invalid, COL_ISBN);
+  field = TblGetCurrentField(table);
+  FldGrabFocus(field);
+
+  return false;
 }
 
 static void ISBNFormClear()
@@ -432,31 +466,114 @@ static Err ISBNFormGetISBN(MemPtr table, Int16 row, Int16 column,
 
 static Boolean ISBNFormSaveISBN(MemPtr table, Int16 row, Int16 column)
 {
+  FieldType *field;
   ISBNEntry *entry;
+  BookRecord record;
+  MemHandle recordH;
+  Char *isbn;
+  Err error;
+  Boolean redraw;
 
   if (column != COL_ISBN) return false;
 
-  entry = g_ISBNs + row;
+  field = TblGetCurrentField(table);
 
-  return true;
+  entry = g_ISBNs + row;
+#if 0
+  // I don't think this is ever necessary since we always make one above.
+  if (NULL == entry->isbn)
+    entry->isbn = FldGetTextHandle(field);
+#endif
+
+  redraw = false;
+
+  if (FldDirty(field)) {
+    isbn = (Char *)MemHandleLock(entry->isbn);
+
+    if ('\0' == *isbn) {
+      if (NO_RECORD != entry->record) {
+        BookDatabaseDeleteRecord(&entry->record, false);
+        entry->record = NO_RECORD;
+      }
+      entry->status = STATUS_EMPTY;
+    }
+    else {
+      if (NO_RECORD == entry->record) {
+        MemSet(&record, sizeof(record), 0);
+        record.fields[FIELD_ISBN] = isbn;
+        error = BookDatabaseNewRecord(&entry->record, &record);
+        if (error)
+          FrmAlert(DeviceFullAlert);
+        else
+          BookRecordSetCategory(entry->record, g_CurrentCategory);
+      }
+      else if (BookDatabaseGetRecord(entry->record, &recordH, &record)) {
+        record.fields[FIELD_ISBN] = isbn;
+        error = BookDatabaseSaveRecord(&entry->record, &recordH, &record);
+        if (error)
+          FrmAlert(DeviceFullAlert);
+      }
+      entry->status = (ISBNValidate(isbn) ? STATUS_VALID : STATUS_INVALID);
+      redraw = true;
+    }
+
+    MemHandleUnlock(entry->isbn);
+
+    FldSetDirty(field, false);
+  }
+
+  return redraw;
 }
 
 static void ISBNFormDrawStatus(MemPtr table, Int16 row, Int16 column,
                                RectangleType *bounds)
 {
-  FontID oldFont;
+  FontID font, oldFont;
   char statusChar;
-  Coord x;
+  Coord x, y;
+  UInt16 rowHeight;
 
   if (column != COL_STATUS) return;
 
-  oldFont = FntSetFont(symbolFont);
+  font = g_ISBNFont;
+  switch (g_ISBNs[row].status) {
+  case STATUS_EMPTY:
+    statusChar = ' ';
+    break;
+  case STATUS_INVALID:
+    statusChar = '?';
+    break;
+  case STATUS_VALID:
+    font = symbolFont;
+    statusChar = 0x16;
+    break;
+  }
 
-  statusChar = 0x16;
+  rowHeight = TblGetRowHeight(table, row);
+  if (rowHeight < bounds->extent.y)
+    rowHeight = bounds->extent.y;
 
+  oldFont = FntSetFont(font);
   x = bounds->topLeft.x + (bounds->extent.x - FntCharWidth(statusChar)) / 2;
-  WinDrawChars(&statusChar, 1, x, bounds->topLeft.y);
-
+  y = bounds->topLeft.y + rowHeight - FntLineHeight();
+  WinDrawChars(&statusChar, 1, x, y);
   FntSetFont(oldFont);
 }
 
+/*** Validation ***/
+
+static Boolean ISBNValidate(Char *isbn)
+{
+  switch (StrLen(isbn)) {
+  case 10:
+    {
+      return true;
+    }
+  case 13:
+    {
+      return true;
+    }
+  default:
+    return false;
+  }
+}
