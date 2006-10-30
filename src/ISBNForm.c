@@ -155,6 +155,8 @@ static void ISBNFormClose()
   table = FrmGetObjectPtrFromID(form, ISBNTable);
   nrows = TblGetNumberOfRows(table);
 
+  TblReleaseFocus(table);       // Just in case.
+
   for (row = 0; row < nrows; row++) {
     if (NULL != g_ISBNs[row].isbn) {
       MemHandleFree(g_ISBNs[row].isbn);
@@ -480,9 +482,19 @@ static void ISBNFormClear()
 {
   FormType *form;
   TableType *table;
+  Int16 row, nrows;
   
   form = FrmGetActiveForm();
   table = FrmGetObjectPtrFromID(form, ISBNTable);
+  nrows = TblGetNumberOfRows(table);
+
+  MemSet(g_ISBNs, nrows * sizeof(ISBNEntry), 0);
+
+  for (row = 0; row < nrows; row++) {
+    g_ISBNs[row].record = NO_RECORD;
+  }
+
+  TblDrawTable(table);
 }
 
 static Err ISBNFormGetISBN(MemPtr table, Int16 row, Int16 column, 
@@ -630,7 +642,7 @@ static Boolean ISBNValidate(Char *isbn)
         ch -= '0';
         isbn9 += (ch * (ndigits + 2));
         isbn10 += (ch * (ndigits + 1));
-        isbn13 += (ch * ((ndigits % 1) ? 3 : 1));
+        isbn13 += (ch * ((ndigits & 1) ? 3 : 1));
         ndigits++;
       }
       lastp = isbn;
@@ -659,7 +671,8 @@ static Boolean ISBNValidate(Char *isbn)
     else
       return ((*lastp - '0') == mod);
   case 12:
-    mod = isbn13 % 10;
+    mod = 10 - (isbn13 % 10);
+    if (mod == 10) mod = 0;
     return ((*lastp - '0') == mod);
   default:
     return false;

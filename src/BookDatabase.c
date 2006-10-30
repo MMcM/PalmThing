@@ -289,7 +289,7 @@ Err BookDatabaseNewRecord(UInt16 *index, BookRecord *record)
 
   // No outHP -> insert at index.
   error = DmAttachRecord(g_BookDatabase, &nindex, recordH, NULL);
- if (error) 
+  if (error) 
     MemHandleFree(recordH);
   else
     *index = nindex;
