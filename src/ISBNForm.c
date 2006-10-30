@@ -40,6 +40,7 @@ static void ISBNFontSelect() ISBN_SECTION;
 static void ISBNFormNextField(WinDirectionType direction) ISBN_SECTION;
 static void ISBNFormSelectCategory() ISBN_SECTION;
 static Boolean ISBNFormUpdateDisplay(UInt16 updateCode) ISBN_SECTION;
+static void ISBNFormRecomputeUsable(TableType *table) ISBN_SECTION;
 static Boolean ISBNFormSave() ISBN_SECTION;
 static void ISBNFormClear() ISBN_SECTION;
 static Err ISBNFormGetISBN(MemPtr table, Int16 row, Int16 column, 
@@ -214,6 +215,7 @@ Boolean ISBNFormHandleEvent(EventType *event)
     }
     else {
       switch (event->data.keyDown.chr) {
+      case linefeedChr:
       case nextFieldChr:
         ISBNFormNextField(winDown);
         handled = true;
@@ -329,6 +331,8 @@ static void ISBNFormNextField(WinDirectionType direction)
 {
   FormType *form;
   TableType *table;
+  FieldType *field;
+  Int16 row, lastRow, column;
  
   form = FrmGetActiveForm();
   table = FrmGetObjectPtrFromID(form, ISBNTable);
@@ -336,7 +340,23 @@ static void ISBNFormNextField(WinDirectionType direction)
   if (!TblEditing(table))
     return;
    
-  // TODO: ...
+  lastRow = TblGetLastUsableRow(table);
+
+  TblGetSelection(table, &row, &column);
+  if (winDown == direction) {
+    row++;
+    if (row > lastRow)
+      row = 0;
+  }
+  else {
+    row--;
+    if (row < 0)
+      row = lastRow;
+  }
+  TblReleaseFocus(table);
+  TblGrabFocus(table, row, COL_ISBN);
+  field = TblGetCurrentField(table);
+  FldGrabFocus(field);
 }
 
 static void ISBNFormSelectCategory()
@@ -377,7 +397,7 @@ static Boolean ISBNFormUpdateDisplay(UInt16 updateCode)
  
   if (updateCode & UPDATE_FONT_CHANGED) {
     TblReleaseFocus(table);
-    // TODO: Set font.
+    ISBNFormRecomputeUsable(table);
     TblRedrawTable(table);
     handled = true;
   }
@@ -389,6 +409,34 @@ static Boolean ISBNFormUpdateDisplay(UInt16 updateCode)
   }
 
   return handled;
+}
+
+static void ISBNFormRecomputeUsable(TableType *table)
+{
+  Int16 row, nrows;
+  RectangleType bounds;
+  UInt16 lineHeight;
+  FontID oldFont;
+
+  oldFont = FntSetFont(g_ISBNFont);
+  lineHeight = FntLineHeight();
+  FntSetFont(oldFont);
+
+  TblGetBounds(table, &bounds);
+  nrows = bounds.extent.y / lineHeight;
+  for (row = 0; row < nrows; row++) {
+    TblSetItemFont(table, row, COL_ISBN, g_ISBNFont);
+    TblSetRowHeight(table, row, lineHeight);
+    TblSetRowUsable(table, row, true);
+  }
+
+  nrows = TblGetNumberOfRows(table);
+  while (row < nrows) {
+    TblSetRowUsable(table, row, false);
+    row++;
+  }
+
+  TblMarkTableInvalid(table);
 }
 
 static Boolean ISBNFormSave()
@@ -507,13 +555,16 @@ static Boolean ISBNFormSaveISBN(MemPtr table, Int16 row, Int16 column)
         else
           BookRecordSetCategory(entry->record, g_CurrentCategory);
       }
-      else if (BookDatabaseGetRecord(entry->record, &recordH, &record)) {
+      else if (!BookDatabaseGetRecord(entry->record, &recordH, &record)) {
         record.fields[FIELD_ISBN] = isbn;
         error = BookDatabaseSaveRecord(&entry->record, &recordH, &record);
+        if (NULL != recordH)
+          MemHandleUnlock(recordH);
         if (error)
           FrmAlert(DeviceFullAlert);
       }
       entry->status = (ISBNValidate(isbn) ? STATUS_VALID : STATUS_INVALID);
+      TblMarkRowInvalid(table, row);
       redraw = true;
     }
 
@@ -564,15 +615,52 @@ static void ISBNFormDrawStatus(MemPtr table, Int16 row, Int16 column,
 
 static Boolean ISBNValidate(Char *isbn)
 {
-  switch (StrLen(isbn)) {
-  case 10:
-    {
-      return true;
+  Char *lastp, ch;
+  UInt16 ndigits, isbn9, isbn10, isbn13, mod;
+  
+  lastp = NULL;
+  ndigits = isbn9 = isbn10 = isbn13 = 0;
+  while (true) {
+    ch = *isbn;
+    if ('\0' == ch) break;
+    if ('-' != ch) {
+      if (NULL != lastp) {
+        ch = *lastp;
+        if ((ch < '0') || (ch > '9')) return false;
+        ch -= '0';
+        isbn9 += (ch * (ndigits + 2));
+        isbn10 += (ch * (ndigits + 1));
+        isbn13 += (ch * ((ndigits % 1) ? 3 : 1));
+        ndigits++;
+      }
+      lastp = isbn;
     }
-  case 13:
-    {
-      return true;
+    isbn++;
+  }
+  switch (ndigits) {
+  case 8:
+    isbn10 = isbn9;
+    /* falls through */
+  case 9:
+    mod = isbn10 % 11;
+    if (mod == 10) {
+      switch (*lastp) {
+      case 'x':
+      case '+':
+      case '*':
+        *lastp = 'X';
+        /* falls through */
+      case 'X':
+        return true;
+      default:
+        return false;
+      }
     }
+    else
+      return ((*lastp - '0') == mod);
+  case 12:
+    mod = isbn13 % 10;
+    return ((*lastp - '0') == mod);
   default:
     return false;
   }
