@@ -11,7 +11,7 @@
 <body>
 
 <h1>Palm OS offline LibraryThing database application</h1>
-Version 1.0.3. &nbsp;MMcM 10/06
+Version 1.0.4. &nbsp;MMcM 10/06
 
 <h3>Summary</h3>
 
@@ -299,6 +299,28 @@ A note is presently the same as the LT Comments field.
 </ul></td>
 <td><img src="NoteForm.png" width="160" height="160" alt="Note Edit"></td></tr></table>
 
+<h4>Add ISBNs</h4>
+<table><tr><td><ul>
+
+<li>
+Creates new book records with only the ISBN field filled in.
+</li>
+
+<li>
+Validates ISBNs that are entered.
+</li>
+
+<li>
+<kbd>Done</kbd> to return to View.
+</li>
+
+<li>
+<kbd>Save</kbd> to clear the form so more can be added.
+</li>
+
+</ul></td>
+<td><img src="ISBNForm.png" width="160" height="160" alt="Add ISBNs"></td></tr></table>
+
 <h3>Categories and Tags</h3>
 
 <p>
@@ -396,9 +418,8 @@ The icons suck.  Improvements would be most welcome.
 <ul>
 
 <li>
-A table full of blanks for entering ISBNs with validation.  Each ISBN
-turns into a new book with only that field filled.  HotSync somehow
-uploads these records to LT's importer.
+HotSync somehow uploads records created by the Add ISBNs form to LT's
+importer.
 </li>
 
 <li>
