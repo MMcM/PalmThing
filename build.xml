@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<!DOCTYPE project SYSTEM "build.dtd">
+<project name="palmthing" default="all" basedir=".">
+
+  <property name="buildfile.version" value="$Header$"/>
+  <description>Build file for PalmThing.</description>
+
+  <property file="build.properties"/>
+
+  <target name="all" depends="init, prc, jar, tar, exe, clean"
+          description="Compile and build components."/>
+
+  <target name="init">
+    <tstamp/>
+  </target>
+
+  <target name="prc" depends="init">
+    <exec dir="Release" executable="${CYGWIN_HOME}/bin/sh.exe" os="Windows XP">
+      <arg value="-c"/>
+      <arg value="make clean all"/>
+      <env key="PATH" path="${CYGWIN_HOME}/bin"/>
+    </exec>
+  </target>
+
+  <target name="jar" depends="init">
+    <ant dir="Java" inheritAll="false"/>
+  </target>
+
+  <target name="tar" depends="init">
+    <mkdir dir="ubin"/>
+    <copy todir="ubin" preservelastmodified="yes">
+      <fileset dir="Java">
+        <include name="*.sh"/>
+      </fileset>
+      <filterchain>
+        <deletecharacters chars="\r"/>
+      </filterchain>
+    </copy>
+    <tar tarfile="PalmThing.tar.gz" compression="gzip">
+      <tarfileset dir="Release">
+        <include name="PalmThing.prc"/>
+      </tarfileset>
+      <tarfileset dir="Java">
+        <include name="PalmThingConduit.jar"/>
+      </tarfileset>
+      <tarfileset dir="ubin" mode="755">
+        <include name="*.sh"/>
+      </tarfileset>
+      <tarfileset dir="Docs">
+        <include name="*.html"/>
+        <include name="*.txt"/>
+        <include name="*.png"/>
+      </tarfileset>
+      <tarfileset dir="${CDK_HOME}/Bin/jsync/rt" mode="444">
+        <include name="jsync.jar"/>
+      </tarfileset>
+    </tar>
+    <delete dir="ubin"/>
+  </target>
+
+  <target name="exe" depends="init">
+    <exec dir="Install" executable="${INNO_HOME}/iscc.exe" os="Windows XP">
+      <arg value="PalmThing.iss"/>
+    </exec>    
+  </target>
+
+  <target name="comcast" depends="init"
+          description="Copy some files to home page.">
+    <ftp server="upload.comcast.net"
+         userid="mmcm"
+         password="${PASSWORD}"
+         remotedir="palmthing"
+         action="put">
+      <fileset dir="Docs">
+        <include name="readme.html"/>
+        <include name="license.txt"/>
+        <include name="*.png"/>
+      </fileset>
+      <fileset dir=".." includes="PalmThing-src.zip"/>
+      <fileset dir="." includes="PalmThing.tar.gz,PalmThing.exe"/>
+    </ftp>
+    <delete dir="toftp"/>
+  </target>
+
+  <target name="clean">
+  </target>
+
+  <target name="dtd" depends="init"
+          description="Create DTD file.">
+    <antstructure output="build.dtd"/>
+  </target>
+</project>

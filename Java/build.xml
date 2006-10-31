@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!DOCTYPE project SYSTEM "build.dtd">
+<!DOCTYPE project SYSTEM "../build.dtd">
 <project name="palmthing" default="all" basedir=".">
 
   <property name="buildfile.version" value="$Header$"/>
@@ -44,44 +44,7 @@
     </jar>
   </target>
 
-  <target name="tar" depends="init">
-    <mkdir dir="ubin"/>
-    <copy todir="ubin" preservelastmodified="yes">
-      <fileset dir=".">
-        <include name="*.sh"/>
-      </fileset>
-      <filterchain>
-        <deletecharacters chars="\r"/>
-      </filterchain>
-    </copy>
-    <tar tarfile="../PalmThing.tar.gz" compression="gzip">
-      <tarfileset dir="../Release">
-        <include name="PalmThing.prc"/>
-      </tarfileset>
-      <tarfileset dir=".">
-        <include name="PalmThingConduit.jar"/>
-      </tarfileset>
-      <tarfileset dir="ubin" mode="755">
-        <include name="*.sh"/>
-      </tarfileset>
-      <tarfileset dir="../Docs">
-        <include name="*.html"/>
-        <include name="*.txt"/>
-        <include name="*.png"/>
-      </tarfileset>
-      <tarfileset dir="${CDK_HOME}/Bin/jsync/rt" mode="444">
-        <include name="jsync.jar"/>
-      </tarfileset>
-    </tar>
-    <delete dir="ubin"/>
-  </target>
-
   <target name="clean">
     <delete dir="${build}"/>
-  </target>
-
-  <target name="dtd" depends="init"
-          description="Create DTD file.">
-    <antstructure output="build.dtd"/>
   </target>
 </project>
