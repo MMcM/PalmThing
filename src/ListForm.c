@@ -495,12 +495,36 @@ static UInt16 ListFormNumberOfRows(TableType *table)
 
 static void ListFormScroll(WinDirectionType direction)
 {
-  UInt16 action, pendingAction;
   FormType *form;
   TableType *table;
-  UInt16 rowsPerPage;
+  UInt16 action, pendingAction, rowsPerPage;
+  Int16 row;
+  Boolean useCache;
 
-  if (direction == winDown)
+  form = FrmGetActiveForm();
+  table = FrmGetObjectPtrFromID(form, ListTable);
+
+  if ((winDown == direction) &&
+      ((NULL == g_FindState) || 
+       (REDISPLAY_NONE == g_FindState->action))) {
+    // Scrolling forward with no redisplay pending is easy: just bump
+    // the bottom line up to the top.
+    row = TblGetLastUsableRow(table);
+    g_TopVisibleRecord = TblGetRowID(table, row);
+    useCache = false;
+    // May even be able to use end of an existing filter cache by shifting it up too.
+    if ((NULL != g_FindState) &&
+        (g_FindState->cacheFillPointer > row)) {
+      g_FindState->cacheFillPointer -= row;
+      MemMove(g_FindState->recordCache, g_FindState->recordCache + row, 
+              g_FindState->cacheFillPointer * sizeof(UInt16));
+      useCache = true;
+    }
+    ListFormRedisplay(REDISPLAY_BEGIN, useCache);
+    return;
+  }
+
+  if (winDown == direction)
     action = REDISPLAY_SCROLL_FORWARD;
   else
     action = REDISPLAY_SCROLL_BACKWARD;
@@ -511,8 +535,6 @@ static void ListFormScroll(WinDirectionType direction)
         (pendingAction == REDISPLAY_SCROLL_BACKWARD)) {
       // If we already have a scroll in progress, then we attempt to
       // augment it rather than starting over.
-      form = FrmGetActiveForm();
-      table = FrmGetObjectPtrFromID(form, ListTable);
       rowsPerPage = ListFormNumberOfRows(table) - 1;
       if (action == pendingAction) {
         // Same direction: easy, just add more work.

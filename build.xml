@@ -15,11 +15,20 @@
   </target>
 
   <target name="prc" depends="init">
-    <exec dir="Release" executable="${CYGWIN_HOME}/bin/sh.exe" os="Windows XP">
+    <property name="SUBDIR" value="Release"/>
+    <property name="TARGET" value="clean all"/>
+    <exec dir="${SUBDIR}" executable="${CYGWIN_HOME}/bin/sh.exe" os="Windows XP">
       <arg value="-c"/>
-      <arg value="make clean all"/>
+      <arg value="make ${TARGET}"/>
       <env key="PATH" path="${CYGWIN_HOME}/bin"/>
     </exec>
+  </target>
+
+  <target name="prc-debug" depends="init">
+    <antcall target="prc">
+      <param name="SUBDIR" value="Debug"/>
+      <param name="TARGET" value="all"/>
+    </antcall>
   </target>
 
   <target name="jar" depends="init">
