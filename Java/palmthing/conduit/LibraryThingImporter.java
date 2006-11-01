@@ -516,6 +516,13 @@ public class LibraryThingImporter {
     }
   }
 
+  // Must agree with AppGlobals.h and BookDatabase.c.
+  public static final String APP_CREATOR = "plTN";
+  public static final String DB_TYPE = "DATA";
+  public static final String DB_TYPE_UNICODE = "DATU";
+  public static final short DB_VER = (short)0;
+  public static final String DB_NAME = "PalmThing-Books";
+
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
       System.out.println("usage: LibraryThingImporter" +
@@ -585,8 +592,9 @@ public class LibraryThingImporter {
       else if (arg.equals("-dump")) {
         Vector categories = BookCategories.getCategories(books);
         BookCategories.setCategoryIndices(books, categories);
-        PalmDatabaseDumper pdb = new PalmDatabaseDumper("PalmThing-Books", (short)0, 
-                                                        "plTN", "DATA");
+        PalmDatabaseDumper pdb = 
+          new PalmDatabaseDumper(DB_NAME, DB_VER, APP_CREATOR, 
+                                 (unicode) ? DB_TYPE_UNICODE : DB_TYPE);
         byte[] catBytes = Category.toBytes(categories);
         byte[] appInfo = new byte[BookCategories.SIZE + 2];
         System.arraycopy(catBytes, 0, appInfo, 0, catBytes.length);

@@ -92,18 +92,25 @@ public class BookRecord extends AbstractRecord {
   public void writeData(DataOutputStream out) throws IOException {
     out.writeInt(m_bookID);
 
-    short mask = 0;
+    short mask = 0, unicodeMask = 0;
     for (int i = 0; i < BOOK_NFIELDS; i++) {
       if (m_stringFields[i] != null) {
         mask |= (1 << i);
+        if (g_unicode && requiresUnicode(m_stringFields[i]))
+          unicodeMask |= (1 << i);
       }
     }
     out.writeShort(mask);
 
+    if (g_unicode)
+      out.writeShort(unicodeMask);
+
     for (int i = 0; i < BOOK_NFIELDS; i++) {
       if (m_stringFields[i] != null) {
-        // TODO: Unicode support.
-        writeCString(out, m_stringFields[i]);
+        if (g_unicode && ((unicodeMask & (1 << i)) != 0))
+          writeUTFString(out, m_stringFields[i]);
+        else
+          writeCString(out, m_stringFields[i]);
       }
     }
   }
@@ -112,12 +119,43 @@ public class BookRecord extends AbstractRecord {
     m_bookID = in.readInt();
     
     short mask = in.readShort();
+    short unicodeMask = 0;
+
+    if (g_unicode)
+      unicodeMask = in.readShort();
     
     for (int i = 0; i < BOOK_NFIELDS; i++) {
       if ((mask & (1 << i)) != 0) {
-        m_stringFields[i] = readCString(in);
+        if (g_unicode && ((unicodeMask & (1 << i)) != 0))
+          m_stringFields[i] = readUTFString(in);
+        else
+          m_stringFields[i] = readCString(in);
       }
     }
+  }
+
+  protected static String readUTFString(DataInputStream in) throws IOException {
+    ByteArrayOutputStream bstr = new ByteArrayOutputStream();
+    while (true) {
+      int c = in.read();
+      if (c == 0) break;
+      bstr.write((byte)c);
+    }
+    return bstr.toString("UTF-8");
+  }
+
+  static public void writeUTFString(DataOutputStream out, String str) 
+      throws IOException {
+    out.write(str.getBytes("UTF-8"));
+    out.write(0);
+  }
+
+  protected static boolean requiresUnicode(String str) {
+    for (int i = 0; i < str.length(); i++) {
+      if (str.charAt(i) >= 0x100)
+        return true;
+    }
+    return false;
   }
 
   public int hashCode() {
