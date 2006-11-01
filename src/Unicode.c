@@ -54,4 +54,61 @@ void UnicodeTerminate()
     UniBucketCloseUnicode(&g_UniBucket, g_FoundUniCharDB, g_FoundMappingDB);
 }
 
+void UnicodeSizeSingleLine(const Char *str, UInt16 len, 
+                           Int16 *width, Int16 *height)
+{
+  const UTF8 *utf8, *start8, *end8;
+  UTF16 *utf16, *start16, *end16;
+  UInt16 lw, lh;
+  ConversionResult cr;
+
+  utf8 = (const UTF8 *)str;
+  len++;                        // Include terminating nul.
+  utf16 = (UTF16 *)MemPtrNew(len * 2);
+  if (NULL == utf16) {
+    *height = g_UniBucket.lineHeight;
+  }
+  start8 = utf8;
+  end8 = start8 + len;
+  start16 = utf16;
+  end16 = start16 + len;
+  cr = ConvertUTF8toUTF16(&start8, end8, &start16, end16, lenientConversion);
+  UniStrUniCharPrintLine(&g_UniBucket, 16, utf16, 
+                         0, 0, *height, *width,
+                         UNI_TEXT_DIR_LR, 0, 0, 
+                         &lw, &lh, false);
+  MemPtrFree(utf16);
+
+  *width = lw;
+  *height = lh;
+}
+
+void UnicodeDrawSingleLine(const Char *str, UInt16 len, 
+                           Int16 x, Int16 y, 
+                           Int16 *width, Int16 *height)
+{
+  const UTF8 *utf8, *start8, *end8;
+  UTF16 *utf16, *start16, *end16;
+  UInt16 lw, lh;
+  ConversionResult cr;
+
+  utf8 = (const UTF8 *)str;
+  len++;                        // Include terminating nul.
+  utf16 = (UTF16 *)MemPtrNew(len * sizeof(UTF16));
+  if (NULL == utf16) return;
+  start8 = utf8;
+  end8 = start8 + len;
+  start16 = utf16;
+  end16 = start16 + len;
+  cr = ConvertUTF8toUTF16(&start8, end8, &start16, end16, lenientConversion);
+  UniStrUniCharPrintLine(&g_UniBucket, 16, utf16, 
+                         y, x, *height, *width,
+                         UNI_TEXT_DIR_LR, winPaint, winOverlay, 
+                         &lw, &lh, true);
+  MemPtrFree(utf16);
+
+  *width = lw;
+  *height = lh;
+}
+
 #endif

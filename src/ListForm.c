@@ -1384,8 +1384,12 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
     if (NULL == str1)
       return FntLineHeight();
 #ifdef UNICODE
-    if (ucs1)
-      return ...;
+    if (ucs1) {
+      width = bounds->extent.x;
+      height = bounds->extent.y;
+      UnicodeSizeSingleLine(str1, len1, &width, &height);
+      return height;
+    }
     else
 #endif
       return FntLineHeight();
@@ -1393,8 +1397,12 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
   else {
     if (NULL == str1) {
 #ifdef UNICODE
-      if (ucs1)
-        return ...;
+      if (ucs2) {
+        width = bounds->extent.x;
+        height = bounds->extent.y;
+        UnicodeSizeSingleLine(str2, len2, &width, &height);
+        return height;
+      }
       else
 #endif
         return FntLineHeight();
@@ -1403,17 +1411,18 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
 #ifdef UNICODE
       (!ucs1 && !ucs2)
 #else
-      (false)
+      (true)
 #endif
       return FntLineHeight();
     else {
-      // Need to figure out how much each side will take, since width
-      // determines substring determines height.
+      // Need to figure out how much left side will take, even if it
+      // isn't Unicode, since width remaining to right side determines
+      // substring which determines height.
       width = bounds->extent.x - SPACE_BETWEEN_FIELDS;
       width = (width * LEFT_FRACTION_NUM) / LEFT_FRACTION_DEN;
 #ifdef UNICODE
       if (ucs1) {
-        height = bounds.extent.y;
+        height = bounds->extent.y;
         UnicodeSizeSingleLine(str1, len1, &width, &height);
       }
       else
@@ -1428,7 +1437,7 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
 #ifdef UNICODE
       if (ucs1) {
         width = bounds->extent.x - width - SPACE_BETWEEN_FIELDS;
-        height = bounds.extent.y;
+        height = bounds->extent.y;
         UnicodeSizeSingleLine(str1, len1, &width, &height);
       }
       else
