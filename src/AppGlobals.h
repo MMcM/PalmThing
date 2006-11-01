@@ -208,5 +208,10 @@ extern Boolean BookDatabaseIsUnicode();
 /*** Unicode routines ***/
 extern Err UnicodeInitialize();
 extern void UnicodeTerminate();
+extern void UnicodeSizeSingleLine(const Char *str, UInt16 len, 
+                                  Int16 *width, Int16 *height);
+extern void UnicodeDrawSingleLine(const Char *str, UInt16 len, 
+                                  Int16 x, Int16 y, 
+                                  Int16 *width, Int16 *height);
 
 #endif

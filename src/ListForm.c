@@ -66,6 +66,19 @@ static void ListFormUpdateFindState();
 static void ListFormCloseFindState();
 static void ListFormDeleteFindState();
 
+// Variable height is currently only possible is Unicode is enabled,
+// but theoretically there might be ways of deciding to use another
+// font.
+#ifdef UNICODE
+#define VARHEIGHT
+#endif
+
+#ifdef VARHEIGHT
+static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, RectangleType *bounds);
+static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
+                                UInt16 listFields);
+#endif
+
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 {
   return FrmGetObjectPtr(formP, FrmGetObjectIndex(formP, objID));
@@ -698,7 +711,9 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
   FormType *form;
   TableType *table;
   ControlType *ctl;
+#ifndef VARHEIGHT
   FontID oldFont;
+#endif
   RectangleType bounds, ibounds;
   UInt16 currentRecord, amount, ndraw, upIndex, downIndex;
   Int16 direction, row, nrows, selectRow, column, lineHeight, cacheIndex;
@@ -927,11 +942,21 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
         y = ibounds.topLeft.y + lineHeight;
       }
       selectRow = -1;
+#ifndef VARHEIGHT
       oldFont = FntSetFont(g_ListFont);
       lineHeight = FntLineHeight();
       FntSetFont(oldFont);
+#endif
       haveTableVars = true;
     }
+
+#ifdef VARHEIGHT
+    ibounds.topLeft.x = bounds.topLeft.x;
+    ibounds.extent.x = bounds.extent.x;
+    ibounds.topLeft.y = y;
+    ibounds.extent.y = bounds.topLeft.y + bounds.extent.y - y;
+    lineHeight = ListFormSizeItem(currentRecord, COL_TITLE, &bounds);
+#endif
 
     if ((row >= nrows) ||
         (y + lineHeight > bounds.topLeft.y + bounds.extent.y)) {
@@ -1122,7 +1147,13 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
 {
   Char *str1, *str2;
   UInt16 len1, len2;
+#ifdef UNICODE
+  Boolean ucs1, ucs2;
+#endif
   Int16 width, x, y;
+#ifdef VARHEIGHT
+  Int16 height;
+#endif
   DmResID noneID;
   MemHandle noneH;
 
@@ -1131,23 +1162,43 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
   switch (listFields) {
   case KEY_TITLE:
     str1 = record->fields[FIELD_TITLE];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_TITLE);
+#endif
     break;
   case KEY_AUTHOR:
     str1 = record->fields[FIELD_AUTHOR];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_AUTHOR);
+#endif
     break;
   case KEY_ISBN:
     str1 = record->fields[FIELD_ISBN];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_ISBN);
+#endif
     break;
   case KEY_SUMMARY:
     str1 = record->fields[FIELD_SUMMARY];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_SUMMARY);
+#endif
     break;
   case KEY_TITLE_AUTHOR:
     str1 = record->fields[FIELD_TITLE];
     str2 = record->fields[FIELD_AUTHOR];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_TITLE);
+    ucs2 = BookRecordFieldIsUnicode(record, FIELD_AUTHOR);
+#endif
     break;
   case KEY_AUTHOR_TITLE:
     str1 = record->fields[FIELD_AUTHOR];
     str2 = record->fields[FIELD_TITLE];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_AUTHOR);
+    ucs2 = BookRecordFieldIsUnicode(record, FIELD_TITLE);
+#endif
     break;
   }
 
@@ -1157,6 +1208,9 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
     len2 = StrLen(str2);
 
   width = bounds->extent.x;
+#ifdef VARHEIGHT
+  height = bounds->extent.y;
+#endif
   x = bounds->topLeft.x;
   y = bounds->topLeft.y;
 
@@ -1176,8 +1230,16 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
       noneH = DmGetResource(strRsc, noneID);
       str1 = (Char *)MemHandleLock(noneH);
       len1 = StrLen(str1);
+#ifdef UNICODE
+      ucs1 = false;
+#endif
     }
-    WinGlueDrawTruncChars(str1, len1, x, y, width);
+#ifdef UNICODE
+    if (ucs1)
+      UnicodeDrawSingleLine(str1, len1, x, y, &width, &height);
+    else
+#endif
+      WinGlueDrawTruncChars(str1, len1, x, y, width);
     if (NULL != noneH) {
       MemHandleUnlock(noneH);
       DmReleaseResource(noneH);
@@ -1185,18 +1247,201 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
   }
   else {
     if (NULL == str1) {
+#ifdef UNICODE
+    if (ucs2)
+      UnicodeDrawSingleLine(str1, len1, x, y, &width, &height);
+    else
+#endif
       DrawTruncChars(str2, &len2, x, y, &width, true);
     }
     else {
       width -= SPACE_BETWEEN_FIELDS;
       width = (width * LEFT_FRACTION_NUM) / LEFT_FRACTION_DEN;
-      DrawTruncChars(str1, &len1, x, y, &width, false);
+#ifdef UNICODE
+      if (ucs1) {
+      }
+      else {
+        if (ucs2)
+#else
+      {
+#endif
+#ifdef VARHEIGHT
+          y += (height - FntCharHeight()) / 2;
+#endif
+        DrawTruncChars(str1, &len1, x, y, &width, false);
+#ifdef VARHEIGHT
+        y = bounds->topLeft.y;
+#endif
+      }
       x += width + SPACE_BETWEEN_FIELDS;
       width = bounds->extent.x - x;
-      DrawTruncChars(str2, &len2, x, y, &width, true);
+#ifdef UNICODE
+      if (ucs2)
+        UnicodeDrawSingleLine(str1, len1, x, y, &width, &height);
+      else {
+        if (ucs1)
+#else
+      {
+#endif
+#ifdef VARHEIGHT
+          y += (height - FntCharHeight()) / 2;
+#endif
+        DrawTruncChars(str2, &len2, x, y, &width, true);
+      }
     }
   }
 }
+
+#ifdef VARHEIGHT
+
+static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, RectangleType *bounds)
+{
+  MemHandle recordH;
+  BookRecord record;
+  FontID oldFont;
+  UInt16 height;
+
+  if (BookDatabaseGetRecord(recordNum, &recordH, &record))
+    return FntLineHeight();
+
+  oldFont = FntSetFont(g_ListFont);
+
+  switch (column) {
+  case COL_TITLE:
+    height = ListFormSizeTitle(&record, bounds, g_ListFields);
+    break;
+  default:
+    height = FntLineHeight();
+  }
+
+  MemHandleUnlock(recordH);
+  FntSetFont(oldFont);
+
+  return height;
+}
+
+static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
+                                UInt16 listFields)
+{
+  Char *str1, *str2;
+  UInt16 len1, len2;
+#ifdef UNICODE
+  Boolean ucs1, ucs2;
+#endif
+  Int16 width, twidth, height, maxHeight;
+
+  str1 = str2 = NULL;
+  len1 = len2 = 0;
+  switch (listFields) {
+  case KEY_TITLE:
+    str1 = record->fields[FIELD_TITLE];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_TITLE);
+#endif
+    break;
+  case KEY_AUTHOR:
+    str1 = record->fields[FIELD_AUTHOR];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_AUTHOR);
+#endif
+    break;
+  case KEY_ISBN:
+    str1 = record->fields[FIELD_ISBN];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_ISBN);
+#endif
+    break;
+  case KEY_SUMMARY:
+    str1 = record->fields[FIELD_SUMMARY];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_SUMMARY);
+#endif
+    break;
+  case KEY_TITLE_AUTHOR:
+    str1 = record->fields[FIELD_TITLE];
+    str2 = record->fields[FIELD_AUTHOR];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_TITLE);
+    ucs2 = BookRecordFieldIsUnicode(record, FIELD_AUTHOR);
+#endif
+    break;
+  case KEY_AUTHOR_TITLE:
+    str1 = record->fields[FIELD_AUTHOR];
+    str2 = record->fields[FIELD_TITLE];
+#ifdef UNICODE
+    ucs1 = BookRecordFieldIsUnicode(record, FIELD_AUTHOR);
+    ucs2 = BookRecordFieldIsUnicode(record, FIELD_TITLE);
+#endif
+    break;
+  }
+
+  if (NULL != str1)
+    len1 = StrLen(str1);
+  if (NULL != str2)
+    len2 = StrLen(str2);
+
+  if (NULL == str2) {
+    if (NULL == str1)
+      return FntLineHeight();
+#ifdef UNICODE
+    if (ucs1)
+      return ...;
+    else
+#endif
+      return FntLineHeight();
+  }
+  else {
+    if (NULL == str1) {
+#ifdef UNICODE
+      if (ucs1)
+        return ...;
+      else
+#endif
+        return FntLineHeight();
+    }
+    if
+#ifdef UNICODE
+      (!ucs1 && !ucs2)
+#else
+      (false)
+#endif
+      return FntLineHeight();
+    else {
+      // Need to figure out how much each side will take, since width
+      // determines substring determines height.
+      width = bounds->extent.x - SPACE_BETWEEN_FIELDS;
+      width = (width * LEFT_FRACTION_NUM) / LEFT_FRACTION_DEN;
+#ifdef UNICODE
+      if (ucs1) {
+        height = bounds.extent.y;
+        UnicodeSizeSingleLine(str1, len1, &width, &height);
+      }
+      else
+#endif
+      {     
+        twidth = width;
+        if (FntGlueWidthToOffset(str1, len1, width, NULL, &width) < len1)
+          width = twidth;       // Truncated: take it all (will draw ellipsis).
+        height = FntLineHeight();
+      }
+      maxHeight = height;
+#ifdef UNICODE
+      if (ucs1) {
+        width = bounds->extent.x - width - SPACE_BETWEEN_FIELDS;
+        height = bounds.extent.y;
+        UnicodeSizeSingleLine(str1, len1, &width, &height);
+      }
+      else
+#endif
+        height = FntLineHeight();
+      if (maxHeight < height)
+        maxHeight = height;
+      return maxHeight;
+    }
+  }
+}
+
+#endif
 
 /*** Preferences ***/
 
