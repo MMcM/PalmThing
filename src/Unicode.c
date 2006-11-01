@@ -25,6 +25,8 @@ Err UnicodeInitialize()
 {
   Err error;
 
+  if (!BookDatabaseIsUnicode()) return errNone;
+
   MemSet(&g_UniBucket, sizeof(g_UniBucket), 0);
   g_UniBucket.fontIDOffset = kFontIDOffset;
   g_UniBucket.maxActiveFontIDs = kMaxActiveFontIDs;

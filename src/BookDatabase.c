@@ -17,11 +17,40 @@ enum { DB_VER_0 = 0 };
 #define DB_NAME "PalmThing-Books"
 #define DB_TYPE 'DATA'          // Main book database.
 
+#ifndef UNICODE
+
 typedef struct {
   UInt32 bookID;
   UInt16 fieldMask;
   Char fields[0];
 } BookRecordPacked;
+
+#define BookRecordPackedNative BookRecordPacked
+
+#define DB_TYPE_CREATE DB_TYPE
+
+#else
+
+#define DB_TYPE_UNICODE 'DATU'
+#define DB_TYPE_CREATE DB_TYPE_UNICODE
+
+typedef struct {
+  UInt32 bookID;
+  UInt16 fieldMask;
+} BookRecordPacked;
+
+typedef struct {
+  BookRecordPacked base;
+  Char fields[0];
+} BookRecordPackedNative;
+
+typedef struct {
+  BookRecordPacked base;
+  UInt16 unicodeMask;
+  Char fields[0];
+} BookRecordPackedUnicode;
+
+#endif
 
 // TODO: Could move to prefs.
 #define SEEK_YIELD_QUANTUM 100
@@ -29,9 +58,21 @@ typedef struct {
 /*** Local storage ***/
 
 static DmOpenRef g_BookDatabase = NULL;
+
+#ifdef UNICODE
+static Boolean g_BookDatabaseUnicode = false;
+#endif
+
 static Char g_CategoryName[dmCategoryLength];
 
 /*** Local routines ***/
+
+#ifdef UNICODE
+Boolean BookDatabaseIsUnicode()
+{
+  return g_BookDatabaseUnicode;
+}
+#endif
 
 static Int16 BookRecordCompare(void *p1, void *p2, 
                                Int16 sortKey,
@@ -44,7 +85,12 @@ static UInt16 BookRecordPackedSize(BookRecord *record)
   int i;
   Char *p;
 
-  result = sizeof(BookRecordPacked);
+#ifdef UNICODE
+  if (g_BookDatabaseUnicode)
+    result = sizeof(BookRecordPackedUnicode);
+  else
+#endif
+    result = sizeof(BookRecordPackedNative);
   for (i = 0; i < BOOK_NFIELDS; i++) {
     if (NULL != (p = record->fields[i])) {
       result += StrLen(p) + 1;
@@ -64,8 +110,17 @@ static void PackRecord(BookRecord *record, BookRecordPacked *packed)
   DmWrite(packed, offsetof(BookRecordPacked,bookID), 
           &record->bookID, sizeof(packed->bookID));
   
+#ifdef UNICODE
+  if (g_BookDatabaseUnicode) {
+    DmWrite(packed, offsetof(BookRecordPackedUnicode,unicodeMask), 
+            &record->unicodeMask, fsizeof(BookRecordPackedUnicode,unicodeMask));
+    offset = offsetof(BookRecordPackedUnicode,fields);
+  }
+  else
+#endif
+    offset = offsetof(BookRecordPackedNative,fields);
+
   mask = 0;
-  offset = offsetof(BookRecordPacked,fields);
   for (i = 0; i < BOOK_NFIELDS; i++) {
     if (NULL != (p = record->fields[i])) {
       mask |= (1 << i);
@@ -79,14 +134,24 @@ static void PackRecord(BookRecord *record, BookRecordPacked *packed)
 
 static void UnpackRecord(BookRecordPacked *packed, BookRecord *record)
 {
+  UInt16 mask;
   int i;
   Char *p;
   
   record->bookID = packed->bookID;
-  
-  p = packed->fields;
+
+  mask = packed->fieldMask;
+
+#ifdef UNICODE
+  if (g_BookDatabaseUnicode) {
+    record->unicodeMask = ((BookRecordPackedUnicode *)packed)->unicodeMask;
+    p = ((BookRecordPackedUnicode *)packed)->fields;
+  }
+  else
+#endif
+    p = ((BookRecordPackedNative *)packed)->fields;
   for (i = 0; i < BOOK_NFIELDS; i++) {
-    if (packed->fieldMask & (1 << i)) {
+    if (mask & (1 << i)) {
       record->fields[i] = p;
       p += StrLen(p) + 1;
     }
@@ -106,13 +171,22 @@ Err BookDatabaseOpen()
   BookAppInfo *appInfo;
   Err error;
   
+#ifdef UNICODE
+  db = DmOpenDatabaseByTypeCreator(DB_TYPE_UNICODE, APP_CREATOR, dmModeReadWrite);
+  g_BookDatabaseUnicode = (NULL != db);
+  if (!g_BookDatabaseUnicode)
+#endif
   db = DmOpenDatabaseByTypeCreator(DB_TYPE, APP_CREATOR, dmModeReadWrite);
   if (NULL == db) {
-    error = DmCreateDatabase(0, DB_NAME, APP_CREATOR, DB_TYPE, false);
+    error = DmCreateDatabase(0, DB_NAME, APP_CREATOR, DB_TYPE_CREATE, false);
     if (error) return error;
 
-    db = DmOpenDatabaseByTypeCreator(DB_TYPE, APP_CREATOR, dmModeReadWrite);
+    db = DmOpenDatabaseByTypeCreator(DB_TYPE_CREATE, APP_CREATOR, dmModeReadWrite);
     if (NULL == db) return DmGetLastErr();
+
+#ifdef UNICODE
+    g_BookDatabaseUnicode = true;
+#endif
 
     error = DmOpenDatabaseInfo(db, &dbID, NULL, NULL, &cardNo, NULL);
     if (error) return error;
@@ -211,23 +285,29 @@ Err BookRecordGetField(UInt16 index, UInt16 fieldIndex,
   BookRecordPacked *packed;
   Char *p;
   int i;
-  UInt16 len;
+  UInt16 mask, len;
 
   *dataH = DmQueryRecord(g_BookDatabase, index);
   if (NULL == *dataH)
     return DmGetLastErr();
 
   packed = (BookRecordPacked *)MemHandleLock(*dataH);
-  if (!(packed->fieldMask & (1 << fieldIndex))) {
+  mask = packed->fieldMask;
+  if (!(mask & (1 << fieldIndex))) {
     MemHandleUnlock(*dataH);
     *dataOffset = MemHandleSize(*dataH);
     *dataLen = 0;
     return errNone;
   }
   
-  p = packed->fields;
+#ifdef UNICODE
+  if (g_BookDatabaseUnicode)
+    p = ((BookRecordPackedUnicode *)packed)->fields;
+  else
+#endif
+    p = ((BookRecordPackedNative *)packed)->fields;
   for (i = 0; i < BOOK_NFIELDS; i++) {
-    if (packed->fieldMask & (1 << i)) {
+    if (mask & (1 << i)) {
       len = StrLen(p) + 1;
       if (i == fieldIndex) {
         *dataOffset = p - (Char *)packed;
@@ -506,8 +586,14 @@ static Boolean BookRecordPackedFilterMatch(BookRecordPacked *packed, BookFilter 
   if (0 == searchMask)
     return false;
 
+#ifdef UNICODE
+  if (g_BookDatabaseUnicode)
+    fldp = ((BookRecordPackedUnicode *)packed)->fields;
+  else
+#endif
+    fldp = ((BookRecordPackedNative *)packed)->fields;
+
   match = false;
-  fldp = packed->fields;
   for (i = 0; i < BOOK_NFIELDS; i++) {
     len = StrLen(fldp);
     if (searchMask & (1 << i)) {
@@ -668,17 +754,23 @@ static void BookRecordCompareGetField(BookRecordPacked *packed, Int16 fieldIndex
 {
   Char *p;
   int i;
-  UInt16 len;
+  UInt16 mask, len;
 
-  if (!(packed->fieldMask & (1 << fieldIndex))) {
+  mask = packed->fieldMask;
+  if (!(mask & (1 << fieldIndex))) {
     *fstr = NULL;
     *flen = 0;
     return;
   }
     
-  p = packed->fields;
+#ifdef UNICODE
+  if (g_BookDatabaseUnicode)
+    p = ((BookRecordPackedUnicode *)packed)->fields;
+  else
+#endif
+    p = ((BookRecordPackedNative *)packed)->fields;
   for (i = 0; i < BOOK_NFIELDS; i++) {
-    if (packed->fieldMask & (1 << i)) {
+    if (mask & (1 << i)) {
       len = StrLen(p) + 1;
       if (i == fieldIndex) {
         *fstr = p;

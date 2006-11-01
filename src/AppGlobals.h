@@ -44,6 +44,7 @@ typedef struct {
 
 #define countof(x) (sizeof(x)/sizeof(x[0]))
 #define offsetof(t,f) ((UInt32)&(((t *)0)->f))
+#define fsizeof(t,f) sizeof(((t *)0)->f)
 
 #define NO_RECORD 0xFFFF
 
@@ -66,8 +67,15 @@ enum {
 /** Unpacked representation for easy manipulation. **/
 typedef struct {
   UInt32 bookID;
+#ifdef UNICODE
+  UInt16 unicodeMask;
+#endif
   Char *fields[BOOK_NFIELDS];
 } BookRecord;
+
+#ifdef UNICODE
+#define BookRecordFieldIsUnicode(rec,i) (0 != (rec->unicodeMask & (1<<(i))))
+#endif
 
 /** Record key fields.
  * Can specify either database record sort order or list column
@@ -194,6 +202,11 @@ extern void BookDatabaseSetSortFields(Int16 sortFields);
 extern Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc, 
                             void (*drawRecord)(BookRecord*, RectangleType*, UInt16));
 
+#ifdef UNICODE
+extern Boolean BookDatabaseIsUnicode();
+
 /*** Unicode routines ***/
 extern Err UnicodeInitialize();
 extern void UnicodeTerminate();
+
+#endif
