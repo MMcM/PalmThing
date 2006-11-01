@@ -193,3 +193,7 @@ extern UInt16 BookDatabaseGetSortFields();
 extern void BookDatabaseSetSortFields(Int16 sortFields);
 extern Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc, 
                             void (*drawRecord)(BookRecord*, RectangleType*, UInt16));
+
+/*** Unicode routines ***/
+extern Err UnicodeInitialize();
+extern void UnicodeTerminate();

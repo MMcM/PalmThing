@@ -47,6 +47,14 @@ static Err AppStart()
   error = BookDatabaseOpen();
   if (error) return error;
 
+#ifdef UNICODE
+  error = UnicodeInitialize();
+  if (error) {
+    BookDatabaseClose();
+    return error;
+  }
+#endif
+
   appInfo = BookDatabaseGetAppInfo();
 
   ListFormSetup(pprefs, appInfo);
@@ -70,6 +78,10 @@ static void AppStop()
 
   // Close all the open forms.
   FrmCloseAllForms();
+
+#ifdef UNICODE
+  UnicodeTerminate();
+#endif
 
   // Close the application's data file.
   BookDatabaseClose();
