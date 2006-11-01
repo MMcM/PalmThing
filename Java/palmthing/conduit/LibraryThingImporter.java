@@ -525,6 +525,7 @@ public class LibraryThingImporter {
                          " [-read file] [-append file] [-write file]" +
                          " [-sort field] [-dump file]" + 
                          " [-dump-raw file] [-load-raw file]" +
+                         " [-read-xml file] [-write-xml file] [-write-html file xsl]" +
                          " [-print]");
       return;
     }
@@ -616,6 +617,15 @@ public class LibraryThingImporter {
           }
         }
         istr.close();
+      }
+      else if (arg.equals("-read-xml")) {
+        books = new XMLImporter().importFile(args[i++]);
+      }
+      else if (arg.equals("-write-xml")) {
+        new XMLImporter().exportFile(books, args[i++], null);
+      }
+      else if (arg.equals("-write-html")) {
+        new XMLImporter().exportFile(books, args[i++], args[i++]);
       }
       else if (arg.equals("-print")) {
         Iterator iter = books.iterator();
