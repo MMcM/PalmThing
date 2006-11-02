@@ -1160,6 +1160,9 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
 
   str1 = str2 = NULL;
   len1 = len2 = 0;
+#ifdef UNICODE
+  ucs1 = ucs2 = false;
+#endif
   switch (listFields) {
   case KEY_TITLE:
     str1 = record->fields[FIELD_TITLE];
@@ -1333,6 +1336,9 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
 
   str1 = str2 = NULL;
   len1 = len2 = 0;
+#ifdef UNICODE
+  ucs1 = ucs2 = false;
+#endif
   switch (listFields) {
   case KEY_TITLE:
     str1 = record->fields[FIELD_TITLE];
