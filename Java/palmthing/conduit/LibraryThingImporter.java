@@ -144,15 +144,15 @@ public class LibraryThingImporter {
 
       for (int i = 0; i < cols.length; i++) {
         String col = cols[i];
-        if (g_recordIDField.equals(col))
+        if (g_recordIDField.equalsIgnoreCase(col))
           recordIDFieldCol = i;
-        else if (g_bookIDField.equals(col))
+        else if (g_bookIDField.equalsIgnoreCase(col))
           bookIDFieldCol = i;
-        else if (m_authorField.equals(col))
+        else if (m_authorField.equalsIgnoreCase(col))
           stringFieldCols[BookRecord.FIELD_AUTHOR] = i;
         else {
           for (int j = 0; j < g_stringFields.length; j++) {
-            if (g_stringFields[j].equals(col)) {
+            if (g_stringFields[j].equalsIgnoreCase(col)) {
               if ((j == BookRecord.FIELD_SUMMARY) && !m_includeSummaryField)
                 break;
               stringFieldCols[j] = i;
@@ -353,6 +353,8 @@ public class LibraryThingImporter {
     m_fieldDelimiter = fieldDelimiter;
   }
 
+  private char m_quoteCharacter = '"';
+
   // Split the given line up into columns.
   protected String[] splitLine(String line) {
     String[] cols = stringSplit(line, m_fieldDelimiter);
@@ -360,6 +362,9 @@ public class LibraryThingImporter {
       String col = cols[i];
       if (col.length() == 0)
         cols[i] = null;
+      else if ((col.charAt(0) == m_quoteCharacter) &&
+               (col.charAt(col.length()-1) == m_quoteCharacter))
+        cols[i] = col.substring(1, col.length()-1);
     }
     return cols;
   }
