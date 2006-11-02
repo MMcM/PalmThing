@@ -213,5 +213,7 @@ extern void UnicodeSizeSingleLine(const Char *str, UInt16 len,
 extern void UnicodeDrawSingleLine(const Char *str, UInt16 len, 
                                   Int16 x, Int16 y, 
                                   Int16 *width, Int16 *height);
+extern Boolean UnicodeDrawField(const Char *str, UInt16 len, Int16 *y, 
+                                RectangleType *bounds);
 
 #endif

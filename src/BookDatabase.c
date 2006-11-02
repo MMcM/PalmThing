@@ -147,9 +147,13 @@ static void UnpackRecord(BookRecordPacked *packed, BookRecord *record)
     record->unicodeMask = ((BookRecordPackedUnicode *)packed)->unicodeMask;
     p = ((BookRecordPackedUnicode *)packed)->fields;
   }
-  else
+  else {
+    record->unicodeMask = 0;
+#else
+  {
 #endif
     p = ((BookRecordPackedNative *)packed)->fields;
+  }
   for (i = 0; i < BOOK_NFIELDS; i++) {
     if (mask & (1 << i)) {
       record->fields[i] = p;

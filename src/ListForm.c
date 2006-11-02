@@ -1258,8 +1258,8 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
       width -= SPACE_BETWEEN_FIELDS;
       width = (width * LEFT_FRACTION_NUM) / LEFT_FRACTION_DEN;
 #ifdef UNICODE
-      if (ucs1) {
-      }
+      if (ucs1)
+        UnicodeDrawSingleLine(str1, len1, x, y, &width, &height);
       else {
         if (ucs2)
 #else
@@ -1277,7 +1277,7 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
       width = bounds->extent.x - x;
 #ifdef UNICODE
       if (ucs2)
-        UnicodeDrawSingleLine(str1, len1, x, y, &width, &height);
+        UnicodeDrawSingleLine(str2, len2, x, y, &width, &height);
       else {
         if (ucs1)
 #else

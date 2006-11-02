@@ -54,25 +54,37 @@ void UnicodeTerminate()
     UniBucketCloseUnicode(&g_UniBucket, g_FoundUniCharDB, g_FoundMappingDB);
 }
 
-void UnicodeSizeSingleLine(const Char *str, UInt16 len, 
-                           Int16 *width, Int16 *height)
+static UTF16 *UTF8toUTF16(const Char *str, UInt16 len)
 {
   const UTF8 *utf8, *start8, *end8;
   UTF16 *utf16, *start16, *end16;
-  UInt16 lw, lh;
   ConversionResult cr;
-
+  
   utf8 = (const UTF8 *)str;
   len++;                        // Include terminating nul.
   utf16 = (UTF16 *)MemPtrNew(len * 2);
-  if (NULL == utf16) {
-    *height = g_UniBucket.lineHeight;
-  }
+  if (NULL == utf16) 
+    return NULL;
+
   start8 = utf8;
   end8 = start8 + len;
   start16 = utf16;
   end16 = start16 + len;
   cr = ConvertUTF8toUTF16(&start8, end8, &start16, end16, lenientConversion);
+
+  return utf16;
+}
+
+void UnicodeSizeSingleLine(const Char *str, UInt16 len, 
+                           Int16 *width, Int16 *height)
+{
+  UTF16 *utf16;
+  UInt16 lw, lh;
+
+  utf16 = UTF8toUTF16(str, len);
+  if (NULL == utf16) {
+    *height = g_UniBucket.lineHeight;
+  }
   UniStrUniCharPrintLine(&g_UniBucket, 16, utf16, 
                          0, 0, *height, *width,
                          UNI_TEXT_DIR_LR, 0, 0, 
@@ -87,20 +99,11 @@ void UnicodeDrawSingleLine(const Char *str, UInt16 len,
                            Int16 x, Int16 y, 
                            Int16 *width, Int16 *height)
 {
-  const UTF8 *utf8, *start8, *end8;
-  UTF16 *utf16, *start16, *end16;
+  UTF16 *utf16;
   UInt16 lw, lh;
-  ConversionResult cr;
 
-  utf8 = (const UTF8 *)str;
-  len++;                        // Include terminating nul.
-  utf16 = (UTF16 *)MemPtrNew(len * sizeof(UTF16));
+  utf16 = UTF8toUTF16(str, len);
   if (NULL == utf16) return;
-  start8 = utf8;
-  end8 = start8 + len;
-  start16 = utf16;
-  end16 = start16 + len;
-  cr = ConvertUTF8toUTF16(&start8, end8, &start16, end16, lenientConversion);
   UniStrUniCharPrintLine(&g_UniBucket, 16, utf16, 
                          y, x, *height, *width,
                          UNI_TEXT_DIR_LR, winPaint, winOverlay, 
@@ -109,6 +112,40 @@ void UnicodeDrawSingleLine(const Char *str, UInt16 len,
 
   *width = lw;
   *height = lh;
+}
+
+Boolean UnicodeDrawField(const Char *str, UInt16 len, Int16 *y, 
+                         RectangleType *bounds)
+{
+  UTF16 *utf16, *up;
+  Int16 x, width, bottom;
+  UInt16 lw, lh;
+  Int32 nchars;
+  Boolean exhausted;
+
+  utf16 = UTF8toUTF16(str, len);
+  if (NULL == utf16) return false;
+
+  x = bounds->topLeft.x;
+  width = bounds->extent.x;
+  bottom = bounds->topLeft.y + bounds->extent.y;
+
+  up = utf16;
+  while (true) {
+    nchars = UniStrUniCharPrintLine(&g_UniBucket, 16, up, 
+                                    *y, x, (bottom - *y), width,
+                                    UNI_TEXT_DIR_LR, winPaint, winOverlay,
+                                    &lw, &lh, true);
+    *y += lh;
+    if (nchars <= 0) {
+      exhausted = (nchars == -2);
+      break;
+    }
+    up += nchars;
+  }
+  MemPtrFree(utf16);
+
+  return exhausted;
 }
 
 #endif

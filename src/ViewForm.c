@@ -424,6 +424,9 @@ static void ViewFormGadgetDraw()
   Boolean scrollableUp, scrollableDown;
   UInt16 upIndex, downIndex;
 
+  if (BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record))
+    return;
+
   if (g_ViewSummary) {
     fields = g_ViewFieldsSummary;
     nfields = VIEW_NFIELDS_SUMMARY;
@@ -432,9 +435,6 @@ static void ViewFormGadgetDraw()
     fields = g_ViewFields;
     nfields = VIEW_NFIELDS;
   }
-
-  if (BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record))
-    return;
 
   form = FrmGetActiveForm();
   FrmGetObjectBounds(form, FrmGetObjectIndex(form, ViewRecordGadget), &bounds);
@@ -456,6 +456,26 @@ static void ViewFormGadgetDraw()
     else if (fieldNumber == 0)
       str += g_TopFieldOffset;
 
+    if (recordFieldIndex == g_HilightRecordFieldIndex) {
+      hilightPosition = g_HilightPosition;
+      hilightLength = g_HilightLength;
+      if (fieldNumber == 0)
+        hilightPosition -= g_TopFieldOffset;
+    }
+    else {
+      hilightPosition = hilightLength = 0;
+    }
+
+#ifdef UNICODE
+    if (record.unicodeMask & (1 << recordFieldIndex)) {
+      // TODO: hilightPosition, hilightLength.
+      if (!UnicodeDrawField(str, StrLen(str), &y, &bounds))
+        break;
+      else
+        continue;
+    }
+#endif
+
     switch (recordFieldIndex) {
     case FIELD_TITLE:
     case FIELD_SUMMARY:
@@ -469,16 +489,6 @@ static void ViewFormGadgetDraw()
     default:
       FntSetFont(g_ViewFont);
       break;
-    }
-
-    if (recordFieldIndex == g_HilightRecordFieldIndex) {
-      hilightPosition = g_HilightPosition;
-      hilightLength = g_HilightLength;
-      if (fieldNumber == 0)
-        hilightPosition -= g_TopFieldOffset;
-    }
-    else {
-      hilightPosition = hilightLength = 0;
     }
 
     if (!ViewFormGadgetDrawField(str, &y, &bounds, hilightPosition, hilightLength))
