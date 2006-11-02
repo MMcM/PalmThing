@@ -90,8 +90,9 @@ void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo)
 {
   if (NULL == prefs) {
     g_ListFont = FntGlueGetDefaultFontID(defaultSystemFont);
-    g_ListFields = (appInfo->sortFields < 0) ? 
-      -appInfo->sortFields : appInfo->sortFields;
+    if (appInfo->sortFields != 0)
+      g_ListFields = (appInfo->sortFields < 0) ? 
+        -appInfo->sortFields : appInfo->sortFields;
   }
   else {
     g_ListFont = prefs->listFont;
