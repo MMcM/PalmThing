@@ -50,8 +50,10 @@ Err UnicodeInitialize()
 
 void UnicodeTerminate()
 {
-  if (g_UnicodeInitialized)
+  if (g_UnicodeInitialized) {
     UniBucketCloseUnicode(&g_UniBucket, g_FoundUniCharDB, g_FoundMappingDB);
+    UniUtilReleaseCode(sysAppLaunchFlagNewGlobals);
+  }
 }
 
 static UTF16 *UTF8toUTF16(const Char *str, UInt16 len)
