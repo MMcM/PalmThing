@@ -21,8 +21,21 @@ static UniBucketType g_UniBucket;
 static UInt8 g_FoundUniCharDB, g_FoundMappingDB;
 static Boolean g_UnicodeInitialized = false;
 
+#define NUM_FONT_PATHS 5
+static const char *FONT_PATHS[NUM_FONT_PATHS] = {
+  "/Palm/Launcher/",
+  "/Palm/Programs/",
+  "/Palm/Programs/UniLib/",
+  "/Palm/Programs/PalmThing/",
+  "/Palm/Programs/UniBible/"
+};
+static DmVFSPathType g_FontPaths[NUM_FONT_PATHS];
+
 Err UnicodeInitialize()
 {
+  int i;
+  UInt32 vfsMgrVersion;
+  UInt8 foundVFS;
   Err error;
 
   if (!BookDatabaseIsUnicode()) return errNone;
@@ -30,7 +43,18 @@ Err UnicodeInitialize()
   MemSet(&g_UniBucket, sizeof(g_UniBucket), 0);
   g_UniBucket.fontIDOffset = kFontIDOffset;
   g_UniBucket.maxActiveFontIDs = kMaxActiveFontIDs;
-  error = UniBucketOpenUnicode(&g_UniBucket, false, NULL, 0, 
+
+  error = FtrGet(sysFileCVFSMgr, vfsFtrIDVersion, &vfsMgrVersion);
+  foundVFS = (!error && vfsMgrVersion);
+  if (foundVFS) {
+    g_UniBucket.uniCharDB.tryVFS = foundVFS;
+    g_UniBucket.uniMapDB.tryVFS = foundVFS;
+    for (i = 0; i < NUM_FONT_PATHS; i++) {
+      StrCopy(g_FontPaths[i].path, FONT_PATHS[i]);
+    }
+  }
+
+  error = UniBucketOpenUnicode(&g_UniBucket, foundVFS, g_FontPaths, NUM_FONT_PATHS, 
                                &g_FoundUniCharDB, true, &g_FoundMappingDB);
   if (error) return error;
 
@@ -45,6 +69,8 @@ Err UnicodeInitialize()
 
   g_UniBucket.flag[FLAG_RENDER_HEBREW_WITH_PRESENTATION_FORMS] = true;
   
+  g_UnicodeInitialized = true;
+
   return error;
 }
 
