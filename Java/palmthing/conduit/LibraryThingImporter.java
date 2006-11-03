@@ -206,6 +206,8 @@ public class LibraryThingImporter {
         if (col == null) continue;
         if (m_normalizer != null)
           col = m_normalizer.normalize(col);
+        if (hasHangulSyllables(col))
+          col = decomposeHangulSyllables(col);
         setField(book, i, col);
       }
 
@@ -296,6 +298,8 @@ public class LibraryThingImporter {
           atsign++;
         }
         col = stringReplaceAll(col, ",", ", ");
+        if (col.length() == 0)
+          col = null;
       }
       break;
     default:
@@ -401,6 +405,56 @@ public class LibraryThingImporter {
     return result.toString();
   }
 
+  // UniLib only does Hangul as an alphabet, not pre-composed.
+  private static final int HANGUL_SYLLABLE_BASE = 0xAC00;
+  private static final int HANGUL_SYLLABLE_COUNT = 11172;
+  private static final int HANGUL_CHOSEONG_BASE = 0x1100;
+  private static final int HANGUL_CHOSEONG_COUNT = 19;
+  private static final int HANGUL_JUNGSEONG_BASE = 0x1161;
+  private static final int HANGUL_JUNGSEONG_COUNT = 21;
+  private static final int HANGUL_JONGSEONG_BASE = 0x11a7;
+  private static final int HANGUL_JONGSEONG_COUNT = 28;
+  
+  private static boolean hasHangulSyllables(String str) {
+    for (int i = 0; i < str.length(); i++) {
+      char ch = str.charAt(i);
+      if ((ch >= HANGUL_SYLLABLE_BASE) && 
+          (ch < HANGUL_SYLLABLE_BASE + HANGUL_SYLLABLE_COUNT))
+        return true;
+    }
+    return false;
+  }
+
+  private static String decomposeHangulSyllables(String str) {
+    StringBuffer buf = new StringBuffer(str);
+    for (int i = 0; i < buf.length(); i++) {
+      int offset = (int)buf.charAt(i) - HANGUL_SYLLABLE_BASE;
+      if ((offset >= 0) && (offset < HANGUL_SYLLABLE_COUNT)) {
+        buf.deleteCharAt(i);
+        int choseong = (offset / (HANGUL_JUNGSEONG_COUNT * HANGUL_JONGSEONG_COUNT));
+        int jungseong = (offset % (HANGUL_JUNGSEONG_COUNT * HANGUL_JONGSEONG_COUNT)) / 
+          HANGUL_JONGSEONG_COUNT;
+        int jongseong = (offset % HANGUL_JONGSEONG_COUNT);
+        if (jongseong == 0) {   //no trailing consonant
+          buf.insert(i, new char[] {
+                       (char)(HANGUL_CHOSEONG_BASE + choseong),
+                       (char)(HANGUL_JUNGSEONG_BASE + jungseong)
+                     });
+          i++;
+        }
+        else {
+          buf.insert(i, new char[] {
+                       (char)(HANGUL_CHOSEONG_BASE + choseong),
+                       (char)(HANGUL_JUNGSEONG_BASE + jungseong),
+                       (char)(HANGUL_JONGSEONG_BASE + jongseong)
+                     });
+          i+=2;
+        }
+      }
+    }
+    return buf.toString();
+  }
+  
   // Libraries that use MARC-8 / ANSEL will tend to have decomposed
   // accents, which can end up in the library.  Converting to
   // ISO-8859-1 works better with composed.  Every version of Java
