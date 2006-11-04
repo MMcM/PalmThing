@@ -7,8 +7,11 @@
 
   <property file="build.properties"/>
 
-  <target name="all" depends="init, prc, jar, tar, exe, clean"
-          description="Compile and build components."/>
+  <target name="all" depends="init, prc-debug, prc-unicode-debug, jar"
+          description="Compile and build debug /test components."/>
+
+  <target name="dist" depends="init, prc, prc-unicode, jar, tar, exe, comcast"
+          description="Distribute components."/>
 
   <target name="init">
     <tstamp/>
@@ -17,16 +20,30 @@
   <target name="prc" depends="init">
     <property name="SUBDIR" value="Release"/>
     <property name="TARGET" value="clean all"/>
-    <exec dir="${SUBDIR}" executable="${CYGWIN_HOME}/bin/sh.exe" os="Windows XP">
+    <exec dir="${SUBDIR}" failonerror="true"
+          executable="${CYGWIN_HOME}/bin/sh.exe" os="Windows XP">
       <arg value="-c"/>
       <arg value="make ${TARGET}"/>
       <env key="PATH" path="${CYGWIN_HOME}/bin"/>
     </exec>
   </target>
 
+  <target name="prc-unicode" depends="init">
+    <antcall target="prc">
+      <param name="SUBDIR" value="Unicode-Release"/>
+    </antcall>
+  </target>
+
   <target name="prc-debug" depends="init">
     <antcall target="prc">
       <param name="SUBDIR" value="Debug"/>
+      <param name="TARGET" value="all"/>
+    </antcall>
+  </target>
+
+  <target name="prc-unicode-debug" depends="init">
+    <antcall target="prc">
+      <param name="SUBDIR" value="Unicode-Debug"/>
       <param name="TARGET" value="all"/>
     </antcall>
   </target>
@@ -68,7 +85,8 @@
   </target>
 
   <target name="exe" depends="init">
-    <exec dir="Install" executable="${INNO_HOME}/iscc.exe" os="Windows XP">
+    <exec dir="Install" failonerror="true"
+          executable="${INNO_HOME}/iscc.exe" os="Windows XP">
       <arg value="PalmThing.iss"/>
     </exec>    
   </target>
