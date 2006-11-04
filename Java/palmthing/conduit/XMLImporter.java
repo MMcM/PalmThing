@@ -23,9 +23,10 @@ public class XMLImporter extends DefaultHandler {
 
   public static final String g_rootElement = "books";
   public static final String g_bookElement = "book";
-  public static final String g_categoryTagAttribute = "category";
   public static final String g_recordIDAttribute = "record-id";
   public static final String g_bookIDAttribute = "book-id";
+  public static final String g_linkElement = "link";
+  public static final String g_urlAttribute = "url";
   // Order must agree with BookRecord.
   public static final String[] g_stringFieldElements = {
     "title",
@@ -77,10 +78,7 @@ public class XMLImporter extends DefaultHandler {
     }
     else if (g_bookElement.equals(localName)) {
       m_book = new BookRecord();
-      String attr = attrs.getValue(g_categoryTagAttribute);
-      if (attr != null)
-        m_book.setCategoryTag(attr);
-      attr = attrs.getValue(g_recordIDAttribute);
+      String attr = attrs.getValue(g_recordIDAttribute);
       if (attr != null)
         m_book.setId(Integer.parseInt(attr));
       attr = attrs.getValue(g_bookIDAttribute);
@@ -106,7 +104,10 @@ public class XMLImporter extends DefaultHandler {
     }
     else {
       if (m_fieldBuffer != null) {
-        m_book.setStringField(m_field, m_fieldBuffer.toString());
+        String field = m_fieldBuffer.toString();
+        if (m_field == BookRecord.FIELD_TAGS)
+          field = BookUtils.extractCategoryTag(field, m_book);
+        m_book.setStringField(m_field, field);
         m_fieldBuffer = null;
       }
     }
@@ -169,10 +170,6 @@ public class XMLImporter extends DefaultHandler {
     while (iter.hasNext()) {
       BookRecord book = (BookRecord)iter.next();
       AttributesImpl attrs = new AttributesImpl();
-      if (book.getCategoryTag() != null) {
-        attrs.addAttribute(null, g_categoryTagAttribute, g_categoryTagAttribute, null,
-                           book.getCategoryTag());
-      }
       if (book.getId() != BookRecord.RECORD_ID_NONE) {
         attrs.addAttribute(null, g_recordIDAttribute, g_recordIDAttribute, null,
                            Integer.toString(book.getId()));
@@ -184,15 +181,80 @@ public class XMLImporter extends DefaultHandler {
       hand.startElement(null, g_bookElement, g_bookElement, attrs);
       for (int i = 0; i < g_stringFieldElements.length; i++) {
         String field = book.getStringField(i);
+        if (i == BookRecord.FIELD_TAGS)
+          field = BookUtils.mergeCategoryTag(field, book);
         if (field == null) continue;
         String elem = g_stringFieldElements[i];
         hand.startElement(null, elem, elem, NO_ATTRS);
         hand.characters(field.toCharArray(), 0, field.length());
         hand.endElement(null, elem, elem);
       }      
+      attrs = new AttributesImpl();
+      attrs.addAttribute(null, g_urlAttribute, g_urlAttribute, null, getLinkURL(book));
+      hand.startElement(null, g_linkElement, g_linkElement, attrs);
+      hand.endElement(null, g_linkElement, g_linkElement);
       hand.endElement(null, g_bookElement, g_bookElement);
     }
     hand.endElement(null, g_rootElement, g_rootElement);
     hand.endDocument();
-  }  
+  }
+
+  public String getLinkURL(BookRecord book) {
+    StringBuffer buf = new StringBuffer("http://www.librarything.com/");
+    if (book.getBookID() != 0) {
+      buf.append("work.php?book=");
+      buf.append(book.getBookID());
+    }
+    else {
+      buf.append("addbooks.php?search=");
+      if (book.getISBN() != null) {
+        buf.append(book.getISBN());
+      }
+      else {
+        if (book.getAuthor() != null) {
+          buf.append(toURL(book.getAuthor()));
+          if (book.getTitle() != null)
+            buf.append(",+");
+        }
+        if (book.getTitle() != null) {
+          buf.append(toURL(BookUtils.trimTitle(book.getTitle())));
+        }
+      }
+    }
+    return buf.toString();
+  }
+
+  private static final char[] g_hexChars = "0123456789ABCDEF".toCharArray();
+  /** Encode string for inclusion in URL. */
+  public static String toURL(String value) {
+    StringBuffer sb = new StringBuffer();
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (c > 128) {
+        // Actually, it depends on the headers and server defaults
+        // what encoding gets used.
+        try {
+          byte[] bytes = new String(new char[] { c }).getBytes("UTF-8");
+          for (int j = 0; j < bytes.length; j++) {
+            int b = (int)bytes[j] & 0xFF; // Do not sign extend.
+            sb.append('%');
+            sb.append(g_hexChars[b / 16]);
+            sb.append(g_hexChars[b % 16]);
+          }
+        }
+        catch (UnsupportedEncodingException ex) {
+          throw new RuntimeException(ex);
+        }
+      }
+      else if (!Character.isLetterOrDigit(c)) {
+        sb.append('%');
+        sb.append(g_hexChars[c / 16]);
+        sb.append(g_hexChars[c % 16]);
+      }
+      else {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
+  }
 }

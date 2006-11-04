@@ -72,19 +72,6 @@ public class BookRecordComparator implements Comparator {
     return 0;
   }
 
-  public static String[] g_noise = { "a ", "the " };
-
-  private static String trimTitle(String str) {
-    for (int i = 0; i < g_noise.length; i++) {
-      String noise = g_noise[i];
-      if ((str.length() > noise.length()) &&
-          (str.substring(0, noise.length()).equalsIgnoreCase(noise))) {
-        return str.substring(noise.length());
-      }
-    }
-    return str;
-  }
-
   private static int compareFields(BookRecord book1, BookRecord book2, int field) {
     String str1 = book1.getStringField(field);
     String str2 = book2.getStringField(field);
@@ -101,8 +88,8 @@ public class BookRecordComparator implements Comparator {
       switch (field) {
       case BookRecord.FIELD_TITLE:
       case BookRecord.FIELD_SUMMARY:
-        str1 = trimTitle(str1);
-        str2 = trimTitle(str2);
+        str1 = BookUtils.trimTitle(str1);
+        str2 = BookUtils.trimTitle(str2);
         return str1.compareToIgnoreCase(str2);
       case BookRecord.FIELD_ISBN:
         // TODO: Special ISBN comparison ignoring punctuation.
