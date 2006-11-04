@@ -1,6 +1,6 @@
 //
 //      Palm App Name:                  "PalmThing"
-//      Palm App Version:               "1.0.4"
+//      Palm App Version:               "1.0.5"
 //      $Header$
 //
 
@@ -36,6 +36,7 @@
 #define ViewDoneButton                            1205
 #define ViewEditButton                            1206
 #define ViewNoteButton                            1207
+#define ViewWebButton                             1208
 
 //      Resource: tFRM 1300
 #define EditForm                                  1300
@@ -47,6 +48,7 @@
 #define EditScrollDownRepeating                   1306
 #define EditDoneButton                            1307
 #define EditNoteButton                            1308
+#define EditWebButton                             1309
 
 //      Resource: tFRM 1400
 #define ISBNForm                                  1400

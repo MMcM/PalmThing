@@ -126,7 +126,7 @@ static void EditFormOpen(FormType *form)
 {
   MemHandle labelsH;
   Char *labels, *p, *np;
-  UInt16 nlabels, lsize;
+  UInt16 index, nlabels, lsize;
   int i;
   Int16 row, nrows;
   UInt16 labelColumnWidth, dataColumnWidth;
@@ -151,6 +151,11 @@ static void EditFormOpen(FormType *form)
       np += StrLen(np) + 1;
     }
     g_EditLabels[nlabels] = NULL;
+  }
+
+  if (WebEnabled()) {
+    index = FrmGetObjectIndex(form, EditWebButton);
+    FrmShowObject(form, index);
   }
 
   table = FrmGetObjectPtrFromID(form, EditTable);
@@ -215,6 +220,11 @@ Boolean EditFormHandleEvent(EventType *event)
 
     case EditNoteButton:
       NoteFormActivate();
+      handled = true;
+      break;
+
+    case EditWebButton:
+      WebGotoCurrentBook();
       handled = true;
       break;
     }

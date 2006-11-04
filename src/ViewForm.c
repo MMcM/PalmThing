@@ -120,9 +120,16 @@ UInt16 ViewFormGoToPrepare(GoToParamsPtr params)
 
 static void ViewFormOpen(FormType *form)
 {
+  UInt16 index;
+
   if (SYS_ROM_3_5) {
     FrmSetGadgetHandler(form, FrmGetObjectIndex(form, ViewRecordGadget),
                         ViewFormGadgetHandler);
+  }
+
+  if (WebEnabled()) {
+    index = FrmGetObjectIndex(form, ViewWebButton);
+    FrmShowObject(form, index);
   }
 
   FrmSetCategoryLabel(form, FrmGetObjectIndex(form, ViewCategoryLabel),
@@ -169,6 +176,11 @@ Boolean ViewFormHandleEvent(EventType *event)
       g_TopFieldNumber = g_TopFieldOffset = 0;
       g_HilightRecordFieldIndex = NO_FIELD;
       NoteFormActivate();
+      handled = true;
+      break;
+
+    case ViewWebButton:
+      WebGotoCurrentBook();
       handled = true;
       break;
     }

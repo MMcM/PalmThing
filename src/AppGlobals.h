@@ -202,6 +202,11 @@ extern void BookDatabaseSetSortFields(Int16 sortFields);
 extern Err BookDatabaseFind(FindParamsPtr params, UInt16 headerRsc, 
                             void (*drawRecord)(BookRecord*, RectangleType*, UInt16));
 
+/*** Exchange routines ***/
+
+extern Boolean WebEnabled();
+extern Err WebGotoCurrentBook();
+
 #ifdef UNICODE
 extern Boolean BookDatabaseIsUnicode();
 
