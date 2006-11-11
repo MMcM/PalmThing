@@ -59,6 +59,14 @@
 #define ISBNDoneButton                            1405
 #define ISBNSaveButton                            1406
 
+//	Resource: tFRM 1500
+#define DeleteForm                                1500
+#define DeleteConfirmationIconBitMap              10005
+#define DeleteDeletequestionLabel                 1501
+#define DeleteArchiveCheckbox                     1502
+#define DeleteOKButton                            1503
+#define DeleteCancelButton                        1504
+
 //      Resource: tFRM 2000
 #define PreferencesForm                           2000
 #define PreferencesSortPopTrigger                 2001

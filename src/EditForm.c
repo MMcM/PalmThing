@@ -44,6 +44,8 @@ static UInt8 g_EditFields[] = {
 
 static Char **g_EditLabels = NULL;
 
+static Boolean g_SaveBackup = false;
+
 /*** Local routines ***/
 
 static void EditFormOpen(FormType *form) EDIT_SECTION;
@@ -55,6 +57,7 @@ static void EditFormLoadTable() EDIT_SECTION;
 static Boolean EditFormUpdateDisplay(UInt16 updateCode) EDIT_SECTION;
 static Boolean EditFormMenuCommand(UInt16 command) EDIT_SECTION;
 static void EditFormSelectCategory() EDIT_SECTION;
+static Boolean EditFormDeleteBook() EDIT_SECTION;
 static void EditFormScroll(WinDirectionType direction) EDIT_SECTION;
 static void EditFormNextField(WinDirectionType direction) EDIT_SECTION;
 static void EditFormSelectField(UInt16 row, UInt16 column) EDIT_SECTION;
@@ -380,6 +383,12 @@ static Boolean EditFormMenuCommand(UInt16 command)
     handled = true;
     break;
 
+  case RecordDeleteBook:
+    if (EditFormDeleteBook())
+      FrmGotoForm(ListForm);
+    handled = true;
+    break;
+      
   case RecordBeamBook:
     EditBeamRecord(false);
     handled = true;
@@ -620,6 +629,36 @@ static void EditFormSelectCategory()
     FrmUpdateForm(FrmGetActiveFormID(), UPDATE_CATEGORY_CHANGED);
     g_CurrentRecordEdited = true;
   }
+}
+
+static Boolean EditFormDeleteBook()
+{
+  FormType *form;
+  UInt16 ctlIndex, buttonHit;
+  Boolean archive;
+   
+  // TODO: Save focus.
+  TblReleaseFocus(FrmGetObjectPtrFromID(FrmGetActiveForm(), EditTable));
+
+  form = FrmInitForm(DeleteForm);
+  
+  ctlIndex = FrmGetObjectIndex(form, DeleteArchiveCheckbox);
+  FrmSetControlValue(form, ctlIndex, g_SaveBackup);
+ 
+  buttonHit = FrmDoDialog(form);
+ 
+  archive = FrmGetControlValue(form, ctlIndex);
+ 
+  FrmDeleteForm(form);
+  if (buttonHit == DeleteCancelButton)
+    // TODO: Restore focus.
+    return false;
+  
+  g_SaveBackup = archive;
+  
+  DeleteCurrentRecord(archive);
+ 
+  return true;
 }
 
 /*** Display ***/
@@ -999,7 +1038,6 @@ static Err EditFormGetRecordField(MemPtr table, Int16 row, Int16 column, Boolean
     case FIELD_AUTHOR:
     case FIELD_PUBLICATION:
     case FIELD_SUMMARY:
-      // TODO: Think about this some more.
       FldSetAutoShift(field);
       break;
     }
