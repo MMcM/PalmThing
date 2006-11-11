@@ -1037,6 +1037,8 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
   }
 
   if (SYS_ROM_3_5) {
+    if (!haveTableVars)
+      form = FrmGetActiveForm();
     ctl = FrmGetObjectPtrFromID(form, ListFindButton);
     CtlSetGraphics(ctl,
                    (REDISPLAY_NONE == action) ? FindBitmap : FindActiveBitmap,
