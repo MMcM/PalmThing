@@ -49,22 +49,26 @@ static Boolean g_ScrollCurrentIntoView = false;
 
 /*** Local routines ***/
 
+static void ListFormOpen(FormType *form) LIST_SECTION;
 static void ListFormDrawRecord(MemPtr table, Int16 row, Int16 column,
-                               RectangleType *bounds);
-static void ListFormRedisplay(UInt16 action, Boolean checkCache);
-static Boolean ListFormMenuCommand(UInt16 command);
-static void ListFormItemSelected(EventType *event);
-static void ListFormSelectCategory();
-static void ListFormFindTypeSelected(EventType *event);
-static void ListFormScroll(WinDirectionType direction);
-static Boolean ListFormUpdateDisplay(UInt16 updateCode);
-static void ListBeamCategory(Boolean send);
-static void ListFontSelect();
-static void ListFormFieldChanged();
-static void ListFormFind();
-static void ListFormUpdateFindState();
-static void ListFormCloseFindState();
-static void ListFormDeleteFindState();
+                               RectangleType *bounds) LIST_SECTION;
+static void ListFormRedisplay(UInt16 action, Boolean checkCache) LIST_SECTION;
+static Boolean ListFormMenuCommand(UInt16 command) LIST_SECTION;
+static void ListFormItemSelected(EventType *event) LIST_SECTION;
+static UInt16 ListFormNumberOfRows(TableType *table) LIST_SECTION;
+static void ListFormSelectCategory() LIST_SECTION;
+static void ListFormFindTypeSelected(EventType *event) LIST_SECTION;
+static void ListFormScroll(WinDirectionType direction) LIST_SECTION;
+static Boolean ListFormUpdateDisplay(UInt16 updateCode) LIST_SECTION;
+static void ListBeamCategory(Boolean send) LIST_SECTION;
+static void ListFontSelect() LIST_SECTION;
+static void ListFormFieldChanged() LIST_SECTION;
+static void ListFormFind() LIST_SECTION;
+static void ListFormUpdateFindState() LIST_SECTION;
+static void ListFormCloseFindState() LIST_SECTION;
+static void ListFormDeleteFindState() LIST_SECTION;
+static void DrawTruncChars(char *str, Int16 *length, Int16 x, Int16 y, Int16 *width, 
+                           Boolean rightJustify) LIST_SECTION;
 
 // Variable height is currently only possible is Unicode is enabled,
 // but theoretically there might be ways of deciding to use another
@@ -74,10 +78,13 @@ static void ListFormDeleteFindState();
 #endif
 
 #ifdef VARHEIGHT
-static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, RectangleType *bounds);
+static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, RectangleType *bounds,
+                               FontID *font) LIST_SECTION;
 static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
-                                UInt16 listFields);
+                                UInt16 listFields, FontID *font) LIST_SECTION;
 #endif
+
+static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID) LIST_SECTION;
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 {
@@ -109,6 +116,8 @@ void ListFormSetdown(AppPreferences *prefs)
 
   ListFormDeleteFindState();
 }
+
+static void ReplaceGraphicalButton(FormType *form, UInt16 newID, UInt16 oldID) LIST_SECTION;
 
 static void ReplaceGraphicalButton(FormType *form, UInt16 newID, UInt16 oldID)
 {
@@ -151,7 +160,6 @@ static void ListFormOpen(FormType *form)
 
   for (row = 0; row < nrows; row++) {
     TblSetItemStyle(table, row, COL_TITLE, customTableItem);
-    TblSetItemFont(table, row, COL_TITLE, g_ListFont);
     TblSetRowUsable(table, row, false);
   }
 
@@ -712,6 +720,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
   FormType *form;
   TableType *table;
   ControlType *ctl;
+  FontID font;
 #ifndef VARHEIGHT
   FontID oldFont;
 #endif
@@ -944,7 +953,8 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
       }
       selectRow = -1;
 #ifndef VARHEIGHT
-      oldFont = FntSetFont(g_ListFont);
+      font = g_ListFont;
+      oldFont = FntSetFont(font);
       lineHeight = FntLineHeight();
       FntSetFont(oldFont);
 #endif
@@ -956,7 +966,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     ibounds.extent.x = bounds.extent.x;
     ibounds.topLeft.y = y;
     ibounds.extent.y = bounds.topLeft.y + bounds.extent.y - y;
-    lineHeight = ListFormSizeItem(currentRecord, COL_TITLE, &bounds);
+    lineHeight = ListFormSizeItem(currentRecord, COL_TITLE, &bounds, &font);
 #endif
 
     if ((row >= nrows) ||
@@ -971,6 +981,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
     TblSetRowUsable(table, row, true);
     TblMarkRowInvalid(table, row);
     TblSetRowID(table, row, currentRecord);
+    TblSetItemFont(table, row, COL_TITLE, font);
     TblSetRowHeight(table, row, lineHeight);
     if (currentRecord == g_CurrentRecord)
       selectRow = row;
@@ -1255,7 +1266,7 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
     if (NULL == str1) {
 #ifdef UNICODE
     if (ucs2)
-      UnicodeDrawSingleLine(str1, len1, x, y, &width, &height);
+      UnicodeDrawSingleLine(str2, len2, x, y, &width, &height);
     else
 #endif
       DrawTruncChars(str2, &len2, x, y, &width, true);
@@ -1264,8 +1275,10 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
       width -= SPACE_BETWEEN_FIELDS;
       width = (width * LEFT_FRACTION_NUM) / LEFT_FRACTION_DEN;
 #ifdef UNICODE
-      if (ucs1)
+      if (ucs1) {
         UnicodeDrawSingleLine(str1, len1, x, y, &width, &height);
+        height = bounds->extent.y;
+      }
       else {
         if (ucs2)
 #else
@@ -1300,7 +1313,8 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
 
 #ifdef VARHEIGHT
 
-static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, RectangleType *bounds)
+static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, 
+                               RectangleType *bounds, FontID *font)
 {
   MemHandle recordH;
   BookRecord record;
@@ -1310,11 +1324,12 @@ static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, RectangleType *bo
   if (BookDatabaseGetRecord(recordNum, &recordH, &record))
     return FntLineHeight();
 
+  *font = g_ListFont;
   oldFont = FntSetFont(g_ListFont);
 
   switch (column) {
   case COL_TITLE:
-    height = ListFormSizeTitle(&record, bounds, g_ListFields);
+    height = ListFormSizeTitle(&record, bounds, g_ListFields, font);
     break;
   default:
     height = FntLineHeight();
@@ -1327,7 +1342,7 @@ static UInt16 ListFormSizeItem(UInt16 recordNum, Int16 column, RectangleType *bo
 }
 
 static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
-                                UInt16 listFields)
+                                UInt16 listFields, FontID *font)
 {
   Char *str1, *str2;
   UInt16 len1, len2;
@@ -1335,6 +1350,7 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
   Boolean ucs1, ucs2;
 #endif
   Int16 width, twidth, height, maxHeight;
+  FontID font2;
 
   str1 = str2 = NULL;
   len1 = len2 = 0;
@@ -1396,7 +1412,7 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
     if (ucs1) {
       width = bounds->extent.x;
       height = bounds->extent.y;
-      UnicodeSizeSingleLine(str1, len1, &width, &height);
+      UnicodeSizeSingleLine(str1, len1, &width, &height, font);
       return height;
     }
     else
@@ -1409,7 +1425,7 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
       if (ucs2) {
         width = bounds->extent.x;
         height = bounds->extent.y;
-        UnicodeSizeSingleLine(str2, len2, &width, &height);
+        UnicodeSizeSingleLine(str2, len2, &width, &height, font);
         return height;
       }
       else
@@ -1432,7 +1448,7 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
 #ifdef UNICODE
       if (ucs1) {
         height = bounds->extent.y;
-        UnicodeSizeSingleLine(str1, len1, &width, &height);
+        UnicodeSizeSingleLine(str1, len1, &width, &height, font);
       }
       else
 #endif
@@ -1447,13 +1463,19 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
       if (ucs1) {
         width = bounds->extent.x - width - SPACE_BETWEEN_FIELDS;
         height = bounds->extent.y;
-        UnicodeSizeSingleLine(str1, len1, &width, &height);
+        font2 = *font;
+        UnicodeSizeSingleLine(str1, len1, &width, &height, &font2);
       }
       else
 #endif
+      {
         height = FntLineHeight();
-      if (maxHeight < height)
+        font2 = g_ListFont;
+      }
+      if (maxHeight < height) {
         maxHeight = height;
+        *font = font2;
+      }
       return maxHeight;
     }
   }
@@ -1464,6 +1486,9 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
 /*** Preferences ***/
 
 extern Boolean g_ViewSummary;
+
+static void PreferencesFormOpen(FormType *form) LIST_SECTION;
+static void PreferencesFormSave() LIST_SECTION;
 
 static void PreferencesFormOpen(FormType *form)
 {

@@ -31,15 +31,18 @@ static UInt16 g_ReturnToForm = ListForm;
 
 /*** Local routines ***/
 
-static Boolean NoteFormMenuCommand(UInt16 command);
-static void NoteFontSelect();
-static void NoteFormPageScroll(WinDirectionType direction);
-static void NoteFormScroll(Int16 linesToScroll);
-static void NoteFormSave();
-static Boolean NoteFormDeleteNote();
-static void NoteFormLoadRecord();
-static void NoteFormDrawTitle(FormType *form);
-static void NoteFormUpdateScrollBar();
+static void NoteFormOpen(FormType *form) NOTE_SECTION;
+static Boolean NoteFormMenuCommand(UInt16 command) NOTE_SECTION;
+static void NoteFontSelect() NOTE_SECTION;
+static void NoteFormPageScroll(WinDirectionType direction) NOTE_SECTION;
+static void NoteFormScroll(Int16 linesToScroll) NOTE_SECTION;
+static void NoteFormSave() NOTE_SECTION;
+static Boolean NoteFormDeleteNote() NOTE_SECTION;
+static void NoteFormLoadRecord() NOTE_SECTION;
+static void NoteFormDrawTitle(FormType *form) NOTE_SECTION;
+static void NoteFormUpdateScrollBar() NOTE_SECTION;
+
+static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID) NOTE_SECTION;
 
 static inline void *FrmGetObjectPtrFromID(const FormType *formP, UInt16 objID)
 {

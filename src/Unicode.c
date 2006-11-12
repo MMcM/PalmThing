@@ -103,24 +103,70 @@ static UTF16 *UTF8toUTF16(const Char *str, UInt16 len)
   return utf16;
 }
 
+static void UnicodeFindFontToMatchHeight(UniBucketPtr uniBucketPtr, UTF16 *utf16,
+                                         Int16* height, FontID* font)
+{
+  FontID oldFont, charFont;
+  Int16 fontHeight, charFontHeight;
+  UInt16 charset;
+  UInt32 uch;
+  
+  oldFont = FntSetFont(*font);
+  fontHeight = FntCharHeight();
+  
+  if (fontHeight != *height) {
+    while (true) {
+      uch = *utf16++;
+      if (0 == uch) break;
+      if (UniStrUniChar16PairIsExtendedChar(uch, *utf16))
+        UniStrUniChar16PairToUniChar32(uch, *utf16++, &uch);
+      charset = (UInt16)(uch / 0x100);
+      charFont = UniFontGetFont(uniBucketPtr, charset);
+      FntSetFont(charFont);
+      charFontHeight = FntCharHeight();
+      if (*height == charFontHeight) {
+        *font = charFont;
+        break;
+      }
+      if ((charFontHeight < *height) &&
+          (charFontHeight > fontHeight)) {
+        // Closest so far.
+        *font = charFont;
+        fontHeight = charFontHeight;
+      }
+      while ((0 != *utf16) &&
+             (charset == (*utf16 / 0x100)))
+        utf16++;
+    }
+    if (0 == uch)
+      FntSetFont(*font);        // May be left-over from middle.
+  }
+
+  *height = FntLineHeight();    // Now we can include leading.
+  FntSetFont(oldFont);
+}
+
 void UnicodeSizeSingleLine(const Char *str, UInt16 len, 
-                           Int16 *width, Int16 *height)
+                           Int16 *width, Int16 *height, 
+                           FontID *font)
 {
   UTF16 *utf16;
   UInt16 lw, lh;
 
   utf16 = UTF8toUTF16(str, len);
   if (NULL == utf16) {
+    *width = 0;
     *height = g_UniBucket.lineHeight;
+    return;
   }
   UniStrUniCharPrintLine(&g_UniBucket, 16, utf16, 
                          0, 0, *height, *width,
                          UNI_TEXT_DIR_LR, 0, 0, 
                          &lw, &lh, false);
-  MemPtrFree(utf16);
-
   *width = lw;
   *height = lh;
+  UnicodeFindFontToMatchHeight(&g_UniBucket, utf16, height, font);
+  MemPtrFree(utf16);
 }
 
 void UnicodeDrawSingleLine(const Char *str, UInt16 len, 

@@ -56,15 +56,19 @@ static UInt8 g_ViewFieldsSummary[] = {
 
 /*** Local routines ***/
 
-static Boolean ViewFormMenuCommand(UInt16 command);
-static void ViewFontSelect();
-static void ViewBeamRecord(Boolean send);
-static void ViewFormScroll(WinDirectionType direction);
+static void ViewFormOpen(FormType *form) VIEW_SECTION;
+static Boolean ViewFormMenuCommand(UInt16 command) VIEW_SECTION;
+static void ViewFontSelect() VIEW_SECTION;
+static void ViewBeamRecord(Boolean send) VIEW_SECTION;
+static void ViewFormScroll(WinDirectionType direction) VIEW_SECTION;
 static Boolean ViewFormGadgetHandler(FormGadgetTypeInCallback *gadgetP, 
-                                     UInt16 cmd, void *paramP);
-static Boolean ViewFormGadgetPen(EventType *event);
-static Boolean ViewFormUpdateDisplay(UInt16 updateCode);
-static void ViewFormGadgetDraw();
+                                     UInt16 cmd, void *paramP) VIEW_SECTION;
+static Boolean ViewFormGadgetPen(EventType *event) VIEW_SECTION;
+static Boolean ViewFormUpdateDisplay(UInt16 updateCode) VIEW_SECTION;
+static void ViewFormGadgetDraw() VIEW_SECTION;
+static Boolean ViewFormGadgetDrawField(Char *str, UInt16 *offset, UInt16 *ndrawn,
+                                       Coord *y, RectangleType *bounds,
+                                       UInt16 highlightPosition, UInt16 highlightLength) VIEW_SECTION;
 
 /*** Setup and event handling ***/
 

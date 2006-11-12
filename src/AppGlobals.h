@@ -139,20 +139,20 @@ extern void AboutFormDisplay();
 extern FieldType *GetFocusField();
 
 /*** List form routines ***/
-extern void ListFormDowngrade(FormType *form);
-extern void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
-extern void ListFormSetdown(AppPreferences *prefs);
-extern Boolean ListFormHandleEvent(EventType *event);
+extern void ListFormDowngrade(FormType *form) LIST_SECTION;
+extern void ListFormSetup(AppPreferences *prefs, BookAppInfo *appInfo) LIST_SECTION;
+extern void ListFormSetdown(AppPreferences *prefs) LIST_SECTION;
+extern Boolean ListFormHandleEvent(EventType *event) LIST_SECTION;
 extern void ListFormDrawTitle(BookRecord *record, RectangleType *bounds,
-                              UInt16 listFields);
-extern Boolean PreferencesFormHandleEvent(EventType *event);
+                              UInt16 listFields) LIST_SECTION;
+extern Boolean PreferencesFormHandleEvent(EventType *event) LIST_SECTION;
 
 /*** View form routines ***/
-extern void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
-extern void ViewFormSetdown(AppPreferences *prefs);
-extern Boolean ViewFormHandleEvent(EventType *event);
-extern void ViewFormActivate(BookFilter *filter);
-extern UInt16 ViewFormGoToPrepare(GoToParamsPtr params);
+extern void ViewFormSetup(AppPreferences *prefs, BookAppInfo *appInfo) VIEW_SECTION;
+extern void ViewFormSetdown(AppPreferences *prefs) VIEW_SECTION;
+extern Boolean ViewFormHandleEvent(EventType *event) VIEW_SECTION;
+extern void ViewFormActivate(BookFilter *filter) VIEW_SECTION;
+extern UInt16 ViewFormGoToPrepare(GoToParamsPtr params) VIEW_SECTION;
 
 /*** Edit form routines ***/
 extern void EditFormSetup(AppPreferences *prefs, BookAppInfo *appInfo) EDIT_SECTION;
@@ -162,11 +162,11 @@ extern void EditFormActivate() EDIT_SECTION;
 extern void EditFormNewRecord() EDIT_SECTION;
 
 /*** Note form routines ***/
-extern void NoteFormSetup(AppPreferences *prefs, BookAppInfo *appInfo);
-extern void NoteFormSetdown(AppPreferences *prefs);
-extern Boolean NoteFormHandleEvent(EventType *event);
-extern void NoteFormActivate();
-extern UInt16 NoteFormGoToPrepare(GoToParamsPtr params);
+extern void NoteFormSetup(AppPreferences *prefs, BookAppInfo *appInfo) NOTE_SECTION;
+extern void NoteFormSetdown(AppPreferences *prefs) NOTE_SECTION;
+extern Boolean NoteFormHandleEvent(EventType *event) NOTE_SECTION;
+extern void NoteFormActivate() NOTE_SECTION;
+extern UInt16 NoteFormGoToPrepare(GoToParamsPtr params) NOTE_SECTION;
 
 /*** ISBN form routines ***/
 extern void ISBNFormSetup(AppPreferences *prefs, BookAppInfo *appInfo) ISBN_SECTION;
@@ -214,7 +214,8 @@ extern Boolean BookDatabaseIsUnicode();
 extern Err UnicodeInitialize();
 extern void UnicodeTerminate();
 extern void UnicodeSizeSingleLine(const Char *str, UInt16 len, 
-                                  Int16 *width, Int16 *height);
+                                  Int16 *width, Int16 *height, 
+                                  FontID *font);
 extern void UnicodeDrawSingleLine(const Char *str, UInt16 len, 
                                   Int16 x, Int16 y, 
                                   Int16 *width, Int16 *height);
