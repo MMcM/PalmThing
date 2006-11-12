@@ -10,8 +10,8 @@
   <target name="all" depends="init, prc-debug, prc-unicode-debug, jar"
           description="Compile and build debug /test components."/>
 
-  <target name="dist" depends="init, prc, prc-unicode, jar, tar, exe, comcast"
-          description="Distribute components."/>
+  <target name="dist" depends="init, prc, prc-unicode, jar, tar, exe"
+          description="Build distributed components."/>
 
   <target name="init">
     <tstamp/>
