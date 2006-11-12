@@ -752,6 +752,7 @@ static void ListFormRedisplay(UInt16 action, Boolean checkCache)
   direction = nrows = selectRow = lineHeight = 0;
   y = 0;
   fromCache = scrollableUp = scrollableDown = false;
+  font = g_ListFont;
   
   haveTableVars = updateScrollable = false;
   ndraw = 0;
