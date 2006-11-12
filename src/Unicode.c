@@ -142,8 +142,8 @@ void UnicodeDrawSingleLine(const Char *str, UInt16 len,
   *height = lh;
 }
 
-Boolean UnicodeDrawField(const Char *str, UInt16 len, Int16 *y, 
-                         RectangleType *bounds)
+Boolean UnicodeDrawField(const Char *str, UInt16 *offset, UInt16 len, UInt16 *ndrawn,
+                         Int16 *y, RectangleType *bounds)
 {
   UTF16 *utf16, *up;
   Int16 x, width, bottom;
@@ -158,7 +158,9 @@ Boolean UnicodeDrawField(const Char *str, UInt16 len, Int16 *y,
   width = bounds->extent.x;
   bottom = bounds->topLeft.y + bounds->extent.y;
 
-  up = utf16;
+  *ndrawn = 0;
+
+  up = utf16 + *offset;
   while (true) {
     nchars = UniStrUniCharPrintLine(&g_UniBucket, 16, up, 
                                     *y, x, (bottom - *y), width,
@@ -169,6 +171,8 @@ Boolean UnicodeDrawField(const Char *str, UInt16 len, Int16 *y,
       exhausted = (nchars == -2);
       break;
     }
+    *ndrawn += nchars;
+    *offset = (up - utf16);     // Start, not end, of last piece drawn.
     up += nchars;
   }
   MemPtrFree(utf16);

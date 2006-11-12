@@ -12,6 +12,7 @@
 /*** Local constants ***/
 
 #define UPDATE_FONT_CHANGED 0x02
+#define UPDATE_TOP_CHANGED 0x08
 
 /*** Local storage ***/
 
@@ -22,6 +23,7 @@ static FontID g_ViewFont = stdFont;
 /*static*/ Boolean g_ViewSummary = false;
 
 static UInt16 g_TopFieldNumber = 0, g_TopFieldOffset = 0;
+static UInt16 g_BottomFieldNumber = 0, g_BottomFieldOffset = 0;
 static UInt16 g_HilightRecordFieldIndex = NO_FIELD, 
    g_HilightPosition = 0, g_HilightLength = 0;
 
@@ -31,6 +33,9 @@ static UInt8 g_ViewFields[] = {
   FIELD_ISBN,
   FIELD_PUBLICATION,
   FIELD_TAGS
+#ifdef UNICODE
+  ,FIELD_COMMENTS
+#endif
 };
 
 #define VIEW_NFIELDS sizeof(g_ViewFields)
@@ -40,6 +45,9 @@ static UInt8 g_ViewFieldsSummary[] = {
   FIELD_ISBN,
   FIELD_PUBLICATION,
   FIELD_TAGS
+#ifdef UNICODE
+  ,FIELD_COMMENTS
+#endif
 };
 
 #define VIEW_NFIELDS_SUMMARY sizeof(g_ViewFieldsSummary)
@@ -304,6 +312,21 @@ static void ViewBeamRecord(Boolean send)
 
 static void ViewFormScroll(WinDirectionType direction)
 {
+  if (winDown == direction) {
+    // Prefer not to start in the middle of a field, but must if it
+    // takes more than a screen all by itself.
+    if (g_TopFieldNumber == g_BottomFieldNumber)
+      g_TopFieldOffset = g_BottomFieldOffset;
+    else {
+      g_TopFieldNumber = g_BottomFieldNumber;
+      g_TopFieldOffset = 0;
+    }
+  }
+  else {
+    // TODO: Can do better than this.
+    g_TopFieldNumber = g_TopFieldOffset = 0;
+  }
+  FrmUpdateForm(FrmGetActiveFormID(), UPDATE_TOP_CHANGED);
 }
 
 static Boolean ViewFormGadgetPen(EventType *event)
@@ -347,12 +370,7 @@ static Boolean ViewFormUpdateDisplay(UInt16 updateCode)
   form = FrmGetActiveForm();
   handled = false;
  
-  if (updateCode & frmRedrawUpdateCode) {
-    FrmDrawForm(form);
-    handled = true;
-  }
- 
-  if (updateCode & UPDATE_FONT_CHANGED) {
+  if (updateCode & (frmRedrawUpdateCode | UPDATE_FONT_CHANGED | UPDATE_TOP_CHANGED)) {
     FrmDrawForm(form);
     handled = true;
   }
@@ -361,39 +379,54 @@ static Boolean ViewFormUpdateDisplay(UInt16 updateCode)
 }
 
 
-static Boolean ViewFormGadgetDrawField(Char *str, Coord *y, RectangleType *bounds,
+static Boolean ViewFormGadgetDrawField(Char *str, UInt16 *offset, UInt16 *ndrawn,
+                                       Coord *y, RectangleType *bounds,
                                        UInt16 highlightPosition, UInt16 highlightLength)
 {
+  Char *sp;
   UInt16 lineHeight, bottom;
   UInt16 nchars, ndraw;
   UInt16 nhilight;
   RectangleType invert;
+  Boolean exhausted;
   
   lineHeight = FntLineHeight();
   bottom = bounds->topLeft.y + bounds->extent.y;
 
-  while (true) {
-    if (*y + lineHeight > bottom)
-      return false;
+  if (highlightLength > 0) {
+    if (highlightPosition < *offset)
+      highlightPosition = highlightLength = 0;
+    else
+      highlightPosition -= *offset;
+  }
 
-    nchars = FntWordWrap(str, bounds->extent.x);
+  *ndrawn = 0;
+
+  sp = str + *offset;
+  while (true) {
+    if (*y + lineHeight > bottom) {
+      exhausted = false;
+      break;
+    }
+
+    nchars = FntWordWrap(sp, bounds->extent.x);
     ndraw = nchars;
-    while ((ndraw > 0) && TxtGlueCharIsSpace(str[ndraw-1]))
+    while ((ndraw > 0) && TxtGlueCharIsSpace(sp[ndraw-1]))
       ndraw--;
 
-    WinDrawChars(str, ndraw, bounds->topLeft.x, *y);
+    WinDrawChars(sp, ndraw, bounds->topLeft.x, *y);
     if (highlightLength > 0) {
       if (highlightPosition < nchars) {
         invert.topLeft.y = *y;
         invert.extent.y = lineHeight;
         invert.topLeft.x = bounds->topLeft.x;
         if (highlightPosition > 0)
-          invert.topLeft.x += FntCharsWidth(str, highlightPosition);
+          invert.topLeft.x += FntCharsWidth(sp, highlightPosition);
         nhilight = highlightLength;
         if (highlightPosition + nhilight > nchars)
           nhilight = nchars - highlightPosition;
         highlightLength -= nhilight;
-        invert.extent.x = FntCharsWidth(str + highlightPosition, nhilight);
+        invert.extent.x = FntCharsWidth(sp + highlightPosition, nhilight);
         highlightPosition = 0;
         if (invert.topLeft.x > 0) {
           // Aligned directly at the left of characters looks worse.
@@ -412,12 +445,17 @@ static Boolean ViewFormGadgetDrawField(Char *str, Coord *y, RectangleType *bound
       }
     }
     *y += lineHeight;
-    str += nchars;
+    *ndrawn += nchars;
+    *offset = (sp - str);     // Start, not end, of last piece drawn.
+    sp += nchars;
 
-    if ('\0' == *str) break;
+    if ('\0' == *sp) {
+      exhausted = true;
+      break;
+    }
   }
-
-  return true;
+  
+  return exhausted;
 }
 
 static void ViewFormGadgetDraw()
@@ -431,9 +469,10 @@ static void ViewFormGadgetDraw()
   FontID oldFont;
   Coord y;
   Char *str;
+  UInt16 offset, ndrawn;
   UInt16 hilightPosition, hilightLength;
   MemHandle noneH;
-  Boolean scrollableUp, scrollableDown;
+  Boolean exhausted, scrollableUp, scrollableDown;
   UInt16 upIndex, downIndex;
 
   if (BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record))
@@ -460,50 +499,62 @@ static void ViewFormGadgetDraw()
     recordFieldIndex = fields[fieldNumber];
 
     str = record.fields[recordFieldIndex];
+    offset = 0;
     if (NULL == str) {
       if (fieldNumber > 0) continue; // Top field always draws something.
       noneH = DmGetResource(strRsc, ViewNoTitle);
       str = (Char *)MemHandleLock(noneH);
     }
-    else if (fieldNumber == 0)
-      str += g_TopFieldOffset;
+    else if (fieldNumber == g_TopFieldNumber)
+      offset = g_TopFieldOffset;
+
+#ifdef UNICODE
+    if ((FIELD_COMMENTS == recordFieldIndex) &&
+        !BookRecordFieldIsUnicode(&record, recordFieldIndex))
+      // Since we can't edit Unicode yet, we have to display this here
+      // if it's Unicode.
+      continue;
+#endif
 
     if (recordFieldIndex == g_HilightRecordFieldIndex) {
       hilightPosition = g_HilightPosition;
       hilightLength = g_HilightLength;
-      if (fieldNumber == 0)
-        hilightPosition -= g_TopFieldOffset;
     }
     else {
       hilightPosition = hilightLength = 0;
     }
 
 #ifdef UNICODE
-    if (record.unicodeMask & (1 << recordFieldIndex)) {
+    if (BookRecordFieldIsUnicode(&record, recordFieldIndex)) {
       // TODO: hilightPosition, hilightLength.
-      if (!UnicodeDrawField(str, StrLen(str), &y, &bounds))
-        break;
-      else
-        continue;
+      exhausted = UnicodeDrawField(str, &offset, StrLen(str), &ndrawn, &y, &bounds);
     }
+    else
 #endif
+    {
+      switch (recordFieldIndex) {
+      case FIELD_TITLE:
+      case FIELD_SUMMARY:
+        FntSetFont(g_ViewTitleFont);
+        break;
 
-    switch (recordFieldIndex) {
-    case FIELD_TITLE:
-    case FIELD_SUMMARY:
-      FntSetFont(g_ViewTitleFont);
-      break;
+      case FIELD_PUBLICATION:
+        FntSetFont(g_ViewDetailFont);
+        break;
 
-    case FIELD_PUBLICATION:
-      FntSetFont(g_ViewDetailFont);
-      break;
-
-    default:
-      FntSetFont(g_ViewFont);
-      break;
+      default:
+        FntSetFont(g_ViewFont);
+        break;
+      }
+      exhausted = ViewFormGadgetDrawField(str, &offset, &ndrawn, &y, &bounds, 
+                                          hilightPosition, hilightLength);
     }
-
-    if (!ViewFormGadgetDrawField(str, &y, &bounds, hilightPosition, hilightLength))
+    if (ndrawn > 0) {
+      // We actually drew something.
+      g_BottomFieldNumber = fieldNumber;
+      g_BottomFieldOffset = offset;
+    }
+    if (!exhausted) 
       break;
   }
 

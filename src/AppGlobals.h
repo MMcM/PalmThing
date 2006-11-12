@@ -74,7 +74,7 @@ typedef struct {
 } BookRecord;
 
 #ifdef UNICODE
-#define BookRecordFieldIsUnicode(rec,i) (0 != (rec->unicodeMask & (1<<(i))))
+#define BookRecordFieldIsUnicode(rec,i) (0 != ((rec)->unicodeMask & (1<<(i))))
 #endif
 
 /** Record key fields.
@@ -218,7 +218,7 @@ extern void UnicodeSizeSingleLine(const Char *str, UInt16 len,
 extern void UnicodeDrawSingleLine(const Char *str, UInt16 len, 
                                   Int16 x, Int16 y, 
                                   Int16 *width, Int16 *height);
-extern Boolean UnicodeDrawField(const Char *str, UInt16 len, Int16 *y, 
-                                RectangleType *bounds);
+extern Boolean UnicodeDrawField(const Char *str, UInt16 *offset, UInt16 len, 
+                                UInt16 *ndrawn, Int16 *y, RectangleType *bounds);
 
 #endif
