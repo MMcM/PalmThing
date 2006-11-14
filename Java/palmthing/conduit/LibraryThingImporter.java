@@ -403,6 +403,22 @@ public class LibraryThingImporter {
   public static final short DB_VER = (short)0;
   public static final String DB_NAME = "PalmThing-Books";
 
+  public PalmDatabaseDumper getPalmDatabaseDumper(List books, 
+                                                  int sort, boolean unicode) 
+      throws PalmThingException, IOException {
+    Vector categories = BookCategories.getCategories(books);
+    BookCategories.setCategoryIndices(books, categories);
+    PalmDatabaseDumper result = 
+      new PalmDatabaseDumper(DB_NAME, DB_VER, APP_CREATOR, 
+                             (unicode) ? DB_TYPE_UNICODE : DB_TYPE);
+    byte[] catBytes = Category.toBytes(categories);
+    byte[] appInfo = new byte[BookCategories.SIZE + 2];
+    System.arraycopy(catBytes, 0, appInfo, 0, catBytes.length);
+    appInfo[BookCategories.SIZE] = (byte)sort;
+    result.setAppInfoBlock(appInfo);
+    return result;
+  }
+
   public static void main(String[] args) throws Exception {
     if (args.length == 0) {
       System.out.println("usage: LibraryThingImporter" +
@@ -477,17 +493,8 @@ public class LibraryThingImporter {
         Collections.sort(books, new BookRecordComparator(sort));
       }
       else if (arg.equals("-dump")) {
-        Vector categories = BookCategories.getCategories(books);
-        BookCategories.setCategoryIndices(books, categories);
-        PalmDatabaseDumper pdb = 
-          new PalmDatabaseDumper(DB_NAME, DB_VER, APP_CREATOR, 
-                                 (unicode) ? DB_TYPE_UNICODE : DB_TYPE);
-        byte[] catBytes = Category.toBytes(categories);
-        byte[] appInfo = new byte[BookCategories.SIZE + 2];
-        System.arraycopy(catBytes, 0, appInfo, 0, catBytes.length);
-        appInfo[BookCategories.SIZE] = (byte)sort;
-        pdb.setAppInfoBlock(appInfo);
         String file = args[i++];
+        PalmDatabaseDumper pdb = importer.getPalmDatabaseDumper(books, sort, unicode);
         pdb.dumpToFile(books, file);
         System.out.println(books.size() + " books written to " + file);
       }
