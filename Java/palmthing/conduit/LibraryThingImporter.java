@@ -10,6 +10,7 @@ import palm.conduit.*;
 
 import java.util.*;
 import java.io.*;
+import java.net.*;
 
 /** Import records from LibraryThing's tab-delimited export file.<p>
  * For now, read from a file, although with the right cookies direct
@@ -121,6 +122,19 @@ public class LibraryThingImporter {
     }
   }
 
+  public static String EXPORT_TAB = "http://www.librarything.com/export-tab.php";
+
+  public List download(String user) throws PalmThingException, IOException {
+    URL url = new URL(EXPORT_TAB);
+    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+    conn.setRequestMethod("GET");
+    conn.setRequestProperty("Cookie", "cookie_userid=" + user);
+    InputStream istr = conn.getInputStream();
+    List result = importStream(istr);
+    istr.close();
+    return result;
+  }
+
   private UnicodeUtils.Normalizer m_normalizer = UnicodeUtils.getNormalizer();
 
   /** Import from the given stream. */
@@ -194,9 +208,9 @@ public class LibraryThingImporter {
           }
           continue;
         }
-        if (fieldCol >= cols.length)
-          System.err.println(line); // TODO: Specific exception?  continue?
-        String col = cols[fieldCol];
+        String col = null;
+        if (fieldCol < cols.length)
+          col = cols[fieldCol];
         if ((i == BookRecord.FIELD_TAGS) &&
             (m_addTags != null)) {
           if (col == null)
@@ -443,13 +457,20 @@ public class LibraryThingImporter {
         BookRecord.setUnicode(unicode);
       }
       else if (arg.equals("-read")) {
-        books = importer.importFile(args[i++]);
+        String file = args[i++];
+        books = importer.importFile(file);
+        System.out.println(books.size() + " books read from " + file);
       }
       else if (arg.equals("-append")) {
-        books.addAll(importer.importFile(args[i++]));
+        String file = args[i++];
+        List nbooks = importer.importFile(file);
+        books.addAll(nbooks);
+        System.out.println(nbooks.size() + " books added from " + file);
       }
       else if (arg.equals("-write")) {
-        importer.exportFile(books, args[i++]);
+        String file = args[i++];
+        importer.exportFile(books, file);
+        System.out.println(books.size() + " books written to " + file);
       }
       else if (arg.equals("-sort")) {
         sort = Integer.parseInt(args[i++]);
@@ -466,20 +487,25 @@ public class LibraryThingImporter {
         System.arraycopy(catBytes, 0, appInfo, 0, catBytes.length);
         appInfo[BookCategories.SIZE] = (byte)sort;
         pdb.setAppInfoBlock(appInfo);
-        pdb.dumpToFile(books, args[i++]);
+        String file = args[i++];
+        pdb.dumpToFile(books, file);
+        System.out.println(books.size() + " books written to " + file);
       }
       else if (arg.equals("-dump-raw")) {
-        DataOutputStream ostr = new DataOutputStream(new FileOutputStream(args[i++]));
+        String file = args[i++];
+        DataOutputStream ostr = new DataOutputStream(new FileOutputStream(file));
         Iterator iter = books.iterator();
         while (iter.hasNext()) {
           BookRecord book = (BookRecord)iter.next();
           book.writeData(ostr);
         }
         ostr.close();
+        System.out.println(books.size() + " books written to " + file);
       }
       else if (arg.equals("-load-raw")) {
+        String file = args[i++];
         books = new ArrayList();
-        DataInputStream istr = new DataInputStream(new FileInputStream(args[i++]));
+        DataInputStream istr = new DataInputStream(new FileInputStream(file));
         while (true) {
           try {
             BookRecord book = new BookRecord();
@@ -491,23 +517,37 @@ public class LibraryThingImporter {
           }
         }
         istr.close();
+        System.out.println(books.size() + " books read from " + file);
       }
       else if (arg.equals("-read-xml")) {
-        books = new XMLImporter().importFile(args[i++]);
+        String file = args[i++];
+        books = new XMLImporter().importFile(file);
+        System.out.println(books.size() + " books read from " + file);
       }
       else if (arg.equals("-write-xml")) {
-        new XMLImporter().exportFile(books, args[i++], null);
+        String file = args[i++];
+        new XMLImporter().exportFile(books, file, null);
+        System.out.println(books.size() + " books written to " + file);
       }
       else if (arg.equals("-write-html")) {
-        new XMLImporter().exportFile(books, args[i++], args[i++]);
+        String file = args[i++];
+        String xsl = args[i++];
+        new XMLImporter().exportFile(books, file, xsl);
+        System.out.println(books.size() + " books written to " + file + " using " + xsl);
       }
       else if (arg.equals("-print")) {
+        System.out.println(books.size() + " books:");
         Iterator iter = books.iterator();
         while (iter.hasNext()) {
           BookRecord book = (BookRecord)iter.next();
           if (false) System.out.println(book.getISBN());
           System.out.println(book.toFormattedString());
         }
+      }
+      else if (arg.equals("-download")) {
+        String user = args[i++];
+        books = importer.download(user);
+        System.out.println(books.size() + " books downloaded for " + user);
       }
       else {
         throw new PalmThingException("Unknown switch: " + arg);
