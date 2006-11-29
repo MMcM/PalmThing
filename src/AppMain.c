@@ -25,7 +25,7 @@ void AboutFormDisplay()
 }
 
 /** Initial application startup. **/
-static Err AppStart()
+static Err AppStart(UInt16 launchFlags)
 {
   AppPreferences prefs, *pprefs;
   Int16 prefVer;
@@ -48,7 +48,7 @@ static Err AppStart()
   if (error) return error;
 
 #ifdef UNICODE
-  error = UnicodeInitialize();
+  error = UnicodeInitialize(launchFlags);
   if (error) {
     BookDatabaseClose();
     return error;
@@ -69,7 +69,7 @@ static Err AppStart()
 }
 
 /** Final application cleanup. **/
-static void AppStop()
+static void AppStop(UInt16 launchFlags)
 {
   AppPreferences prefs;
 
@@ -80,7 +80,7 @@ static void AppStop()
   FrmCloseAllForms();
 
 #ifdef UNICODE
-  UnicodeTerminate();
+  UnicodeTerminate(launchFlags);
 #endif
 
   // Close the application's data file.
@@ -214,11 +214,11 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
   switch (cmd) {
   case sysAppLaunchCmdNormalLaunch:
     g_ROMVersion = romVersion;
-    error = AppStart();
+    error = AppStart(launchFlags);
     if (error) return error;
     FrmGotoForm(ListForm);
     AppEventLoop();
-    AppStop();
+    AppStop(launchFlags);
     break;
 
   case sysAppLaunchCmdFind:
@@ -229,7 +229,7 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
     launched = (0 != (launchFlags & sysAppLaunchFlagNewGlobals));
     if (launched) {
       g_ROMVersion = romVersion;
-      error = AppStart();
+      error = AppStart(launchFlags);
       if (error) return error;
     }
     else {
@@ -240,7 +240,7 @@ UInt32 PilotMain(UInt16 cmd, MemPtr cmdPBP, UInt16 launchFlags)
     GoToPrepare((GoToParamsType *)cmdPBP);
     if (launched) {
       AppEventLoop();
-      AppStop();   
+      AppStop(launchFlags);
     }      
     break;
 

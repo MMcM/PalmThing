@@ -211,8 +211,8 @@ extern Err WebGotoCurrentBook();
 extern Boolean BookDatabaseIsUnicode();
 
 /*** Unicode routines ***/
-extern Err UnicodeInitialize();
-extern void UnicodeTerminate();
+extern Err UnicodeInitialize(UInt16 launchFlags);
+extern void UnicodeTerminate(UInt16 launchFlags);
 extern void UnicodeSizeSingleLine(const Char *str, UInt16 len, 
                                   Int16 *width, Int16 *height, 
                                   FontID *font);

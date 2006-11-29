@@ -146,7 +146,7 @@
 </optionReference>
 <optionReference id="tool.compiler.gcc.68K.option.includeDirs">
 <listOptionValue value="&quot;$(TOOLS_DIR)include/stlport&quot;" builtIn="false"/>
-<listOptionValue value="../../../UniLib" builtIn="false"/>
+<listOptionValue value="../../UniLib" builtIn="false"/>
 </optionReference>
 <optionReference id="tool.compiler.gcc.68K.option.exceptions" defaultValue="Enable (-fexceptions)"/>
 <optionReference id="tool.compiler.gcc.68K.option.assertions" defaultValue="Enable (-UNDEBUG)"/>
