@@ -482,7 +482,7 @@ static void ViewFormGadgetDraw()
   if (BookDatabaseGetRecord(g_CurrentRecord, &recordH, &record))
     return;
 
-  if (g_ViewSummary) {
+  if (g_ViewSummary && (NULL != record.fields[FIELD_SUMMARY])) {
     fields = g_ViewFieldsSummary;
     nfields = VIEW_NFIELDS_SUMMARY;
   }

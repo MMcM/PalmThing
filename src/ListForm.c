@@ -1201,7 +1201,9 @@ void ListFormDrawTitle(BookRecord *record, RectangleType *bounds, UInt16 listFie
 #ifdef UNICODE
     ucs1 = BookRecordFieldIsUnicode(record, FIELD_SUMMARY);
 #endif
-    break;
+    if (NULL != str1)           // If no summary stored, fall back to Title, Author.
+      break;
+    /* else falls through */
   case KEY_TITLE_AUTHOR:
     str1 = record->fields[FIELD_TITLE];
     str2 = record->fields[FIELD_AUTHOR];
@@ -1382,7 +1384,9 @@ static UInt16 ListFormSizeTitle(BookRecord *record, RectangleType *bounds,
 #ifdef UNICODE
     ucs1 = BookRecordFieldIsUnicode(record, FIELD_SUMMARY);
 #endif
-    break;
+    if (NULL != str1)
+      break;
+    /* else falls through */
   case KEY_TITLE_AUTHOR:
     str1 = record->fields[FIELD_TITLE];
     str2 = record->fields[FIELD_AUTHOR];
