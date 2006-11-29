@@ -1,3 +1,5 @@
+1.0.7   11/28/2006      MMcM    Update for new Unicode library.
+
 1.0.6   11/12/2006      MMcM    Mostly Unicode improvements.
 
 1.0.5   11/04/2006      MMcM    Add some more bitmaps and web command for newer devices.
