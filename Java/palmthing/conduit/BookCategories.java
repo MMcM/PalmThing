@@ -19,20 +19,33 @@ public class BookCategories {
   public static final int SIZE = 2 + (Category.CATEGORY_LENGTH * Category.MAX_CATEGORIES) + Category.MAX_CATEGORIES + 1 + 1;
 
   public static int UNFILED = 0;
-  public static int MAIN = 1;
+  public static int DEFAULT = 1;
 
   // TODO: I18N
   private static String g_Unfiled = "Unfiled";
-  private static String g_Main = "Main";
+  private static String g_Default = "Main";
 
+  public static void setDefaultCategory(String defaultCategory) {
+    g_Default = defaultCategory;
+  }
+  
   public static Vector getCategories(Collection books) {
     Vector result = new Vector(Category.MAX_CATEGORIES);
 
     result.add(new Category(g_Unfiled, UNFILED, UNFILED));
-    result.add(new Category(g_Main, MAIN, MAIN));
+
+    Iterator iter = books.iterator();
+    while (iter.hasNext()) {
+      BookRecord book = (BookRecord)iter.next();
+      if (book.getCategoryTag() == null) {
+        // Only add Main category if some book will need it.
+        result.add(new Category(g_Default, DEFAULT, DEFAULT));
+        break;
+      }
+    }
     
     Map byTag = new HashMap();
-    Iterator iter = books.iterator();
+    iter = books.iterator();
     while (iter.hasNext()) {
       BookRecord book = (BookRecord)iter.next();
       String ctag = book.getCategoryTag();
@@ -85,11 +98,16 @@ public class BookCategories {
   public static void setCategoryTags(Collection books, Vector categories) {
     String[] ctags = new String[Category.MAX_CATEGORIES];
 
+    int limit = UNFILED;        // Lowest that does not use category tag.
+    if ((categories.size() > DEFAULT) &&
+        categories.get(DEFAULT).equals(g_Default))
+      limit = DEFAULT;
+
     Iterator iter = books.iterator();
     while (iter.hasNext()) {
       BookRecord book = (BookRecord)iter.next();
       int index = book.getCategoryIndex();
-      if (index <= MAIN) continue;
+      if (index <= limit) continue;
       String ctag = ctags[index];
       if (ctag == null) {
         Category category = (Category)categories.get(index);

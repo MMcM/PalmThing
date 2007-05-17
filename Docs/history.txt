@@ -1,3 +1,5 @@
+1.0.8   5/16/2007       MMcM    Allow Main category suppression.
+
 1.0.7   11/28/2006      MMcM    Update for new Unicode library.
 
 1.0.6   11/12/2006      MMcM    Mostly Unicode improvements.

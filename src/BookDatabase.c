@@ -702,8 +702,13 @@ void BookDatabaseSelectCategory(FormType *form, UInt16 ctlID, UInt16 lstID,
                                 Boolean all, UInt16 *category)
 {
   CategorySelect(g_BookDatabase, form, ctlID, lstID, all, category, 
-                 g_CategoryName, 2, 
-                 (SYS_ROM_3_5) ? categoryHideEditCategory : 0);
+                 g_CategoryName, 
+#if 0
+                 2, (SYS_ROM_3_5) ? categoryHideEditCategory : 0
+#else
+                 1, (SYS_ROM_3_5) ? categoryDefaultEditCategoryString : categoryEditStrID
+#endif
+                 );
 }
 
 UInt16 BookRecordGetCategory(UInt16 index)

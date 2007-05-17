@@ -19,11 +19,12 @@ public class PalmDatabaseServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     try {
-      String userid;
+      String userid, usernum;
       int sort = 5;
       boolean unicode = false;
     
       userid = request.getParameter("userid");
+      usernum = request.getParameter("usernum");
       if (userid == null) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
@@ -31,7 +32,9 @@ public class PalmDatabaseServlet extends HttpServlet {
             Cookie cookie = cookies[i];
             if ("cookie_userid".equals(cookie.getName())) {
               userid = cookie.getValue();
-              break;
+            }
+            else if ("cookie_usernum".equals(cookie.getName())) {
+              usernum = cookie.getValue();
             }
           }
         }
@@ -55,7 +58,7 @@ public class PalmDatabaseServlet extends HttpServlet {
         unicode = true;
     
       LibraryThingImporter importer = new LibraryThingImporter();
-      List books = importer.download(userid);
+      List books = importer.download(userid, usernum);
 
       if (sort != 0)
         Collections.sort(books, new BookRecordComparator(sort));

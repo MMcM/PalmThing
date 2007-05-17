@@ -124,11 +124,14 @@ public class LibraryThingImporter {
 
   public static String EXPORT_TAB = "http://www.librarything.com/export-tab.php";
 
-  public List download(String user) throws PalmThingException, IOException {
+  public List download(String userid, String usernum)
+      throws PalmThingException, IOException {
     URL url = new URL(EXPORT_TAB);
     HttpURLConnection conn = (HttpURLConnection)url.openConnection();
     conn.setRequestMethod("GET");
-    conn.setRequestProperty("Cookie", "cookie_userid=" + user);
+    conn.setRequestProperty("Cookie", 
+                            "cookie_userid=" + userid + "; " +
+                            "cookie_usernum=" + usernum);
     InputStream istr = conn.getInputStream();
     List result = importStream(istr);
     istr.close();
@@ -227,7 +230,7 @@ public class LibraryThingImporter {
         setField(book, i, col);
       }
 
-      book.setCategoryIndex(BookCategories.MAIN);
+      book.setCategoryIndex(BookCategories.DEFAULT);
 
       records.add(book);
     }
@@ -425,6 +428,7 @@ public class LibraryThingImporter {
                          " [-encoding enc] [-delimiter delim]" +
                          " [-author {last_first,first_last}] [-summary bool]" + 
                          " [-validate bool] [-unicode bool]" +
+                         " [-default-category cat] [-add-tags list]" +
                          " [-read file] [-append file] [-write file]" +
                          " [-sort field] [-dump file]" + 
                          " [-dump-raw file] [-load-raw file]" +
@@ -462,15 +466,18 @@ public class LibraryThingImporter {
       else if (arg.equals("-validate")) {
         importer.setValidate(Boolean.valueOf(args[i++]).booleanValue());
       }
+      else if (arg.equals("-unicode")) {
+        unicode = Boolean.valueOf(args[i++]).booleanValue();
+        BookRecord.setUnicode(unicode);
+      }
+      else if (arg.equals("-default-category")) {
+        BookCategories.setDefaultCategory(args[i++]);
+      }
       else if (arg.equals("-add-tags")) {
         String tags = args[i++];
         if (tags.length() == 0)
           tags = null;
         importer.setAddTags(tags);
-      }
-      else if (arg.equals("-unicode")) {
-        unicode = Boolean.valueOf(args[i++]).booleanValue();
-        BookRecord.setUnicode(unicode);
       }
       else if (arg.equals("-read")) {
         String file = args[i++];
@@ -552,9 +559,10 @@ public class LibraryThingImporter {
         }
       }
       else if (arg.equals("-download")) {
-        String user = args[i++];
-        books = importer.download(user);
-        System.out.println(books.size() + " books downloaded for " + user);
+        String userid = args[i++];
+        String usernum = args[i++];
+        books = importer.download(userid, usernum);
+        System.out.println(books.size() + " books downloaded for " + userid);
       }
       else {
         throw new PalmThingException("Unknown switch: " + arg);

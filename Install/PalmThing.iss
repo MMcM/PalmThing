@@ -10,8 +10,8 @@ ExportFilters=Excel files|*.xls|Text files|*.txt|All files|*.*
 
 [Setup]
 AppName=PalmThing
-AppVerName=PalmThing 1.0.7
-AppVersion=1.0.7
+AppVerName=PalmThing 1.0.8
+AppVersion=1.0.8
 ; Consider moving to SourceForge.
 AppPublisher=Mike McMahon
 AppPublisherURL=http://home.comcast.net/~mmcm/palmthing/
