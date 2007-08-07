@@ -43,6 +43,17 @@ public class LibraryThingImporter {
     "comments",
   };
 
+  public static final String[] g_alternateFields = {
+    null,
+    null,
+    null,
+    null,
+    null,
+    "your tags",
+    null,
+    null,
+  };
+
   public static final String g_authorLastFirstField = "author (last, first)";
   public static final String g_authorFirstLastField = "author (first, last)";
   private String m_authorField = g_authorLastFirstField;
@@ -170,7 +181,9 @@ public class LibraryThingImporter {
           stringFieldCols[BookRecord.FIELD_AUTHOR] = i;
         else {
           for (int j = 0; j < g_stringFields.length; j++) {
-            if (g_stringFields[j].equalsIgnoreCase(col)) {
+            if (g_stringFields[j].equalsIgnoreCase(col) ||
+                ((g_alternateFields[j] != null) &&
+                 g_alternateFields[j].equalsIgnoreCase(col))) {
               if ((j == BookRecord.FIELD_SUMMARY) && !m_includeSummaryField)
                 break;
               stringFieldCols[j] = i;

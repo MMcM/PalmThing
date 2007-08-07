@@ -1,4 +1,6 @@
-1.0.8   5/16/2007       MMcM    Allow Main category suppression.
+1.0.9   08/07/2007      MMcM    Export format changed slightly.
+
+1.0.8   05/16/2007      MMcM    Allow Main category suppression.
 
 1.0.7   11/28/2006      MMcM    Update for new Unicode library.
 
