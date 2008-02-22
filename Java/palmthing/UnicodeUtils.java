@@ -104,7 +104,7 @@ public class UnicodeUtils {
       // 1.6
       Object form = null;
       try {
-        Class nclass = Class.forName("java.text.Normalizer.Form");
+        Class nclass = Class.forName("java.text.Normalizer$Form");
         form = nclass.getMethod("valueOf", new Class[] { String.class })
           .invoke(null, new Object[] { "NFC" });
         meth = clazz.getMethod("normalize", new Class[] {

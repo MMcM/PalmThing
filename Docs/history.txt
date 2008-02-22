@@ -1,3 +1,7 @@
+1.0.11  02/22/2008      MMcM    Add record charset override for Mac OSX.
+
+1.0.10  02/20/2008      MMcM    J2SE 6 compatibility.
+
 1.0.9   08/07/2007      MMcM    Export format changed slightly.
 
 1.0.8   05/16/2007      MMcM    Allow Main category suppression.

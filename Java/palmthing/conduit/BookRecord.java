@@ -88,6 +88,16 @@ public class BookRecord extends AbstractRecord {
     g_unicode = unicode;
   }
 
+  private static String g_CStringEncoding = null;
+  
+  public static String getCStringEncoding() {
+    return g_CStringEncoding;
+  }
+
+  public static void setCStringEncoding(String encoding) {
+    g_CStringEncoding = encoding;
+  }
+  
   // Must agree with BookRecordPacked in BookDatabase.c.
   public void writeData(DataOutputStream out) throws IOException {
     out.writeInt(m_bookID);
@@ -147,6 +157,28 @@ public class BookRecord extends AbstractRecord {
   static public void writeUTFString(DataOutputStream out, String str) 
       throws IOException {
     out.write(str.getBytes("UTF-8"));
+    out.write(0);
+  }
+
+  static public String readCString(DataInputStream in) throws IOException {
+    ByteArrayOutputStream bstr = new ByteArrayOutputStream();
+    while (true) {
+      int b = in.read();
+      if (b <= 0) break;
+      bstr.write(b);
+    }
+    if (g_CStringEncoding == null)
+      return bstr.toString();
+    else
+      return bstr.toString(g_CStringEncoding);
+  }
+
+  static public void writeCString(DataOutputStream out, String string) 
+      throws IOException {
+    if (g_CStringEncoding == null)
+      out.write(string.getBytes());
+    else
+      out.write(string.getBytes(g_CStringEncoding));
     out.write(0);
   }
 

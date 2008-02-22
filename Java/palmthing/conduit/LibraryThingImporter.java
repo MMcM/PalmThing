@@ -135,14 +135,15 @@ public class LibraryThingImporter {
 
   public static String EXPORT_TAB = "http://www.librarything.com/export-tab.php";
 
-  public List download(String userid, String usernum)
+  public List download(String userid, String usernum, String usercheck)
       throws PalmThingException, IOException {
     URL url = new URL(EXPORT_TAB);
     HttpURLConnection conn = (HttpURLConnection)url.openConnection();
     conn.setRequestMethod("GET");
     conn.setRequestProperty("Cookie", 
                             "cookie_userid=" + userid + "; " +
-                            "cookie_usernum=" + usernum);
+                            "cookie_usernum=" + usernum + "; " +
+                            "cookie_userchecksum=" + usercheck);
     InputStream istr = conn.getInputStream();
     List result = importStream(istr);
     istr.close();
@@ -440,7 +441,7 @@ public class LibraryThingImporter {
       System.out.println("usage: LibraryThingImporter" +
                          " [-encoding enc] [-delimiter delim]" +
                          " [-author {last_first,first_last}] [-summary bool]" + 
-                         " [-validate bool] [-unicode bool]" +
+                         " [-validate bool] [-unicode bool] [-record-encoding charset]" +
                          " [-default-category cat] [-add-tags list]" +
                          " [-read file] [-append file] [-write file]" +
                          " [-sort field] [-dump file]" + 
@@ -482,6 +483,9 @@ public class LibraryThingImporter {
       else if (arg.equals("-unicode")) {
         unicode = Boolean.valueOf(args[i++]).booleanValue();
         BookRecord.setUnicode(unicode);
+      }
+      else if (arg.equals("-record-encoding")) {
+        BookRecord.setCStringEncoding(args[i++]);
       }
       else if (arg.equals("-default-category")) {
         BookCategories.setDefaultCategory(args[i++]);
@@ -574,7 +578,8 @@ public class LibraryThingImporter {
       else if (arg.equals("-download")) {
         String userid = args[i++];
         String usernum = args[i++];
-        books = importer.download(userid, usernum);
+        String usercheck = args[i++];
+        books = importer.download(userid, usernum, usercheck);
         System.out.println(books.size() + " books downloaded for " + userid);
       }
       else {

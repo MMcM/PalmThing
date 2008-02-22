@@ -1,6 +1,6 @@
 //
 //      Palm App Name:                  "PalmThing"
-//      Palm App Version:               "1.0.9"
+//      Palm App Version:               "1.0.11"
 //      $Header$
 //
 
