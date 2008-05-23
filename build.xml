@@ -99,6 +99,7 @@
          remotedir="palmthing"
          action="put">
       <fileset dir="Docs">
+        <include name="index.html"/>
         <include name="readme.html"/>
         <include name="license.txt"/>
         <include name="*.png"/>
