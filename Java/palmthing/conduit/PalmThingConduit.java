@@ -89,7 +89,7 @@ public class PalmThingConduit implements Conduit {
           }
           if (appInfo != null) {
             remoteCategories = Category.parseCategories(appInfo);
-            BookCategories.setCategoryTags(remoteBooks, remoteCategories);
+            BookCategories.setCategories(remoteBooks, remoteCategories);
           }
         }
         if (appInfo == null) {

@@ -25,11 +25,13 @@ public class BookUtils {
   }
 
   public static String mergeCategoryTag(String col, BookRecord book) {
+    String cname = book.getCategory();
+    if (cname != null)
+      cname = "@" + cname;
     if (col == null)
-      return book.getCategoryTag();
-    String ctag = book.getCategoryTag();
-    if (ctag != null)
-      col = ctag + ", " + col;
+      return cname;
+    if (cname != null)
+      col = cname + ", " + col;
     return col;
   }
 
@@ -41,7 +43,7 @@ public class BookUtils {
       if ((atsign == 0) || (col.charAt(atsign-1) == ',')) {
         int comma = col.indexOf(',', atsign);
         if (comma < 0) comma = col.length();
-        book.setCategoryTag(col.substring(atsign, comma));
+        book.setCategory(col.substring(atsign+1, comma));
         StringBuffer buf = new StringBuffer();
         if (atsign > 0)
           buf.append(col.substring(0, atsign-1));

@@ -106,6 +106,7 @@ public class XMLImporter extends DefaultHandler {
       if (m_fieldBuffer != null) {
         String field = m_fieldBuffer.toString();
         if (m_field == BookRecord.FIELD_TAGS)
+          // TODO: Conditionalize.
           field = BookUtils.extractCategoryTag(field, m_book);
         m_book.setStringField(m_field, field);
         m_fieldBuffer = null;

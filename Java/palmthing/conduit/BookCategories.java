@@ -37,24 +37,24 @@ public class BookCategories {
     Iterator iter = books.iterator();
     while (iter.hasNext()) {
       BookRecord book = (BookRecord)iter.next();
-      if (book.getCategoryTag() == null) {
+      if (book.getCategory() == null) {
         // Only add Main category if some book will need it.
         result.add(new Category(g_Default, DEFAULT, DEFAULT));
         break;
       }
     }
     
-    Map byTag = new HashMap();
+    Map byName = new HashMap();
     iter = books.iterator();
     while (iter.hasNext()) {
       BookRecord book = (BookRecord)iter.next();
-      String ctag = book.getCategoryTag();
-      if (ctag == null) continue;
-      Category category = (Category)byTag.get(ctag);
+      String cname = book.getCategory();
+      if (cname == null) continue;
+      Category category = (Category)byName.get(cname);
       if (category != null) continue;
-      category = new Category(ctag.substring(1), result.size(), result.size());
+      category = new Category(cname, result.size(), result.size());
       result.add(category);
-      byTag.put(ctag, category);
+      byName.put(cname, category);
     }
 
     while (result.size() < Category.MAX_CATEGORIES) {
@@ -95,10 +95,10 @@ public class BookCategories {
     return result;
   }
 
-  public static void setCategoryTags(Collection books, Vector categories) {
-    String[] ctags = new String[Category.MAX_CATEGORIES];
+  public static void setCategories(Collection books, Vector categories) {
+    String[] cnames = new String[Category.MAX_CATEGORIES];
 
-    int limit = UNFILED;        // Lowest that does not use category tag.
+    int limit = UNFILED;        // Lowest that does not use named category.
     if ((categories.size() > DEFAULT) &&
         categories.get(DEFAULT).equals(g_Default))
       limit = DEFAULT;
@@ -108,33 +108,33 @@ public class BookCategories {
       BookRecord book = (BookRecord)iter.next();
       int index = book.getCategoryIndex();
       if (index <= limit) continue;
-      String ctag = ctags[index];
-      if (ctag == null) {
+      String cname = cnames[index];
+      if (cname == null) {
         Category category = (Category)categories.get(index);
-        ctag = "@" + category.getName();
-        ctags[index] = ctag;
+        cname = category.getName();
+        cnames[index] = cname;
       }
-      book.setCategoryTag(ctag);
+      book.setCategory(cname);
     }
   }
 
   public static void setCategoryIndices(Collection books, Vector categories) {
-    Map byTag = new HashMap();
+    Map byName = new HashMap();
 
     Iterator iter = categories.iterator();
     while (iter.hasNext()) {
       Category category = (Category)iter.next();
       if (category.getName().length() == 0) continue;
-      String ctag = "@" + category.getName();
-      byTag.put(ctag, category);
+      String cname = category.getName();
+      byName.put(cname, category);
     }
 
     iter = books.iterator();
     while (iter.hasNext()) {
       BookRecord book = (BookRecord)iter.next();
-      String ctag = book.getCategoryTag();
-      if (ctag == null) continue;
-      Category category = (Category)byTag.get(ctag);
+      String cname = book.getCategory();
+      if (cname == null) continue;
+      Category category = (Category)byName.get(cname);
       book.setCategoryIndex(category.getIndex());
     }
   }

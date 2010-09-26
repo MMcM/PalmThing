@@ -29,7 +29,7 @@ public class BookRecord extends AbstractRecord {
   public static final int BOOK_ID_NONE = 0;
 
   private int m_bookID;
-  private String m_categoryTag;
+  private String m_category;
   private String m_stringFields[] = new String[BOOK_NFIELDS];
 
   protected String getStringField(int index) {
@@ -46,11 +46,11 @@ public class BookRecord extends AbstractRecord {
     m_bookID = bookID;
   }
 
-  public String getCategoryTag() {
-    return m_categoryTag;
+  public String getCategory() {
+    return m_category;
   }
-  public void setCategoryTag(String categoryTag) {
-    m_categoryTag = categoryTag;
+  public void setCategory(String category) {
+    m_category = category;
   }
 
   public String getTitle() {
@@ -199,10 +199,10 @@ public class BookRecord extends AbstractRecord {
     BookRecord other = (BookRecord)obj;
     if (m_bookID != other.m_bookID) return false;
     if (!super.equals(obj)) return false;
-    if (m_categoryTag == null)
-      return (other.m_categoryTag == null);
+    if (m_category == null)
+      return (other.m_category == null);
     else
-      return m_categoryTag.equals(other.m_categoryTag);
+      return m_category.equals(other.m_category);
   }
 
   public String toString() {
@@ -212,7 +212,7 @@ public class BookRecord extends AbstractRecord {
   public String toFormattedString() {
     return ("Book record: {\r\n" +
             "  id: " + getBookID() + "\r\n" +
-            "  category: " + getCategoryTag() + "\r\n" +
+            "  category: " + getCategory() + "\r\n" +
             "  summary: " + getSummary() + "\r\n" +
             "}\r\n" +
             super.toFormattedString());

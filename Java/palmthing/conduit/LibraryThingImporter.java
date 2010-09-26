@@ -310,6 +310,7 @@ public class LibraryThingImporter {
       col = trimISBN(col);
       break;
     case BookRecord.FIELD_TAGS:
+      // TODO: Conditionalize.
       col = BookUtils.extractCategoryTag(col, book);
       if (col != null)
         col = stringReplaceAll(col, ",", ", ");
@@ -338,13 +339,20 @@ public class LibraryThingImporter {
   protected String getField(BookRecord book, int i) {
     String col = book.getStringField(i);
     if (col == null) {
-      return ((i == BookRecord.FIELD_TAGS) ? book.getCategoryTag() : null);
+      // TODO: Conditionalize.
+      if (i == BookRecord.FIELD_TAGS) {
+        String cname = book.getCategory();
+        if (cname != null) 
+          return "@" + cname;
+      }
+      return null;
     }
     switch (i) {
     case BookRecord.FIELD_ISBN:
       col = "[" + col + "]";
       break;
     case BookRecord.FIELD_TAGS:
+      // Conditionalize.
       col = BookUtils.mergeCategoryTag(col, book);
       col = stringReplaceAll(col, ", ", ",");
       break;
