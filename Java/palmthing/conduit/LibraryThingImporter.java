@@ -47,7 +47,7 @@ public class LibraryThingImporter {
     null,
     null,
     null,
-    null,
+    "ISBNs",
     null,
     "your tags",
     null,
