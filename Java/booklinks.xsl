@@ -45,6 +45,7 @@ table.books td {
       <tr>
         <th>Author</th>
         <th>Title</th>
+        <th>Category</th>
         <th>Tags</th>
         <th>Link</th>
       </tr>
@@ -55,6 +56,7 @@ table.books td {
     <tr>
       <td><xsl:apply-templates select="author"/></td>
       <td><xsl:apply-templates select="title"/></td>
+      <td><xsl:apply-templates select="category"/></td>
       <td><xsl:apply-templates select="tags"/></td>
       <td><a href="{link/@url}">
         <xsl:choose>
