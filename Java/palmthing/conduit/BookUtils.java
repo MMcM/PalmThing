@@ -24,17 +24,7 @@ public class BookUtils {
     return str;
   }
 
-  public static String mergeCategoryTag(String col, BookRecord book) {
-    String cname = book.getCategory();
-    if (cname != null)
-      cname = "@" + cname;
-    if (col == null)
-      return cname;
-    if (cname != null)
-      col = cname + ", " + col;
-    return col;
-  }
-
+  /** First tag starting with @ is a category, if enabled. */
   public static String extractCategoryTag(String col, BookRecord book) {
     int atsign = 0;
     while (true) {

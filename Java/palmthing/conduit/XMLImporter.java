@@ -25,6 +25,7 @@ public class XMLImporter extends DefaultHandler {
   public static final String g_bookElement = "book";
   public static final String g_recordIDAttribute = "record-id";
   public static final String g_bookIDAttribute = "book-id";
+  public static final String g_categoryElement = "category";
   public static final String g_linkElement = "link";
   public static final String g_urlAttribute = "url";
   // Order must agree with BookRecord.
@@ -43,6 +44,19 @@ public class XMLImporter extends DefaultHandler {
   private BookRecord m_book;
   private int m_field;
   private StringBuffer m_fieldBuffer;
+
+  private boolean m_atsignTagIsCategory = false;
+
+  /** Get whether tags starting with @ set a category.
+   * This is deprecated due to collections.
+   */
+  public boolean getAtsignTagIsCategory() {
+    return m_atsignTagIsCategory;
+  }
+
+  public void setAtsignTagIsCategory(boolean atsignTagIsCategory) {
+    m_atsignTagIsCategory = atsignTagIsCategory;
+  }
 
   public List importFile(String file) throws PalmThingException, IOException {
     return importSource(new InputSource(file));
@@ -85,6 +99,9 @@ public class XMLImporter extends DefaultHandler {
       if (attr != null)
         m_book.setBookID(Integer.parseInt(attr));
     }
+    else if (g_categoryElement.equals(localName)) {
+      m_fieldBuffer = new StringBuffer();
+    }
     else {
       m_fieldBuffer = null;
       for (int i = 0; i < g_stringFieldElements.length; i++) {
@@ -102,11 +119,16 @@ public class XMLImporter extends DefaultHandler {
       m_books.add(m_book);
       m_book = null;
     }
+    else if (g_categoryElement.equals(localName)) {
+      if (m_fieldBuffer != null) {
+        String field = m_fieldBuffer.toString();
+        m_book.setCategory(field);
+      }
+    }
     else {
       if (m_fieldBuffer != null) {
         String field = m_fieldBuffer.toString();
         if (m_field == BookRecord.FIELD_TAGS)
-          // TODO: Conditionalize.
           field = BookUtils.extractCategoryTag(field, m_book);
         m_book.setStringField(m_field, field);
         m_fieldBuffer = null;
@@ -180,10 +202,15 @@ public class XMLImporter extends DefaultHandler {
                            Integer.toString(book.getBookID()));
       }
       hand.startElement(null, g_bookElement, g_bookElement, attrs);
+      if (book.getCategory() != null) {
+        String field = book.getCategory();
+        String elem = g_categoryElement;
+        hand.startElement(null, elem, elem, NO_ATTRS);
+        hand.characters(field.toCharArray(), 0, field.length());
+        hand.endElement(null, elem, elem);
+      }
       for (int i = 0; i < g_stringFieldElements.length; i++) {
         String field = book.getStringField(i);
-        if (i == BookRecord.FIELD_TAGS)
-          field = BookUtils.mergeCategoryTag(field, book);
         if (field == null) continue;
         String elem = g_stringFieldElements[i];
         hand.startElement(null, elem, elem, NO_ATTRS);

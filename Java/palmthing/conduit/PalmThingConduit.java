@@ -32,6 +32,7 @@ public class PalmThingConduit implements Conduit {
       // TODO: Read a .properties file from props path and initialize
       // field prefs, etc.
       LibraryThingImporter importer = new LibraryThingImporter();
+      importer.setAtsignTagIsCategory(true);
 
       int syncType = props.syncType;
       List localBooks, backupBooks, remoteBooks;

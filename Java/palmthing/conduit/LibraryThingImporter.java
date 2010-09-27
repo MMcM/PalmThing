@@ -31,6 +31,8 @@ public class LibraryThingImporter {
 
   public static final String g_recordIDField = "record id";
   public static final String g_bookIDField = "book id";
+  public static final String g_categoryField = "category";
+  public static final String g_collectionsField = "collections";
   // Order must agree with BookRecord.
   public static final String[] g_stringFields = {
     "title",
@@ -105,6 +107,54 @@ public class LibraryThingImporter {
     m_validate = validate;
   }
 
+  private String m_category;
+
+  /** Get category to assign.
+   * This overrides anything from the input.
+   */
+  public String getCategory() {
+    return m_category;
+  }
+
+  public void setCategory(String category) {
+    m_category = category;
+  }
+
+  private String m_defaultCollection = "Your library";
+  
+  /** Get default collection.
+   * The collection with this name maps to the default category.
+   */
+  public String getDefaultCollection() {
+    return m_defaultCollection;
+  }
+
+  public void setDefaultCollection(String defaultCollection) {
+    m_defaultCollection = defaultCollection;
+  }
+
+  private boolean setCollection(BookRecord book, String col) {
+    if (col.equals(m_defaultCollection))
+      return false;
+    book.setCategory(col);
+    return true;
+  }
+
+  // Get category from collection list separated by commas.
+  protected boolean setCollections(BookRecord book, String col) {
+    int idx = col.indexOf(',');
+    if (idx < 0)
+      return setCollection(book, col);
+    int oidx = 0;
+    do {
+      if (setCollection(book, col.substring(oidx, idx)))
+        return true;
+      oidx = idx + 1;
+      idx = col.indexOf(',', oidx);
+    } while (idx > 0);
+    return setCollection(book, col.substring(oidx));
+  }
+
   private String m_addTags = null;
 
   /** Get additional tags to be added to each record read from the file.
@@ -116,6 +166,19 @@ public class LibraryThingImporter {
 
   public void setAddTags(String addTags) {
     m_addTags = addTags;
+  }
+
+  private boolean m_atsignTagIsCategory = false;
+
+  /** Get whether tags starting with @ set a category.
+   * This is deprecated due to collections.
+   */
+  public boolean getAtsignTagIsCategory() {
+    return m_atsignTagIsCategory;
+  }
+
+  public void setAtsignTagIsCategory(boolean atsignTagIsCategory) {
+    m_atsignTagIsCategory = atsignTagIsCategory;
   }
 
   /** Import from the given file.
@@ -158,6 +221,7 @@ public class LibraryThingImporter {
       new BufferedReader(new InputStreamReader(istr, m_encoding));
     
     int recordIDFieldCol = -1, bookIDFieldCol = -1;
+    int categoryFieldCol = -1, collectionsFieldCol = -1;
     int[] stringFieldCols = new int[g_stringFields.length];
     Arrays.fill(stringFieldCols, -1);
 
@@ -178,6 +242,10 @@ public class LibraryThingImporter {
           recordIDFieldCol = i;
         else if (g_bookIDField.equalsIgnoreCase(col))
           bookIDFieldCol = i;
+        else if (g_categoryField.equalsIgnoreCase(col))
+          categoryFieldCol = i;
+        else if (g_collectionsField.equalsIgnoreCase(col))
+          collectionsFieldCol = i;
         else if (m_authorField.equalsIgnoreCase(col))
           stringFieldCols[BookRecord.FIELD_AUTHOR] = i;
         else {
@@ -215,6 +283,18 @@ public class LibraryThingImporter {
         String col = cols[bookIDFieldCol];
         if (col != null)
           book.setBookID(Integer.parseInt(col));
+      }
+      if (m_category != null)
+        book.setCategory(m_category);
+      else if (categoryFieldCol >= 0) {
+        String col = cols[categoryFieldCol];
+        if (col != null)
+          book.setCategory(col);
+      }
+      else if (collectionsFieldCol >= 0) {
+        String col = cols[collectionsFieldCol];
+        if (col != null)
+          setCollections(book, col);
       }
       for (int i = 0; i < stringFieldCols.length; i++) {
         int fieldCol = stringFieldCols[i];
@@ -276,6 +356,8 @@ public class LibraryThingImporter {
       out.write(g_recordIDField);
       out.write('\t');
       out.write(g_bookIDField);
+      out.write('\t');
+      out.write(g_categoryField);
       for (int i = 0; i < g_stringFields.length; i++) {
         out.write('\t');
         out.write(g_stringFields[i]);
@@ -291,6 +373,9 @@ public class LibraryThingImporter {
       out.write('\t');
       if (book.getBookID() != BookRecord.BOOK_ID_NONE)
         out.write(Integer.toString(book.getBookID()));
+      out.write('\t');
+      if (book.getCategory() != null)
+        out.write(book.getCategory());
       for (int i = 0; i < g_stringFields.length; i++) {
         out.write('\t');
         String col = getField(book, i);
@@ -310,8 +395,8 @@ public class LibraryThingImporter {
       col = trimISBN(col);
       break;
     case BookRecord.FIELD_TAGS:
-      // TODO: Conditionalize.
-      col = BookUtils.extractCategoryTag(col, book);
+      if (m_atsignTagIsCategory && (book.getCategory() == null))
+        col = BookUtils.extractCategoryTag(col, book);
       if (col != null)
         col = stringReplaceAll(col, ",", ", ");
       break;
@@ -338,22 +423,13 @@ public class LibraryThingImporter {
   // Converts internal (HH) format to external (PC) format.
   protected String getField(BookRecord book, int i) {
     String col = book.getStringField(i);
-    if (col == null) {
-      // TODO: Conditionalize.
-      if (i == BookRecord.FIELD_TAGS) {
-        String cname = book.getCategory();
-        if (cname != null) 
-          return "@" + cname;
-      }
+    if (col == null)
       return null;
-    }
     switch (i) {
     case BookRecord.FIELD_ISBN:
       col = "[" + col + "]";
       break;
     case BookRecord.FIELD_TAGS:
-      // Conditionalize.
-      col = BookUtils.mergeCategoryTag(col, book);
       col = stringReplaceAll(col, ", ", ",");
       break;
     default:
@@ -495,14 +571,26 @@ public class LibraryThingImporter {
       else if (arg.equals("-record-encoding")) {
         BookRecord.setCStringEncoding(args[i++]);
       }
+      else if (arg.equals("-default-collection")) {
+        importer.setDefaultCollection(args[i++]);
+      }
       else if (arg.equals("-default-category")) {
         BookCategories.setDefaultCategory(args[i++]);
+      }
+      else if (arg.equals("-category")) {
+        String category = args[i++];
+        if (category.length() == 0)
+          category = null;
+        importer.setCategory(category);
       }
       else if (arg.equals("-add-tags")) {
         String tags = args[i++];
         if (tags.length() == 0)
           tags = null;
         importer.setAddTags(tags);
+      }
+      else if (arg.equals("-atsign-tag-is-category")) {
+        importer.setAtsignTagIsCategory(Boolean.valueOf(args[i++]).booleanValue());
       }
       else if (arg.equals("-read")) {
         String file = args[i++];
@@ -560,7 +648,9 @@ public class LibraryThingImporter {
       }
       else if (arg.equals("-read-xml")) {
         String file = args[i++];
-        books = new XMLImporter().importFile(file);
+        XMLImporter ximporter = new XMLImporter();
+        ximporter.setAtsignTagIsCategory(importer.getAtsignTagIsCategory());
+        books = ximporter.importFile(file);
         System.out.println(books.size() + " books read from " + file);
       }
       else if (arg.equals("-write-xml")) {
