@@ -1,3 +1,5 @@
+1.0.12  09/26/2010      MMcM    Support for collections as categories.
+
 1.0.11  02/22/2008      MMcM    Add record charset override for Mac OSX.
 
 1.0.10  02/20/2008      MMcM    J2SE 6 compatibility.
